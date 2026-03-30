@@ -807,3 +807,167 @@ footer { background: var(--bg-secondary); border-top: 1px solid var(--border); p
   }
   .nav-links .nav-link:last-child { border-bottom: none; }
 }
+
+/* ================================================================
+   FLEET SECTION
+   ================================================================ */
+
+.fleet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.fleet-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: border-color var(--t), transform var(--t), box-shadow var(--t);
+}
+.fleet-card:hover {
+  border-color: var(--blue);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(0,119,255,0.12);
+}
+
+.fleet-card-division { height: 5px; }
+.fleet-card-division.uk { background: linear-gradient(90deg, #012169 0%, #fff 45%, #C8102E 100%); }
+.fleet-card-division.us { background: linear-gradient(90deg, #B22234 0%, #fff 45%, #3C3B6E 100%); }
+.fleet-card-division.ca { background: linear-gradient(90deg, #FF0000 0%, #fff 50%, #FF0000 100%); }
+
+.fleet-card-body { padding: 20px; }
+
+.fleet-division-tag {
+  font-family: var(--font-head);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 3px 9px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+.fleet-division-tag.uk { background: rgba(1,33,105,0.15); color: #6699ff; border: 1px solid rgba(1,33,105,0.3); }
+.fleet-division-tag.us { background: rgba(60,59,110,0.15); color: #9999ee; border: 1px solid rgba(60,59,110,0.3); }
+.fleet-division-tag.ca { background: rgba(255,0,0,0.08); color: #ff7777; border: 1px solid rgba(255,0,0,0.2); }
+
+.fleet-aircraft-name {
+  font-family: var(--font-head);
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.fleet-aircraft-role {
+  font-size: 0.76rem;
+  color: var(--text-sub);
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.fleet-callsign {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--orange);
+  background: rgba(255,106,0,0.08);
+  border: 1px solid rgba(255,106,0,0.2);
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  display: inline-block;
+  margin-bottom: 14px;
+}
+
+.fleet-specs { display: flex; flex-direction: column; gap: 0; }
+.fleet-spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.fleet-spec-row:last-child { border-bottom: none; }
+.fleet-spec-label { color: var(--text-sub); }
+.fleet-spec-val   { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text); }
+
+/* -- Division overview cards -- */
+.division-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 24px 22px;
+  text-align: center;
+  transition: border-color var(--t), transform var(--t);
+}
+.division-card:hover { transform: translateY(-2px); }
+.division-card-uk:hover { border-color: #012169; }
+.division-card-us:hover { border-color: #3C3B6E; }
+.division-card-ca:hover { border-color: #FF4444; }
+
+.division-card-flag { font-size: 2rem; margin-bottom: 10px; }
+.division-card-name {
+  font-family: var(--font-head);
+  font-size: 0.88rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+.division-card-operator {
+  font-size: 0.76rem;
+  color: var(--text-sub);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+.division-card-cs {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--orange);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.division-card-base {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* ================================================================
+   ADMIN PANEL — rank badge overrides for admin table
+   ================================================================ */
+
+.rank-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-family: var(--font-head);
+}
+.rank-director  { background: rgba(255,106,0,0.12); color: var(--orange); border: 1px solid rgba(255,106,0,0.3); }
+.rank-senior    { background: rgba(0,119,255,0.1);  color: var(--blue);   border: 1px solid rgba(0,119,255,0.25); }
+.rank-inspector { background: rgba(0,230,118,0.08); color: var(--pass);   border: 1px solid rgba(0,230,118,0.2); }
+.rank-junior    { background: rgba(255,255,255,0.05); color: var(--text-sub); border: 1px solid var(--border); }
+
+/* NOTAM type tags in admin table */
+.notam-type {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-family: var(--font-head);
+}
+.notam-ops   { background: rgba(0,119,255,0.1);  color: var(--blue);    border: 1px solid rgba(0,119,255,0.2); }
+.notam-maint { background: rgba(255,171,64,0.1); color: var(--monitor); border: 1px solid rgba(255,171,64,0.2); }
+.notam-trng  { background: rgba(0,230,118,0.08); color: var(--pass);    border: 1px solid rgba(0,230,118,0.15); }
+
+/* ================================================================
+   RESPONSIVE — fleet on small screens
+   ================================================================ */
+
+@media (max-width: 600px) {
+  .fleet-grid { grid-template-columns: 1fr; }
+  .admin-main { padding: 18px 16px; }
+}

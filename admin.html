@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Admin — GFIG Virtual</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { overflow: hidden; }
+    /* ── Admin Shell ───────────────────────────────────── */
+    .admin-layout {
+      display: flex;
+      min-height: 100vh;
+      background: var(--bg-primary);
+    }
+
+    /* ── Sidebar ───────────────────────────────────────── */
+    .admin-sidebar {
+      width: 240px;
+      min-width: 240px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .admin-sidebar-head {
+      padding: 22px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .admin-sidebar-head img { height: 36px; width: auto; }
+    .admin-sidebar-org { font-family: var(--font-head); font-size: 0.72rem; letter-spacing: 0.12em; color: var(--text-sub); }
+    .admin-sidebar-badge {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      padding: 2px 8px;
+      background: rgba(255,106,0,0.12);
+      color: var(--orange);
+      border: 1px solid rgba(255,106,0,0.3);
+      border-radius: 4px;
+      margin-top: 2px;
+      display: inline-block;
+    }
+
+    .admin-nav { flex: 1; padding: 12px 10px; }
+    .admin-nav-group { margin-bottom: 6px; }
+    .admin-nav-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-family: var(--font-head);
+      padding: 10px 10px 4px;
+      display: block;
+    }
+
+    .admin-nav-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: none;
+      border: none;
+      color: var(--text-sub);
+      font-size: 0.85rem;
+      font-family: var(--font-body);
+      text-align: left;
+      border-radius: var(--r-md);
+      cursor: pointer;
+      transition: background var(--t), color var(--t);
+      margin-bottom: 2px;
+    }
+    .admin-nav-item:hover { background: var(--bg-hover); color: var(--text); }
+    .admin-nav-item.active { background: rgba(255,106,0,0.1); color: var(--orange); font-weight: 500; }
+    .admin-nav-icon { font-size: 1.05rem; width: 20px; text-align: center; }
+
+    .admin-badge-count {
+      margin-left: auto;
+      background: var(--orange);
+      color: #fff;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-family: var(--font-head);
+    }
+
+    .admin-sidebar-user {
+      padding: 14px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .admin-user-avatar {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--orange), var(--blue));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 700; color: #fff; font-family: var(--font-head);
+      flex-shrink: 0;
+    }
+    .admin-user-name { font-size: 0.82rem; font-weight: 500; }
+    .admin-user-rank { font-size: 0.7rem; color: var(--text-sub); }
+    .admin-logout-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 4px 6px;
+      border-radius: var(--r-sm);
+      transition: color var(--t);
+    }
+    .admin-logout-btn:hover { color: var(--danger); }
+
+    /* ── Main ──────────────────────────────────────────── */
+    .admin-main {
+      margin-left: 240px;
+      flex: 1;
+      overflow-y: auto;
+      height: 100vh;
+      padding: 28px 32px;
+    }
+
+    .admin-section { display: none; }
+    .admin-section.active { display: block; }
+
+    .admin-page-title {
+      font-family: var(--font-head);
+      font-size: 1.2rem;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    .admin-page-sub {
+      color: var(--text-sub);
+      font-size: 0.83rem;
+      margin-bottom: 28px;
+    }
+    .admin-section-divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+    /* ── Metric Cards ──────────────────────────────────── */
+    .admin-metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 18px 20px;
+    }
+    .metric-label { font-size: 0.72rem; color: var(--text-sub); letter-spacing: 0.08em; margin-bottom: 8px; font-family: var(--font-head); }
+    .metric-value { font-family: var(--font-head); font-size: 1.8rem; letter-spacing: -0.02em; }
+    .metric-value.orange { color: var(--orange); }
+    .metric-value.blue   { color: var(--blue); }
+    .metric-value.green  { color: var(--pass); }
+    .metric-value.yellow { color: var(--monitor); }
+    .metric-sub  { font-size: 0.73rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* ── Admin Tables ──────────────────────────────────── */
+    .admin-table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+    }
+    .admin-table-head {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .admin-table-title { font-family: var(--font-head); font-size: 0.82rem; letter-spacing: 0.08em; }
+    .admin-search {
+      padding: 7px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      color: var(--text);
+      font-size: 0.82rem;
+      font-family: var(--font-body);
+      width: 200px;
+    }
+    .admin-search:focus { outline: none; border-color: var(--blue); }
+
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .admin-table th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      font-family: var(--font-head);
+      color: var(--text-sub);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+    .admin-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: middle;
+    }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tr:hover td { background: var(--bg-hover); }
+
+    .tbl-action-btn {
+      padding: 4px 10px;
+      font-size: 0.73rem;
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text-sub);
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: all var(--t);
+      margin-right: 4px;
+    }
+    .tbl-action-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .tbl-action-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+    .tbl-action-btn.success:hover { border-color: var(--pass); color: var(--pass); }
+
+    /* ── Status Badges ─────────────────────────────────── */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;
+      font-family: var(--font-head); letter-spacing: 0.04em;
+    }
+    .status-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .badge-active  { background: rgba(0,230,118,0.1);  color: var(--pass);    border: 1px solid rgba(0,230,118,0.2);  }
+    .badge-active::before  { background: var(--pass); }
+    .badge-reserve { background: rgba(255,171,64,0.1); color: var(--monitor); border: 1px solid rgba(255,171,64,0.2); }
+    .badge-reserve::before { background: var(--monitor); }
+    .badge-pending { background: rgba(0,119,255,0.1);  color: var(--blue);    border: 1px solid rgba(0,119,255,0.2);  }
+    .badge-pending::before { background: var(--blue); }
+    .badge-expired { background: rgba(255,82,82,0.1);  color: var(--danger);  border: 1px solid rgba(255,82,82,0.2);  }
+    .badge-expired::before { background: var(--danger); }
+
+    /* ── Quick Actions ─────────────────────────────────── */
+    .quick-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; }
+    .qa-btn {
+      padding: 10px 18px;
+      font-size: 0.82rem;
+      border-radius: var(--r-md);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--font-body);
+      display: flex; align-items: center; gap: 7px;
+      transition: all var(--t);
+    }
+    .qa-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .qa-btn.orange:hover { border-color: var(--orange); color: var(--orange); }
+
+    /* ── Activity Feed ─────────────────────────────────── */
+    .activity-feed { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+    .activity-feed-head { padding: 14px 20px; border-bottom: 1px solid var(--border); font-family: var(--font-head); font-size: 0.8rem; letter-spacing: 0.08em; }
+    .activity-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.82rem; }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .activity-time { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.72rem; margin-top: 2px; }
+
+    /* ── Forms ─────────────────────────────────────────── */
+    .admin-form { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px; margin-bottom: 24px; }
+    .admin-form-title { font-family: var(--font-head); font-size: 0.82rem; letter-spacing: 0.08em; margin-bottom: 18px; }
+    .admin-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .admin-form-group { display: flex; flex-direction: column; gap: 5px; }
+    .admin-form-label { font-size: 0.74rem; color: var(--text-sub); font-family: var(--font-head); letter-spacing: 0.06em; }
+    .admin-input, .admin-select, .admin-textarea {
+      padding: 9px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      color: var(--text);
+      font-size: 0.83rem;
+      font-family: var(--font-body);
+      transition: border-color var(--t);
+    }
+    .admin-input:focus, .admin-select:focus, .admin-textarea:focus { outline: none; border-color: var(--blue); }
+    .admin-textarea { min-height: 90px; resize: vertical; }
+    .admin-select option { background: var(--bg-secondary); }
+
+    /* ── Discord Section ───────────────────────────────── */
+    .webhook-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .webhook-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .webhook-icon { font-size: 1.3rem; }
+    .webhook-channel-name { font-family: var(--font-head); font-size: 0.88rem; letter-spacing: 0.06em; }
+    .webhook-channel-desc { font-size: 0.76rem; color: var(--text-sub); }
+    .webhook-row { display: flex; gap: 10px; align-items: center; }
+    .webhook-input {
+      flex: 1;
+      padding: 9px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      transition: border-color var(--t);
+    }
+    .webhook-input:focus { outline: none; border-color: #5865F2; }
+    .webhook-test-btn {
+      padding: 9px 16px;
+      background: #5865F2;
+      color: #fff;
+      border: none;
+      border-radius: var(--r-sm);
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background var(--t);
+    }
+    .webhook-test-btn:hover { background: #4752C4; }
+    .webhook-save-btn {
+      padding: 9px 16px;
+      background: var(--bg-secondary);
+      color: var(--text-sub);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all var(--t);
+    }
+    .webhook-save-btn:hover { border-color: var(--pass); color: var(--pass); }
+
+    .discord-status-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; font-size: 0.82rem; color: var(--text-sub); }
+    .discord-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pass); flex-shrink: 0; animation: pulse 2s infinite; }
+
+    /* ── Settings Toggles ──────────────────────────────── */
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row-info { }
+    .settings-row-title { font-size: 0.88rem; font-weight: 500; margin-bottom: 3px; }
+    .settings-row-desc { font-size: 0.75rem; color: var(--text-sub); }
+    .toggle {
+      position: relative;
+      width: 46px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: var(--border);
+      border-radius: 13px;
+      cursor: pointer;
+      transition: background var(--t);
+    }
+    .toggle-slider::after {
+      content: '';
+      position: absolute;
+      left: 3px; top: 3px;
+      width: 20px; height: 20px;
+      background: var(--text-sub);
+      border-radius: 50%;
+      transition: transform var(--t), background var(--t);
+    }
+    .toggle input:checked + .toggle-slider { background: var(--pass); }
+    .toggle input:checked + .toggle-slider::after { transform: translateX(20px); background: #fff; }
+
+    /* ── Misc ──────────────────────────────────────────── */
+    .admin-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+    @media (max-width: 900px) { .admin-grid-2 { grid-template-columns: 1fr; } }
+
+    .toast-msg {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 12px 18px;
+      font-size: 0.83rem;
+      z-index: 999;
+      display: none;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    .toast-msg.visible { display: block; animation: fadeIn 0.2s; }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.adminGuard();</script>
+
+  <div class="admin-layout">
+
+    <!-- ══ SIDEBAR ══════════════════════════════════════ -->
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-head">
+        <img src="logo.png" alt="GFIG">
+        <div>
+          <div class="admin-sidebar-org">GFIG VIRTUAL</div>
+          <div class="admin-sidebar-badge">STAFF PORTAL</div>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <span class="admin-nav-label">Operations</span>
+        <button class="admin-nav-item active" onclick="showSection('overview', this)">
+          <span class="admin-nav-icon">◈</span> Overview
+        </button>
+        <button class="admin-nav-item" onclick="showSection('members', this)">
+          <span class="admin-nav-icon">👥</span> Members
+          <span class="admin-badge-count">184</span>
+        </button>
+        <button class="admin-nav-item" onclick="showSection('missions', this)">
+          <span class="admin-nav-icon">✈</span> Missions
+        </button>
+        <button class="admin-nav-item" onclick="showSection('reports', this)">
+          <span class="admin-nav-icon">📋</span> Reports Queue
+          <span class="admin-badge-count">3</span>
+        </button>
+
+        <span class="admin-nav-label">Content</span>
+        <button class="admin-nav-item" onclick="showSection('notams', this)">
+          <span class="admin-nav-icon">⚠</span> NOTAM Manager
+        </button>
+        <button class="admin-nav-item" onclick="showSection('discord', this)">
+          <span class="admin-nav-icon" style="color:#5865F2">⬡</span> Discord Bot
+        </button>
+
+        <span class="admin-nav-label">System</span>
+        <button class="admin-nav-item" onclick="showSection('settings', this)">
+          <span class="admin-nav-icon">⚙</span> Settings
+        </button>
+      </nav>
+
+      <div class="admin-sidebar-user">
+        <div class="admin-user-avatar" id="admin-avatar">DW</div>
+        <div>
+          <div class="admin-user-name" id="admin-name">DIR Williams</div>
+          <div class="admin-user-rank">Director</div>
+        </div>
+        <button class="admin-logout-btn" onclick="gfigAuth.logout()" title="Logout">↩</button>
+      </div>
+    </aside>
+
+    <!-- ══ MAIN ═════════════════════════════════════════ -->
+    <main class="admin-main">
+
+      <!-- ─── OVERVIEW ─────────────────────────────────── -->
+      <section class="admin-section active" id="sec-overview">
+        <div class="admin-page-title">Operations Overview</div>
+        <div class="admin-page-sub">Live snapshot of GFIG Virtual activity.</div>
+
+        <div class="admin-metrics">
+          <div class="metric-card">
+            <div class="metric-label">TOTAL MEMBERS</div>
+            <div class="metric-value blue">184</div>
+            <div class="metric-sub">↑ 7 this week</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">ACTIVE MISSIONS</div>
+            <div class="metric-value orange">12</div>
+            <div class="metric-sub">3 claimed today</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">REPORTS PENDING</div>
+            <div class="metric-value yellow">3</div>
+            <div class="metric-sub">Awaiting review</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">FLIGHTS THIS MONTH</div>
+            <div class="metric-value green">247</div>
+            <div class="metric-sub">↑ 14% vs last month</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">ACTIVE NOTAMS</div>
+            <div class="metric-value orange">5</div>
+            <div class="metric-sub">1 expires today</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">PASS RATE</div>
+            <div class="metric-value green">96%</div>
+            <div class="metric-sub">30-day average</div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <button class="qa-btn orange" onclick="showSection('notams', document.querySelector('.admin-nav-item:nth-child(7)'))">⚠ Create NOTAM</button>
+          <button class="qa-btn" onclick="showSection('missions', document.querySelectorAll('.admin-nav-item')[2])">✈ Add Mission</button>
+          <button class="qa-btn" onclick="showSection('reports', document.querySelectorAll('.admin-nav-item')[3])">📋 Review Reports</button>
+          <button class="qa-btn" onclick="showSection('discord', document.querySelectorAll('.admin-nav-item')[5])">⬡ Send Announcement</button>
+        </div>
+
+        <div class="admin-grid-2">
+          <div class="activity-feed">
+            <div class="activity-feed-head">RECENT ACTIVITY</div>
+            <div class="activity-item"><div class="activity-dot" style="background:var(--pass)"></div><div><div>CPT Harrison submitted ILS report — EGLL RWY 27R</div><div class="activity-time">14 min ago</div></div></div>
+            <div class="activity-item"><div class="activity-dot" style="background:var(--blue)"></div><div><div>New member joined: FO Chen — UK Division</div><div class="activity-time">1 hr ago</div></div></div>
+            <div class="activity-item"><div class="activity-dot" style="background:var(--orange)"></div><div><div>NOTAM GF-2025-047 created — CYYZ maintenance</div><div class="activity-time">3 hr ago</div></div></div>
+            <div class="activity-item"><div class="activity-dot" style="background:var(--pass)"></div><div><div>Mission GF-2025-0088 completed — KEWR VOR-A</div><div class="activity-time">5 hr ago</div></div></div>
+            <div class="activity-item"><div class="activity-dot" style="background:var(--monitor)"></div><div><div>ILS G/S deviation noted — KORD RWY 10C review needed</div><div class="activity-time">8 hr ago</div></div></div>
+            <div class="activity-item"><div class="activity-dot" style="background:var(--blue)"></div><div><div>Training module completed: CPT Rivera — Advanced RNAV</div><div class="activity-time">12 hr ago</div></div></div>
+          </div>
+
+          <div class="admin-table-wrap">
+            <div class="admin-table-head"><div class="admin-table-title">TOP INSPECTORS THIS MONTH</div></div>
+            <table class="admin-table">
+              <thead><tr><th>#</th><th>INSPECTOR</th><th>FLIGHTS</th><th>PTS</th></tr></thead>
+              <tbody>
+                <tr><td style="color:var(--orange);font-weight:700">1</td><td>CPT Harrison</td><td>18</td><td style="font-family:var(--font-mono);color:var(--pass)">2,940</td></tr>
+                <tr><td>2</td><td>FO Martinez</td><td>14</td><td style="font-family:var(--font-mono)">1,820</td></tr>
+                <tr><td>3</td><td>CPT Okonkwo</td><td>12</td><td style="font-family:var(--font-mono)">1,560</td></tr>
+                <tr><td>4</td><td>FO Tanaka</td><td>11</td><td style="font-family:var(--font-mono)">1,430</td></tr>
+                <tr><td>5</td><td>INS Rivera</td><td>9</td><td style="font-family:var(--font-mono)">1,170</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── MEMBERS ───────────────────────────────────── -->
+      <section class="admin-section" id="sec-members">
+        <div class="admin-page-title">Member Management</div>
+        <div class="admin-page-sub">All GFIG Virtual registered members. Click a member to view their full profile.</div>
+
+        <div class="admin-table-wrap">
+          <div class="admin-table-head">
+            <div class="admin-table-title">ALL MEMBERS <span style="color:var(--text-muted);font-weight:400;font-family:var(--font-body)">(184)</span></div>
+            <input type="text" class="admin-search" placeholder="Search callsign or name…" oninput="filterTable(this, 'members-tbody')">
+          </div>
+          <table class="admin-table">
+            <thead><tr><th>CALLSIGN</th><th>NAME</th><th>RANK</th><th>DIVISION</th><th>FLIGHTS</th><th>JOINED</th><th>STATUS</th><th></th></tr></thead>
+            <tbody id="members-tbody">
+              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GFIG-DIR-0001</td><td>DIR Williams</td><td><span class="rank-badge rank-director">Director</span></td><td>US</td><td>312</td><td>Jan 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GFIG-INS-0042</td><td>CPT Harrison</td><td><span class="rank-badge rank-senior">Senior Insp.</span></td><td>UK</td><td>187</td><td>Mar 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0067</td><td>FO Martinez</td><td><span class="rank-badge rank-inspector">Inspector</span></td><td>US</td><td>94</td><td>Apr 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0091</td><td>CPT Okonkwo</td><td><span class="rank-badge rank-senior">Senior Insp.</span></td><td>CA</td><td>143</td><td>May 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono)">GFIG-JR-0108</td><td>FO Chen</td><td><span class="rank-badge rank-junior">Junior Insp.</span></td><td>UK</td><td>12</td><td>Jun 2025</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0053</td><td>FO Tanaka</td><td><span class="rank-badge rank-inspector">Inspector</span></td><td>CA</td><td>76</td><td>Mar 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0039</td><td>INS Rivera</td><td><span class="rank-badge rank-junior">Junior Insp.</span></td><td>US</td><td>41</td><td>Feb 2024</td><td><span class="status-badge badge-reserve">Reserve</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0077</td><td>CPT Al-Farsi</td><td><span class="rank-badge rank-senior">Senior Insp.</span></td><td>UK</td><td>118</td><td>Apr 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ─── MISSIONS ──────────────────────────────────── -->
+      <section class="admin-section" id="sec-missions">
+        <div class="admin-page-title">Mission Control</div>
+        <div class="admin-page-sub">Create, edit, and expire missions. Claimed missions are locked until submitted.</div>
+
+        <div class="quick-actions">
+          <button class="qa-btn orange" onclick="toggleCreateMission()">+ Create New Mission</button>
+        </div>
+
+        <div class="admin-form" id="create-mission-form" style="display:none">
+          <div class="admin-form-title">NEW MISSION</div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label class="admin-form-label">ICAO</label>
+              <input class="admin-input" type="text" placeholder="e.g. EGLL">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">RUNWAY / NAVAID</label>
+              <input class="admin-input" type="text" placeholder="e.g. RWY 27R ILS">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">TYPE</label>
+              <select class="admin-select">
+                <option>ILS Calibration</option>
+                <option>VOR Check</option>
+                <option>NDB Survey</option>
+                <option>RNAV/RNP Validation</option>
+                <option>Approach Design</option>
+                <option>SID/STAR Survey</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">DIVISION</label>
+              <select class="admin-select">
+                <option>UK — CALIBRATION</option>
+                <option>US — FLIGHT CHECK</option>
+                <option>CA — FLIGHT INSPECTION</option>
+                <option>Any</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">POINTS</label>
+              <input class="admin-input" type="number" placeholder="e.g. 120">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">PRIORITY</label>
+              <select class="admin-select">
+                <option>Standard</option>
+                <option>High Priority</option>
+                <option>Urgent — ATC Hold</option>
+              </select>
+            </div>
+          </div>
+          <div class="admin-form-group" style="margin-bottom:16px">
+            <label class="admin-form-label">BRIEFING / NOTES</label>
+            <textarea class="admin-textarea" placeholder="Mission notes, special requirements, reference documents…"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="toast('Mission created successfully')">Create Mission</button>
+          <button class="btn" style="margin-left:10px;background:none;border:1px solid var(--border);color:var(--text-sub);" onclick="toggleCreateMission()">Cancel</button>
+        </div>
+
+        <div class="admin-table-wrap">
+          <div class="admin-table-head"><div class="admin-table-title">ACTIVE MISSIONS</div></div>
+          <table class="admin-table">
+            <thead><tr><th>ID</th><th>LOCATION</th><th>TYPE</th><th>DIVISION</th><th>CLAIMED BY</th><th>STATUS</th><th></th></tr></thead>
+            <tbody>
+              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0092</td><td>EGLL RWY 27L</td><td>ILS Calibration</td><td>UK</td><td>—</td><td><span class="status-badge badge-active">Available</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0091</td><td>KJFK RWY 13R</td><td>RNAV/RNP</td><td>US</td><td>CPT Harrison</td><td><span class="status-badge badge-pending">Claimed</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0090</td><td>CYVR VOR YVR</td><td>VOR Check</td><td>CA</td><td>—</td><td><span class="status-badge badge-active">Available</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0089</td><td>EGCC RWY 05R</td><td>ILS Calibration</td><td>UK</td><td>FO Martinez</td><td><span class="status-badge badge-pending">Claimed</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0088</td><td>KEWR VOR-A</td><td>VOR Check</td><td>US</td><td>CPT Okonkwo</td><td><span class="status-badge" style="background:rgba(0,230,118,0.06);color:var(--pass);border:1px solid rgba(0,230,118,0.15)">Completed</span></td><td><button class="tbl-action-btn success">Review</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ─── REPORTS QUEUE ─────────────────────────────── -->
+      <section class="admin-section" id="sec-reports">
+        <div class="admin-page-title">Reports Queue</div>
+        <div class="admin-page-sub">Flight inspection reports waiting for staff review and sign-off.</div>
+
+        <div class="admin-table-wrap">
+          <div class="admin-table-head"><div class="admin-table-title">PENDING REVIEW (3)</div></div>
+          <table class="admin-table">
+            <thead><tr><th>REF</th><th>SUBMITTED BY</th><th>LOCATION</th><th>TYPE</th><th>VERDICT</th><th>SUBMITTED</th><th></th></tr></thead>
+            <tbody>
+              <tr>
+                <td style="font-family:var(--font-mono);color:var(--text-muted)">RPT-2025-0311</td>
+                <td>CPT Harrison</td>
+                <td>EGLL RWY 27R — ILS LOC</td>
+                <td>ILS Calibration</td>
+                <td><span class="status-badge badge-active">PASS</span></td>
+                <td style="color:var(--text-muted);font-size:0.78rem">12 min ago</td>
+                <td>
+                  <button class="tbl-action-btn success" onclick="toast('Report approved')">✓ Approve</button>
+                  <button class="tbl-action-btn danger" onclick="toast('Report flagged for re-inspection')">⚑ Flag</button>
+                </td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--font-mono);color:var(--text-muted)">RPT-2025-0310</td>
+                <td>FO Tanaka</td>
+                <td>CYYZ RWY 06L — ILS G/S</td>
+                <td>ILS Calibration</td>
+                <td><span class="status-badge badge-reserve">MONITOR</span></td>
+                <td style="color:var(--text-muted);font-size:0.78rem">3 hr ago</td>
+                <td>
+                  <button class="tbl-action-btn success" onclick="toast('Report approved')">✓ Approve</button>
+                  <button class="tbl-action-btn danger" onclick="toast('Report flagged for re-inspection')">⚑ Flag</button>
+                </td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--font-mono);color:var(--text-muted)">RPT-2025-0309</td>
+                <td>CPT Okonkwo</td>
+                <td>KEWR VOR-A 112.5 MHz</td>
+                <td>VOR Check</td>
+                <td><span class="status-badge badge-active">PASS</span></td>
+                <td style="color:var(--text-muted);font-size:0.78rem">8 hr ago</td>
+                <td>
+                  <button class="tbl-action-btn success" onclick="toast('Report approved')">✓ Approve</button>
+                  <button class="tbl-action-btn danger" onclick="toast('Report flagged for re-inspection')">⚑ Flag</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ─── NOTAM MANAGER ─────────────────────────────── -->
+      <section class="admin-section" id="sec-notams">
+        <div class="admin-page-title">NOTAM Manager</div>
+        <div class="admin-page-sub">Create and manage active NOTAMs visible to all members.</div>
+
+        <div class="admin-form">
+          <div class="admin-form-title">CREATE NEW NOTAM</div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label class="admin-form-label">NOTAM ID</label>
+              <input class="admin-input" type="text" placeholder="e.g. GF-2025-048" id="notam-id">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">TYPE</label>
+              <select class="admin-select" id="notam-type">
+                <option>OPERATIONAL</option>
+                <option>MAINTENANCE</option>
+                <option>AIRSPACE</option>
+                <option>TRAINING</option>
+                <option>SYSTEM</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">ICAO / REGION</label>
+              <input class="admin-input" type="text" placeholder="e.g. EGLL or UK Division" id="notam-icao">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">EXPIRES</label>
+              <input class="admin-input" type="date" id="notam-expires">
+            </div>
+          </div>
+          <div class="admin-form-group" style="margin-bottom:16px">
+            <label class="admin-form-label">TITLE</label>
+            <input class="admin-input" type="text" placeholder="Brief NOTAM title" id="notam-title">
+          </div>
+          <div class="admin-form-group" style="margin-bottom:16px">
+            <label class="admin-form-label">CONTENT</label>
+            <textarea class="admin-textarea" placeholder="Full NOTAM text. Use standard NOTAM formatting where applicable." id="notam-content"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="toast('NOTAM published to member portal')">Publish NOTAM</button>
+        </div>
+
+        <div class="admin-table-wrap">
+          <div class="admin-table-head"><div class="admin-table-title">ACTIVE NOTAMS</div></div>
+          <table class="admin-table">
+            <thead><tr><th>ID</th><th>TYPE</th><th>TITLE</th><th>ICAO</th><th>ISSUED</th><th>EXPIRES</th><th></th></tr></thead>
+            <tbody>
+              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-047</td><td><span class="notam-type notam-maint">MAINT</span></td><td>CYYZ ILS RWY 06L maintenance suspension</td><td>CYYZ</td><td>22 Jun</td><td>26 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-046</td><td><span class="notam-type notam-ops">OPS</span></td><td>KJFK East Complex approaches paused pending re-survey</td><td>KJFK</td><td>20 Jun</td><td>30 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-045</td><td><span class="notam-type notam-trng">TRNG</span></td><td>UK Division recurrency training week</td><td>EGNX</td><td>17 Jun</td><td>24 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ─── DISCORD BOT ───────────────────────────────── -->
+      <section class="admin-section" id="sec-discord">
+        <div class="admin-page-title">Discord Bot Settings</div>
+        <div class="admin-page-sub">Configure webhook URLs for each GFIG Discord channel. Webhooks are stored locally in your browser. Test before saving.</div>
+
+        <div class="discord-status-row">
+          <div class="discord-dot"></div>
+          Discord server reachable &nbsp;·&nbsp; GFIG server: <strong style="color:var(--text);margin-left:4px"><a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none">discord.gg/pyMHMCzApW</a></strong>
+        </div>
+
+        <div class="admin-section-divider"></div>
+
+        <!-- Completed Operations -->
+        <div class="webhook-card">
+          <div class="webhook-header">
+            <div class="webhook-icon">✅</div>
+            <div>
+              <div class="webhook-channel-name">#completed-operations</div>
+              <div class="webhook-channel-desc">Auto-posts when a flight inspection report is approved.</div>
+            </div>
+          </div>
+          <div class="webhook-row">
+            <input type="url" class="webhook-input" id="wh-completed" placeholder="https://discord.com/api/webhooks/…" autocomplete="off">
+            <button class="webhook-test-btn" onclick="testWebhook('wh-completed', 'completed-ops')">Test</button>
+            <button class="webhook-save-btn" onclick="saveWebhook('wh-completed', 'wh_completed')">Save</button>
+          </div>
+        </div>
+
+        <!-- NOTAMs -->
+        <div class="webhook-card">
+          <div class="webhook-header">
+            <div class="webhook-icon">⚠️</div>
+            <div>
+              <div class="webhook-channel-name">#notams</div>
+              <div class="webhook-channel-desc">Posts when a new NOTAM is published or expires.</div>
+            </div>
+          </div>
+          <div class="webhook-row">
+            <input type="url" class="webhook-input" id="wh-notams" placeholder="https://discord.com/api/webhooks/…" autocomplete="off">
+            <button class="webhook-test-btn" onclick="testWebhook('wh-notams', 'notams')">Test</button>
+            <button class="webhook-save-btn" onclick="saveWebhook('wh-notams', 'wh_notams')">Save</button>
+          </div>
+        </div>
+
+        <!-- Announcements -->
+        <div class="webhook-card">
+          <div class="webhook-header">
+            <div class="webhook-icon">📣</div>
+            <div>
+              <div class="webhook-channel-name">#announcements</div>
+              <div class="webhook-channel-desc">Manual announcements sent directly from this panel.</div>
+            </div>
+          </div>
+          <div class="webhook-row">
+            <input type="url" class="webhook-input" id="wh-announce" placeholder="https://discord.com/api/webhooks/…" autocomplete="off">
+            <button class="webhook-test-btn" onclick="testWebhook('wh-announce', 'announcements')">Test</button>
+            <button class="webhook-save-btn" onclick="saveWebhook('wh-announce', 'wh_announce')">Save</button>
+          </div>
+        </div>
+
+        <!-- Manual announcement composer -->
+        <div class="admin-form" style="margin-top:8px">
+          <div class="admin-form-title">SEND MANUAL ANNOUNCEMENT</div>
+          <div class="admin-form-group" style="margin-bottom:12px">
+            <label class="admin-form-label">TITLE</label>
+            <input class="admin-input" type="text" id="ann-title" placeholder="Announcement title">
+          </div>
+          <div class="admin-form-group" style="margin-bottom:16px">
+            <label class="admin-form-label">MESSAGE</label>
+            <textarea class="admin-textarea" id="ann-body" placeholder="Announcement body text…"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="sendAnnouncement()">Send to #announcements</button>
+        </div>
+      </section>
+
+      <!-- ─── SETTINGS ──────────────────────────────────── -->
+      <section class="admin-section" id="sec-settings">
+        <div class="admin-page-title">Site Settings</div>
+        <div class="admin-page-sub">Global configuration for the GFIG member portal.</div>
+
+        <div class="admin-form">
+          <div class="admin-form-title">PORTAL CONTROLS</div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-title">Announcement Banner</div>
+              <div class="settings-row-desc">Show a notice banner at the top of all member pages.</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="toggle-banner"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-title">Open Registration</div>
+              <div class="settings-row-desc">Allow new members to join the GFIG portal. Disable during events or maintenance.</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked id="toggle-reg"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-title">Maintenance Mode</div>
+              <div class="settings-row-desc">Redirect all member pages to a maintenance notice. Admin access remains active.</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="toggle-maintenance"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-title">Show Public Stats on Landing Page</div>
+              <div class="settings-row-desc">Display total flights / active members counters on the public home page.</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked id="toggle-stats"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+
+        <div class="admin-form">
+          <div class="admin-form-title">ANNOUNCEMENT BANNER TEXT</div>
+          <div class="admin-form-group" style="margin-bottom:14px">
+            <label class="admin-form-label">BANNER MESSAGE</label>
+            <input class="admin-input" type="text" id="banner-text" placeholder="e.g. ⚠ UK Division maintenance window 22–24 Jun. See NOTAM GF-2025-047.">
+          </div>
+          <button class="btn btn-primary" onclick="toast('Banner settings saved')">Save Banner</button>
+        </div>
+      </section>
+
+    </main><!-- /admin-main -->
+  </div><!-- /admin-layout -->
+
+  <!-- Toast -->
+  <div class="toast-msg" id="toast"></div>
+
+  <script src="js/app.js"></script>
+  <script>
+    /* ── Apply user info to sidebar ── */
+    (function () {
+      const user = gfigAuth.getUser();
+      if (!user) return;
+      const av = document.getElementById('admin-avatar');
+      const nm = document.getElementById('admin-name');
+      if (av) av.textContent = user.avatar || 'AD';
+      if (nm) nm.textContent = user.name || 'Admin';
+    })();
+
+    /* ── Section Switcher ── */
+    function showSection(id, btn) {
+      document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+      const sec = document.getElementById('sec-' + id);
+      if (sec) sec.classList.add('active');
+      if (btn) btn.classList.add('active');
+    }
+
+    /* ── Table Filter ── */
+    function filterTable(input, tbodyId) {
+      const q = input.value.toLowerCase();
+      document.querySelectorAll('#' + tbodyId + ' tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    }
+
+    /* ── Mission form toggle ── */
+    function toggleCreateMission() {
+      const f = document.getElementById('create-mission-form');
+      f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+
+    /* ── Toast ── */
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('visible');
+      setTimeout(() => t.classList.remove('visible'), 3000);
+    }
+
+    /* ── Discord Webhooks ── */
+    function saveWebhook(inputId, storageKey) {
+      const val = document.getElementById(inputId).value.trim();
+      if (!val) { toast('Please enter a webhook URL first'); return; }
+      if (!val.startsWith('https://discord.com/api/webhooks/')) {
+        toast('Invalid webhook URL — must start with https://discord.com/api/webhooks/');
+        return;
+      }
+      localStorage.setItem('gfig_' + storageKey, val);
+      toast('Webhook URL saved');
+    }
+
+    async function testWebhook(inputId, channelName) {
+      const url = document.getElementById(inputId).value.trim();
+      if (!url) { toast('Enter a webhook URL first'); return; }
+      if (!url.startsWith('https://discord.com/api/webhooks/')) {
+        toast('Invalid webhook URL');
+        return;
+      }
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: 'GFIG Bot',
+            embeds: [{
+              color: 0xff6a00,
+              title: '🛠 Webhook Test',
+              description: `Connection verified for **#${channelName}**. GFIG Admin Panel is online.`,
+              footer: { text: 'Global Flight Inspection Group Virtual' },
+              timestamp: new Date().toISOString()
+            }]
+          })
+        });
+        toast(res.ok ? '✓ Test message sent to Discord' : '✗ Discord returned an error — check the URL');
+      } catch {
+        toast('✗ Request failed — check the webhook URL and your connection');
+      }
+    }
+
+    async function sendAnnouncement() {
+      const url = localStorage.getItem('gfig_wh_announce');
+      if (!url) { toast('Save a webhook URL for #announcements first'); return; }
+      const title = document.getElementById('ann-title').value.trim();
+      const body  = document.getElementById('ann-body').value.trim();
+      if (!title || !body) { toast('Enter a title and message body'); return; }
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: 'GFIG Ops',
+            embeds: [{
+              color: 0xff6a00,
+              title: title,
+              description: body,
+              footer: { text: 'Global Flight Inspection Group Virtual' },
+              timestamp: new Date().toISOString()
+            }]
+          })
+        });
+        if (res.ok) {
+          toast('✓ Announcement sent to Discord');
+          document.getElementById('ann-title').value = '';
+          document.getElementById('ann-body').value = '';
+        } else {
+          toast('✗ Discord error — check the webhook URL');
+        }
+      } catch {
+        toast('✗ Failed to reach Discord');
+      }
+    }
+
+    /* ── Restore saved webhook URLs ── */
+    (function restoreWebhooks() {
+      const map = { 'wh-completed': 'gfig_wh_completed', 'wh-notams': 'gfig_wh_notams', 'wh-announce': 'gfig_wh_announce' };
+      Object.entries(map).forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        const val = localStorage.getItem(key);
+        if (el && val) el.value = val;
+      });
+    })();
+  </script>
+</body>
+</html>

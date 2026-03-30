@@ -163,6 +163,8 @@
   </style>
 </head>
 <body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
 
   <!-- ── Navigation ── -->
   <nav class="navbar">
@@ -189,6 +191,8 @@
           </div>
           <div class="nav-online"></div>
         </div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;" title="Admin Panel">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;" title="Sign Out">↩</button>
       </div>
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu">
         <span></span><span></span><span></span>
@@ -205,7 +209,7 @@
           <h1>◗ EVENTS &amp; OPERATIONS</h1>
           <p>Upcoming group sorties, fly-ins, checkride sessions and community events</p>
         </div>
-        <a href="https://discord.gg/gfig" target="_blank" rel="noopener" class="btn btn-discord" id="discord-link">
+        <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="btn btn-discord" id="discord-link">
           <svg width="15" height="11" viewBox="0 0 71 55" fill="white"><path d="M60.1 4.9A58.5 58.5 0 0 0 45.5.7a40.5 40.5 0 0 0-1.8 3.7 54.1 54.1 0 0 0-16.4 0A37.9 37.9 0 0 0 25.5.7 58.4 58.4 0 0 0 10.9 5C1.6 19.4-1 33.3.3 47.1a59 59 0 0 0 18 9.1 44.3 44.3 0 0 0 3.8-6.2 38.4 38.4 0 0 1-6.1-2.9l1.5-1.1a42.2 42.2 0 0 0 36 0l1.5 1.1a38.7 38.7 0 0 1-6.1 3 43.6 43.6 0 0 0 3.8 6.2 58.8 58.8 0 0 0 18-9.2c1.5-15.8-2.6-29.5-10.6-42.1ZM23.7 38.5c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2Zm23.6 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2Z"/></svg>
           Join Discord
         </a>
@@ -224,7 +228,7 @@
           </div>
           <div style="display:flex;gap:10px;margin-top:4px;">
             <a href="#event-alpha" class="btn btn-primary">View Details</a>
-            <a href="https://discord.gg/gfig" target="_blank" rel="noopener" class="btn btn-secondary" id="discord-event-link">RSVP on Discord</a>
+            <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="btn btn-secondary" id="discord-event-link">RSVP on Discord</a>
           </div>
         </div>
         <div style="display:flex;gap:32px;flex-wrap:wrap;">
@@ -276,7 +280,7 @@
               </div>
               <div class="event-footer">
                 <button class="btn btn-primary" style="flex:1;" onclick="rsvpEvent(this,'CALIBRATE ALPHA')">✔ RSVP</button>
-                <a href="https://discord.gg/gfig" target="_blank" rel="noopener" class="btn btn-discord" id="discord-alpha" style="flex:1;text-align:center;">Discord Event</a>
+                <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="btn btn-discord" id="discord-alpha" style="flex:1;text-align:center;">Discord Event</a>
               </div>
             </div>
           </div>
@@ -349,7 +353,7 @@
               </div>
               <div class="event-footer">
                 <button class="btn btn-primary" style="flex:1;" onclick="rsvpEvent(this,'EGLL→LFPG Fly-In')">✔ RSVP</button>
-                <a href="https://discord.gg/gfig" target="_blank" rel="noopener" class="btn btn-secondary" id="discord-flyin" style="flex:1;text-align:center;">Discord</a>
+                <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="btn btn-secondary" id="discord-flyin" style="flex:1;text-align:center;">Discord</a>
               </div>
             </div>
           </div>
@@ -396,7 +400,7 @@
                 <div class="event-meta-row"><span class="event-meta-icon">📍</span><span>Platform</span><span class="event-meta-val">Discord Voice</span></div>
               </div>
               <div class="event-footer" style="margin-top:14px;">
-                <a href="https://discord.gg/gfig" target="_blank" rel="noopener" class="btn btn-discord" id="discord-weekly" style="flex:1;text-align:center;">Join on Discord</a>
+                <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="btn btn-discord" id="discord-weekly" style="flex:1;text-align:center;">Join on Discord</a>
               </div>
             </div>
           </div>
@@ -430,7 +434,7 @@
                 <div class="event-meta-row"><span class="event-meta-icon">👥</span><span>Target</span><span class="event-meta-val">New Trainees</span></div>
               </div>
               <div class="event-footer" style="margin-top:14px;">
-                <a href="https://discord.gg/gfig" target="_blank" rel="noopener" class="btn btn-discord" id="discord-orientation" style="flex:1;text-align:center;">Register on Discord</a>
+                <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="btn btn-discord" id="discord-orientation" style="flex:1;text-align:center;">Register on Discord</a>
               </div>
             </div>
           </div>
@@ -481,6 +485,7 @@
   </div>
 
   <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
   <script>
     function showEventTab(tab, btn) {
       ['upcoming','recurring','past'].forEach(t => {

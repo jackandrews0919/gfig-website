@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Member Login — GFIG Virtual</title>
+  <meta name="description" content="Sign in to the GFIG Member Portal to access missions, NOTAMs, and flight reports.">
+  <meta property="og:title" content="GFIG Member Portal">
+  <meta property="og:description" content="Sign in to access the Global Flight Inspection Group virtual operations network.">
+  <meta property="og:image" content="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { overflow: hidden; }
+
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-primary);
+      position: relative;
+    }
+
+    .login-grid-bg {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,119,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,119,255,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    .login-glow {
+      position: absolute;
+      width: 700px; height: 700px;
+      background: radial-gradient(ellipse at center, rgba(255,106,0,0.06) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px 40px;
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      box-shadow: 0 8px 60px rgba(0,0,0,0.5);
+    }
+
+    .login-logo {
+      height: 64px;
+      width: auto;
+      margin-bottom: 12px;
+    }
+
+    .login-org-tag {
+      font-family: var(--font-head);
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      color: var(--orange);
+      background: rgba(255,106,0,0.08);
+      border: 1px solid rgba(255,106,0,0.2);
+      padding: 4px 12px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+
+    .login-title {
+      font-family: var(--font-head);
+      font-size: 1.1rem;
+      letter-spacing: 0.1em;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .login-sub {
+      color: var(--text-sub);
+      font-size: 0.84rem;
+      line-height: 1.65;
+      margin-bottom: 32px;
+    }
+
+    .btn-discord {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px 20px;
+      background: #5865F2;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.92rem;
+      border-radius: var(--r-md);
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: background var(--t), transform var(--t), box-shadow var(--t);
+      margin-bottom: 12px;
+    }
+    .btn-discord:hover {
+      background: #4752C4;
+      box-shadow: 0 4px 24px rgba(88,101,242,0.35);
+      transform: translateY(-1px);
+    }
+    .btn-discord svg { flex-shrink: 0; }
+
+    .btn-demo-login {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px 20px;
+      background: rgba(0,119,255,0.1);
+      color: var(--blue);
+      font-size: 0.88rem;
+      font-weight: 500;
+      border-radius: var(--r-md);
+      border: 1px solid rgba(0,119,255,0.25);
+      cursor: pointer;
+      transition: background var(--t), border-color var(--t);
+      margin-bottom: 10px;
+    }
+    .btn-demo-login:hover { background: rgba(0,119,255,0.18); border-color: var(--blue); }
+
+    .login-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .login-divider-line { flex: 1; height: 1px; background: var(--border); }
+    .login-divider-text { font-size: 0.68rem; letter-spacing: 0.12em; color: var(--text-muted); font-family: var(--font-head); }
+
+    .btn-admin-demo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px 20px;
+      background: rgba(255,106,0,0.07);
+      color: var(--orange);
+      font-size: 0.85rem;
+      font-weight: 500;
+      border-radius: var(--r-md);
+      border: 1px solid rgba(255,106,0,0.2);
+      cursor: pointer;
+      transition: background var(--t), border-color var(--t);
+    }
+    .btn-admin-demo:hover { background: rgba(255,106,0,0.14); border-color: var(--orange); }
+
+    .login-note {
+      margin-top: 24px;
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .login-back {
+      position: absolute;
+      top: 20px; left: 24px;
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 2;
+      transition: color var(--t);
+    }
+    .login-back:hover { color: var(--text); }
+
+    @media (max-width: 480px) {
+      .login-card { padding: 36px 24px 28px; margin: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="login-back">← Back to Home</a>
+
+  <div class="login-page">
+    <div class="login-grid-bg"></div>
+    <div class="login-glow"></div>
+
+    <div class="login-card">
+      <img src="logo.png" alt="GFIG" class="login-logo">
+      <div class="login-org-tag">MEMBER PORTAL</div>
+      <div class="login-title">OPERATIONS ACCESS</div>
+      <div class="login-sub">Access missions, NOTAMs, events, and flight reports. You must be an active member of the GFIG Discord server.</div>
+
+      <!-- Real Discord invite -->
+      <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="btn-discord">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.054a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+        Join GFIG on Discord
+      </a>
+
+      <!-- Demo inspector login (for testing) -->
+      <button class="btn-demo-login" onclick="demoLogin()">
+        ▶ Demo Login — Inspector
+      </button>
+
+      <div class="login-divider">
+        <div class="login-divider-line"></div>
+        <span class="login-divider-text">STAFF ACCESS</span>
+        <div class="login-divider-line"></div>
+      </div>
+
+      <!-- Demo admin login -->
+      <button class="btn-admin-demo" onclick="adminDemoLogin()">
+        ⚙ Demo Login — Admin / Director
+      </button>
+
+      <div class="login-note">
+        Demo logins use sample session data for UI testing only. Full Discord-linked authentication will be available via the GFIG bot.
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    /* If already logged in, redirect immediately */
+    (function () {
+      if (gfigAuth.isLoggedIn()) {
+        const params = new URLSearchParams(location.search);
+        const dest = params.get('redirect');
+        window.location.href = dest && dest.match(/^[\w-]+\.html$/) ? dest : 'dashboard.html';
+      }
+    })();
+
+    function demoLogin() {
+      gfigAuth.login(gfigAuth.DEMO_USER);
+      const params = new URLSearchParams(location.search);
+      const dest = params.get('redirect');
+      window.location.href = dest && dest.match(/^[\w-]+\.html$/) ? dest : 'dashboard.html';
+    }
+
+    function adminDemoLogin() {
+      gfigAuth.login(gfigAuth.DEMO_ADMIN);
+      window.location.href = 'admin.html';
+    }
+  </script>
+</body>
+</html>
