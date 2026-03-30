@@ -4,8 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pilot Profile — GFIG</title>
+  <meta name="description" content="GFIG Pilot Profile — View certifications, mission history, statistics and awards.">
+  <meta property="og:title" content="GFIG — Pilot Profile">
+  <meta property="og:description" content="View certifications, mission history, statistics and awards.">
+  <meta property="og:image" content="https://jackandrews0919.github.io/gfig-website/logo.png">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0b1f3a">
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈</text></svg>">
+  <link rel="icon" href="logo.png" type="image/png">
 </head>
 <body>
 
@@ -15,11 +21,14 @@
       <a href="index.html" class="nav-logo">
         <img src="logo.png" alt="GFIG – Global Flight Inspection Group Virtual" class="nav-logo-img">
       </a>
-      <div class="nav-links">
+      <div class="nav-links" id="nav-links">
         <a href="index.html"     class="nav-link">⌂ Home</a>
         <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
         <a href="missions.html"  class="nav-link">◉ Missions</a>
+        <a href="notam.html"     class="nav-link">⚠ NOTAMs</a>
         <a href="training.html"  class="nav-link">◎ Training</a>
+        <a href="events.html"    class="nav-link">◗ Events</a>
+        <a href="sops.html"      class="nav-link">≡ SOPs</a>
         <a href="profile.html"   class="nav-link active">▣ Profile</a>
       </div>
       <div class="nav-actions">
@@ -32,6 +41,9 @@
           <div class="nav-online"></div>
         </div>
       </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
 

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOTAM Board — GFIG</title>
+  <meta name="description" content="GFIG NOTAM Board — Active notices, route restrictions, inspection advisories and airspace alerts.">
+  <meta property="og:title" content="GFIG NOTAM Board">
+  <meta property="og:description" content="Active notices, route restrictions, inspection advisories and airspace alerts.">
+  <meta property="og:image" content="https://jackandrews0919.github.io/gfig-website/logo.png">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <style>
+    .notam-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .notam-stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 18px 20px;
+      text-align: center;
+    }
+    .notam-stat-num {
+      font-family: var(--font-head);
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .notam-stat-label { font-size: 0.78rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.1em; }
+    .notam-stat.critical .notam-stat-num { color: var(--fail); }
+    .notam-stat.advisory .notam-stat-num { color: var(--monitor); }
+    .notam-stat.info .notam-stat-num { color: var(--blue-light); }
+    .notam-stat.total .notam-stat-num { color: var(--text); }
+
+    .notam-filter {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+    }
+    .notam-filter label { font-size: 0.78rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .notam-list { display: flex; flex-direction: column; gap: 14px; }
+
+    .notam-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      transition: border-color var(--t);
+    }
+    .notam-card:hover { border-color: var(--border-light); }
+    .notam-card.critical { border-left: 4px solid var(--fail); }
+    .notam-card.advisory { border-left: 4px solid var(--monitor); }
+    .notam-card.info     { border-left: 4px solid var(--blue); }
+
+    .notam-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .notam-sev {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 3px 9px;
+      border-radius: var(--r-sm);
+      flex-shrink: 0;
+    }
+    .critical .notam-sev { background: var(--fail-bg); color: var(--fail); border: 1px solid var(--fail-border); }
+    .advisory .notam-sev { background: var(--monitor-bg); color: var(--monitor); border: 1px solid var(--monitor-border); }
+    .info .notam-sev     { background: var(--active-bg); color: var(--active); border: 1px solid rgba(64,170,255,0.28); }
+
+    .notam-id {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      flex-shrink: 0;
+    }
+    .notam-title-txt { font-weight: 600; font-size: 0.93rem; flex: 1; }
+    .notam-meta-row {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-left: auto;
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      flex-shrink: 0;
+    }
+    .notam-chevron {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+    .notam-card.open .notam-chevron { transform: rotate(180deg); }
+
+    .notam-body {
+      display: none;
+      padding: 0 20px 20px;
+      border-top: 1px solid var(--border);
+    }
+    .notam-card.open .notam-body { display: block; }
+    .notam-body-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .notam-field label { font-size: 0.72rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 3px; }
+    .notam-field span { font-size: 0.87rem; color: var(--text); font-family: var(--font-mono); }
+    .notam-text {
+      margin-top: 14px;
+      padding: 14px 16px;
+      background: var(--bg-secondary);
+      border-radius: var(--r-md);
+      font-size: 0.87rem;
+      line-height: 1.7;
+      color: var(--text-sub);
+      border: 1px solid var(--border);
+    }
+    .notam-actions { margin-top: 14px; display: flex; gap: 10px; }
+
+    .expired-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: var(--r-sm);
+      background: var(--bg-card-alt);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      margin-left: 8px;
+    }
+    @media (max-width: 768px) {
+      .notam-summary { grid-template-columns: 1fr 1fr; }
+      .notam-meta-row { display: none; }
+      .notam-body-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="logo.png" alt="GFIG – Global Flight Inspection Group Virtual" class="nav-logo-img">
+      </a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html"     class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html"  class="nav-link">◉ Missions</a>
+        <a href="notam.html"     class="nav-link active">⚠ NOTAMs</a>
+        <a href="training.html"  class="nav-link">◎ Training</a>
+        <a href="events.html"    class="nav-link">◗ Events</a>
+        <a href="sops.html"      class="nav-link">≡ SOPs</a>
+        <a href="profile.html"   class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot">
+          <div class="nav-avatar">JH</div>
+          <div class="nav-pilot-info">
+            <div class="nav-pilot-name">CPT Harrison</div>
+            <div class="nav-pilot-rank">Senior Inspector</div>
+          </div>
+          <div class="nav-online"></div>
+        </div>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Page ── -->
+  <div class="page">
+    <div class="container">
+
+      <div class="page-header">
+        <div>
+          <h1>⚠ NOTAM BOARD</h1>
+          <p>Notices to Air Men — Active advisories, route restrictions and inspection alerts</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span style="font-size:0.78rem;color:var(--text-sub);">Last updated: <span style="color:var(--text);font-family:var(--font-mono);" id="notam-updated"></span></span>
+          <button class="btn btn-secondary" onclick="location.reload()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <!-- Summary Stats -->
+      <div class="notam-summary">
+        <div class="notam-stat critical">
+          <div class="notam-stat-num">2</div>
+          <div class="notam-stat-label">Critical</div>
+        </div>
+        <div class="notam-stat advisory">
+          <div class="notam-stat-num">4</div>
+          <div class="notam-stat-label">Advisory</div>
+        </div>
+        <div class="notam-stat info">
+          <div class="notam-stat-num">5</div>
+          <div class="notam-stat-label">Informational</div>
+        </div>
+        <div class="notam-stat total">
+          <div class="notam-stat-num">11</div>
+          <div class="notam-stat-label">Total Active</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="notam-filter">
+        <label>Filter:</label>
+        <select class="input-ctrl" id="sev-filter" onchange="filterNotams()" style="width:auto;padding:6px 12px;">
+          <option value="">All Severities</option>
+          <option value="critical">Critical</option>
+          <option value="advisory">Advisory</option>
+          <option value="info">Informational</option>
+        </select>
+        <select class="input-ctrl" id="region-filter" onchange="filterNotams()" style="width:auto;padding:6px 12px;">
+          <option value="">All Regions</option>
+          <option value="europe">Europe</option>
+          <option value="namerica">North America</option>
+          <option value="asiapac">Asia-Pacific</option>
+          <option value="mideast">Middle East</option>
+          <option value="africa">Africa</option>
+          <option value="latam">Latin America</option>
+          <option value="global">Global</option>
+        </select>
+        <select class="input-ctrl" id="type-filter" onchange="filterNotams()" style="width:auto;padding:6px 12px;">
+          <option value="">All Types</option>
+          <option value="route">Route Restriction</option>
+          <option value="airspace">Airspace Alert</option>
+          <option value="ops">Operations Notice</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="event">Planned Event</option>
+        </select>
+        <button class="btn btn-secondary" style="padding:6px 14px;font-size:0.8rem;" onclick="clearFilters()">✕ Clear</button>
+      </div>
+
+      <!-- NOTAM List -->
+      <div class="notam-list" id="notam-list">
+
+        <!-- NOTAM 01 — Critical -->
+        <div class="notam-card critical" data-sev="critical" data-region="europe" data-type="airspace">
+          <div class="notam-header" onclick="toggleNotam(this)">
+            <span class="notam-sev">CRITICAL</span>
+            <span class="notam-id">GFIG-N-2026-031</span>
+            <span class="notam-title-txt">ILS Critical Area — EGKK RWY 26L Unserviceable</span>
+            <div class="notam-meta-row">
+              <span>Europe</span>
+              <span>Airspace Alert</span>
+              <span>Effective: 30 MAR 2026</span>
+            </div>
+            <span class="notam-chevron">▼</span>
+          </div>
+          <div class="notam-body">
+            <div class="notam-body-grid">
+              <div class="notam-field"><label>NOTAM ID</label><span>GFIG-N-2026-031</span></div>
+              <div class="notam-field"><label>Severity</label><span>CRITICAL</span></div>
+              <div class="notam-field"><label>Region</label><span>Europe — EGKK / London Gatwick</span></div>
+              <div class="notam-field"><label>Type</label><span>Airspace Alert</span></div>
+              <div class="notam-field"><label>Effective</label><span>30 MAR 2026 0000Z</span></div>
+              <div class="notam-field"><label>Expires</label><span>02 APR 2026 2359Z</span></div>
+            </div>
+            <div class="notam-text">
+              ILS RWY 26L at EGKK is UNSERVICEABLE due to calibration fault detected during routine GFIG inspection. All inspection sorties to EGKK must use alternate approach procedures (VOR/DME or visual). Report any ILS signal anomalies immediately via inspection report. Affected callsigns: FLIGHT CHECK, CALIBRATION. Coordinate with London Control (134.125) prior to entry. This NOTAM supersedes all previous ILS advisories for EGKK.
+            </div>
+            <div class="notam-actions">
+              <a href="report.html" class="btn btn-danger" style="font-size:0.8rem;padding:7px 14px;">⚑ File Inspection Report</a>
+              <button class="btn btn-secondary" style="font-size:0.8rem;padding:7px 14px;" onclick="copyNotam('GFIG-N-2026-031')">⎘ Copy NOTAM ID</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTAM 02 — Critical -->
+        <div class="notam-card critical" data-sev="critical" data-region="asiapac" data-type="route">
+          <div class="notam-header" onclick="toggleNotam(this)">
+            <span class="notam-sev">CRITICAL</span>
+            <span class="notam-id">GFIG-N-2026-029</span>
+            <span class="notam-title-txt">VOR Outage — VHHH Sector — Reroute Required</span>
+            <div class="notam-meta-row">
+              <span>Asia-Pacific</span>
+              <span>Route Restriction</span>
+              <span>Effective: 28 MAR 2026</span>
+            </div>
+            <span class="notam-chevron">▼</span>
+          </div>
+          <div class="notam-body">
+            <div class="notam-body-grid">
+              <div class="notam-field"><label>NOTAM ID</label><span>GFIG-N-2026-029</span></div>
+              <div class="notam-field"><label>Severity</label><span>CRITICAL</span></div>
+              <div class="notam-field"><label>Region</label><span>Asia-Pacific — VHHH / Hong Kong Intl</span></div>
+              <div class="notam-field"><label>Type</label><span>Route Restriction</span></div>
+              <div class="notam-field"><label>Effective</label><span>28 MAR 2026 1200Z</span></div>
+              <div class="notam-field"><label>Expires</label><span>05 APR 2026 1200Z</span></div>
+            </div>
+            <div class="notam-text">
+              CHEUNG SHA WAN VOR (CVN 116.80) UNSERVICEABLE. All GFIG inspection routes via A1 and M750 must file alternate routing via BETTY–ABBEY–PORPA. Inspection flights must carry additional fuel for missed approach and alternate. Direct coordination with Hong Kong Control mandatory for inspection sorties. Inspection result expected: VOR signal validation FAIL — document all deviations.
+            </div>
+            <div class="notam-actions">
+              <a href="report.html" class="btn btn-danger" style="font-size:0.8rem;padding:7px 14px;">⚑ File Inspection Report</a>
+              <button class="btn btn-secondary" style="font-size:0.8rem;padding:7px 14px;" onclick="copyNotam('GFIG-N-2026-029')">⎘ Copy NOTAM ID</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTAM 03 — Advisory -->
+        <div class="notam-card advisory" data-sev="advisory" data-region="europe" data-type="ops">
+          <div class="notam-header" onclick="toggleNotam(this)">
+            <span class="notam-sev">ADVISORY</span>
+            <span class="notam-id">GFIG-N-2026-028</span>
+            <span class="notam-title-txt">Reduced Inspection Windows — LFPG Paris CDG Slot Restrictions</span>
+            <div class="notam-meta-row">
+              <span>Europe</span>
+              <span>Operations Notice</span>
+              <span>Effective: 01 APR 2026</span>
+            </div>
+            <span class="notam-chevron">▼</span>
+          </div>
+          <div class="notam-body">
+            <div class="notam-body-grid">
+              <div class="notam-field"><label>NOTAM ID</label><span>GFIG-N-2026-028</span></div>
+              <div class="notam-field"><label>Severity</label><span>ADVISORY</span></div>
+              <div class="notam-field"><label>Region</label><span>Europe — LFPG / Paris Charles de Gaulle</span></div>
+              <div class="notam-field"><label>Type</label><span>Operations Notice</span></div>
+              <div class="notam-field"><label>Effective</label><span>01 APR 2026 0600Z</span></div>
+              <div class="notam-field"><label>Expires</label><span>14 APR 2026 2200Z</span></div>
+            </div>
+            <div class="notam-text">
+              LFPG slot coordination in effect 0600–2200Z daily. GFIG inspection sorties must file CFMU slot requests minimum 2 hours prior. Preferred inspection window: 0200–0530Z (pre-traffic peak). Runway 27L/09R available for calibration approaches only — avoid 26R/08L during peak hours 0700–1000Z and 1600–1900Z. Contact Paris Control (125.350) for inspection priority handling.
+            </div>
+            <div class="notam-actions">
+              <a href="missions.html" class="btn btn-primary" style="font-size:0.8rem;padding:7px 14px;">◉ View Related Missions</a>
+              <button class="btn btn-secondary" style="font-size:0.8rem;padding:7px 14px;" onclick="copyNotam('GFIG-N-2026-028')">⎘ Copy NOTAM ID</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTAM 04 — Advisory -->
+        <div class="notam-card advisory" data-sev="advisory" data-region="namerica" data-type="airspace">
+          <div class="notam-header" onclick="toggleNotam(this)">
+            <span class="notam-sev">ADVISORY</span>
+            <span class="notam-id">GFIG-N-2026-027</span>
+            <span class="notam-title-txt">TFR Active — KJFK Approach Sector 040°–120° Restricted</span>
+            <div class="notam-meta-row">
+              <span>North America</span>
+              <span>Airspace Alert</span>
+              <span>Effective: 29 MAR 2026</span>
+            </div>
+            <span class="notam-chevron">▼</span>
+          </div>
+          <div class="notam-body">
+            <div class="notam-body-grid">
+              <div class="notam-field"><label>NOTAM ID</label><span>GFIG-N-2026-027</span></div>
+              <div class="notam-field"><label>Severity</label><span>ADVISORY</span></div>
+              <div class="notam-field"><label>Region</label><span>North America — KJFK / New York JFK</span></div>
+              <div class="notam-field"><label>Type</label><span>Airspace Alert</span></div>
+              <div class="notam-field"><label>Effective</label><span>29 MAR 2026 1400Z</span></div>
+              <div class="notam-field"><label>Expires</label><span>31 MAR 2026 2359Z</span></div>
+            </div>
+            <div class="notam-text">
+              Temporary Flight Restriction active in KJFK approach sector 040°–120°, surface to FL180. GFIG inspection sorties must file alternate approach via 272° localizer. All RNAV approaches suspended in restricted sector. ILS RWY 04L/04R check sorties rescheduled — see Mission Board for updated assignments. Coordination with NY TRACON (126.4) required.
+            </div>
+            <div class="notam-actions">
+              <a href="missions.html" class="btn btn-primary" style="font-size:0.8rem;padding:7px 14px;">◉ View Related Missions</a>
+              <button class="btn btn-secondary" style="font-size:0.8rem;padding:7px 14px;" onclick="copyNotam('GFIG-N-2026-027')">⎘ Copy NOTAM ID</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTAM 05 — Advisory -->
+        <div class="notam-card advisory" data-sev="advisory" data-region="mideast" data-type="maintenance">
+          <div class="notam-header" onclick="toggleNotam(this)">
+            <span class="notam-sev">ADVISORY</span>
+            <span class="notam-id">GFIG-N-2026-025</span>
+            <span class="notam-title-txt">Scheduled Maintenance Window — OMDB ILS RWY 30L/12R Systems</span>
+            <div class="notam-meta-row">
+              <span>Middle East</span>
+              <span>Maintenance</span>
+              <span>Effective: 03 APR 2026</span>
+            </div>
+            <span class="notam-chevron">▼</span>
+          </div>
+          <div class="notam-body">
+            <div class="notam-body-grid">
+              <div class="notam-field"><label>NOTAM ID</label><span>GFIG-N-2026-025</span></div>
+              <div class="notam-field"><label>Severity</label><span>ADVISORY</span></div>
+              <div class="notam-field"><label>Region</label><span>Middle East — OMDB / Dubai Intl</span></div>
+              <div class="notam-field"><label>Type</label><span>Maintenance</span></div>
+              <div class="notam-field"><label>Effective</label><span>03 APR 2026 0100Z</span></div>
+              <div class="notam-field"><label>Expires</label><span>03 APR 2026 0500Z</span></div>
+            </div>
+            <div class="notam-text">
+              Scheduled maintenance on OMDB ILS RWY 30L and 12R ground equipment. GFIG calibration sorties assigned to OMDB region should reschedule outside 0100–0500Z window. RWY 30R/12L ILS remains serviceable throughout. Post-maintenance check sorties required — contact Chief Inspector MIDDLEEAST to volunteer.
+            </div>
+            <div class="notam-actions">
+              <a href="missions.html" class="btn btn-primary" style="font-size:0.8rem;padding:7px 14px;">◉ View Related Missions</a>
+              <button class="btn btn-secondary" style="font-size:0.8rem;padding:7px 14px;" onclick="copyNotam('GFIG-N-2026-025')">⎘ Copy NOTAM ID</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTAM 06 — Info -->
+        <div class="notam-card info" data-sev="info" data-region="global" data-type="ops">
+          <div class="notam-header" onclick="toggleNotam(this)">
+            <span class="notam-sev">INFO</span>
+            <span class="notam-id">GFIG-N-2026-024</span>
+            <span class="notam-title-txt">New Inspection Protocol — RNAV RNP-AR Approach Procedures</span>
+            <div class="notam-meta-row">
+              <span>Global</span>
+              <span>Operations Notice</span>
+              <span>Effective: 28 MAR 2026</span>
+            </div>
+            <span class="notam-chevron">▼</span>
+          </div>
+          <div class="notam-body">
+            <div class="notam-body-grid">
+              <div class="notam-field"><label>NOTAM ID</label><span>GFIG-N-2026-024</span></div>
+              <div class="notam-field"><label>Severity</label><span>INFORMATIONAL</span></div>
+              <div class="notam-field"><label>Region</label><span>Global — All Regions</span></div>
+              <div class="notam-field"><label>Type</label><span>Operations Notice</span></div>
+              <div class="notam-field"><label>Effective</label><span>28 MAR 2026 0000Z</span></div>
+              <div class="notam-field"><label>Expires</label><span>Permanent</span></div>
+            </div>
+            <div class="notam-text">
+              Updated GFIG inspection protocol now in effect for all RNP-AR approach calibration sorties. Inspectors must complete Module 4 (Advanced RNAV) before accepting RNP-AR missions. New checklist items added to inspection report form — RNAV accuracy tolerance now ±0.02NM for approach segment. Refer to SOPs Section 5.3 for full updated requirements.
+            </div>
+            <div class="notam-actions">
+              <a href="sops.html" class="btn btn-primary" style="font-size:0.8rem;padding:7px 14px;">≡ View SOPs</a>
+              <a href="training.html" class="btn btn-secondary" style="font-size:0.8rem;padding:7px 14px;">◎ Training Centre</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTAM 07 — Advisory -->
+        <div class="notam-card advisory" data-sev="advisory" data-region="africa" data-type="route">
+          <div class="notam-header" onclick="toggleNotam(this)">
+            <span class="notam-sev">ADVISORY</span>
+            <span class="notam-id">GFIG-N-2026-022</span>
+            <span class="notam-title-txt">New Waypoints Published — FAOR Johannesburg Sector</span>
+            <div class="notam-meta-row">
+              <span>Africa</span>
+              <span>Route Restriction</span>
+              <span>Effective: 25 MAR 2026</span>
+            </div>
+            <span class="notam-chevron">▼</span>
+          </div>
+          <div class="notam-body">
+            <div class="notam-body-grid">
+              <div class="notam-field"><label>NOTAM ID</label><span>GFIG-N-2026-022</span></div>
+              <div class="notam-field"><label>Severity</label><span>ADVISORY</span></div>
+              <div class="notam-field"><label>Region</label><span>Africa — FAOR / Johannesburg OR Tambo</span></div>
+              <div class="notam-field"><label>Type</label><span>Route Restriction</span></div>
+              <div class="notam-field"><label>Effective</label><span>25 MAR 2026 0000Z</span></div>
+              <div class="notam-field"><label>Expires</label><span>25 APR 2026 0000Z</span></div>
+            </div>
+            <div class="notam-text">
+              Three new RNAV waypoints published in FAOR sector: KAPTU, LUSVO, DETMO. GFIG inspection sorties in Africa region must validate new waypoint coordinates against published AIP. New waypoints affect SID CHARLIE4D and STAR INDIA2A. Full validation sortie required — contact Africa Division Chief for mission assignment.
+            </div>
+            <div class="notam-actions">
+              <a href="missions.html" class="btn btn-primary" style="font-size:0.8rem;padding:7px 14px;">◉ View Related Missions</a>
+              <button class="btn btn-secondary" style="font-size:0.8rem;padding:7px 14px;" onclick="copyNotam('GFIG-N-2026-022')">⎘ Copy NOTAM ID</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTAM 08 — Info -->
+        <div class="notam-card info" data-sev="info" data-region="global" data-type="event">
+          <div class="notam-header" onclick="toggleNotam(this)">
+            <span class="notam-sev">INFO</span>
+            <span class="notam-id">GFIG-N-2026-020</span>
+            <span class="notam-title-txt">Group Event — Operation CALIBRATE ALPHA — 05 APR 2026</span>
+            <div class="notam-meta-row">
+              <span>Global</span>
+              <span>Planned Event</span>
+              <span>Effective: 05 APR 2026</span>
+            </div>
+            <span class="notam-chevron">▼</span>
+          </div>
+          <div class="notam-body">
+            <div class="notam-body-grid">
+              <div class="notam-field"><label>NOTAM ID</label><span>GFIG-N-2026-020</span></div>
+              <div class="notam-field"><label>Severity</label><span>INFORMATIONAL</span></div>
+              <div class="notam-field"><label>Region</label><span>Global — All Regions</span></div>
+              <div class="notam-field"><label>Type</label><span>Planned Event</span></div>
+              <div class="notam-field"><label>Effective</label><span>05 APR 2026 1400Z</span></div>
+              <div class="notam-field"><label>Expires</label><span>05 APR 2026 2200Z</span></div>
+            </div>
+            <div class="notam-text">
+              GFIG Group Operation CALIBRATE ALPHA scheduled 1400–2200Z 05 APR. All active inspectors invited. Simultaneous coordinated inspection sorties across 6 regions. Priority airports: EGLL, KJFK, OMDB, WSSS, FAOR, SBGR. Discord attendance expected — see Events page for full details and registration.
+            </div>
+            <div class="notam-actions">
+              <a href="events.html" class="btn btn-primary" style="font-size:0.8rem;padding:7px 14px;">◗ View Event</a>
+              <a href="missions.html" class="btn btn-secondary" style="font-size:0.8rem;padding:7px 14px;">◉ Mission Board</a>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /notam-list -->
+
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    // Set last updated time
+    document.getElementById('notam-updated').textContent = new Date().toISOString().slice(0,16).replace('T',' ') + 'Z';
+
+    function toggleNotam(header) {
+      header.closest('.notam-card').classList.toggle('open');
+    }
+
+    function filterNotams() {
+      const sev    = document.getElementById('sev-filter').value;
+      const region = document.getElementById('region-filter').value;
+      const type   = document.getElementById('type-filter').value;
+      document.querySelectorAll('.notam-card').forEach(card => {
+        const match =
+          (!sev    || card.dataset.sev    === sev) &&
+          (!region || card.dataset.region === region) &&
+          (!type   || card.dataset.type   === type);
+        card.style.display = match ? '' : 'none';
+      });
+    }
+
+    function clearFilters() {
+      document.getElementById('sev-filter').value = '';
+      document.getElementById('region-filter').value = '';
+      document.getElementById('type-filter').value = '';
+      filterNotams();
+    }
+
+    function copyNotam(id) {
+      navigator.clipboard.writeText(id).then(() => {
+        if (typeof showToast === 'function') showToast('NOTAM ID copied: ' + id, 'success');
+      });
+    }
+  </script>
+</body>
+</html>

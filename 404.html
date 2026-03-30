@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — Page Not Found — GFIG</title>
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <style>
+    .error-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 28px;
+    }
+    .error-wrap { max-width: 520px; }
+    .error-code {
+      font-family: var(--font-head);
+      font-size: clamp(5rem, 18vw, 9rem);
+      color: var(--blue);
+      opacity: 0.18;
+      line-height: 1;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+    .error-icon { font-size: 4rem; margin-bottom: 16px; }
+    .error-title {
+      font-family: var(--font-head);
+      font-size: 1.4rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 14px;
+      color: var(--text);
+    }
+    .error-sub {
+      color: var(--text-sub);
+      font-size: 0.95rem;
+      line-height: 1.7;
+      margin-bottom: 36px;
+    }
+    .error-links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .error-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-top: 40px;
+      text-align: left;
+    }
+    .error-quick {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 16px;
+      transition: border-color var(--t), background var(--t);
+      text-decoration: none;
+      display: block;
+    }
+    .error-quick:hover { border-color: var(--blue); background: var(--bg-hover); }
+    .error-quick-icon { font-size: 1.5rem; margin-bottom: 8px; }
+    .error-quick-label { font-size: 0.8rem; font-weight: 600; color: var(--text); letter-spacing: 0.05em; }
+    .error-quick-desc { font-size: 0.74rem; color: var(--text-sub); margin-top: 3px; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="logo.png" alt="GFIG – Global Flight Inspection Group Virtual" class="nav-logo-img">
+      </a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html"     class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html"  class="nav-link">◉ Missions</a>
+        <a href="notam.html"     class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html"  class="nav-link">◎ Training</a>
+        <a href="events.html"    class="nav-link">◗ Events</a>
+        <a href="sops.html"      class="nav-link">≡ SOPs</a>
+        <a href="profile.html"   class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <a href="dashboard.html" class="btn btn-discord">
+          <svg width="15" height="11" viewBox="0 0 71 55" fill="white"><path d="M60.1 4.9A58.5 58.5 0 0 0 45.5.7a40.5 40.5 0 0 0-1.8 3.7 54.1 54.1 0 0 0-16.4 0A37.9 37.9 0 0 0 25.5.7 58.4 58.4 0 0 0 10.9 5C1.6 19.4-1 33.3.3 47.1a59 59 0 0 0 18 9.1 44.3 44.3 0 0 0 3.8-6.2 38.4 38.4 0 0 1-6.1-2.9l1.5-1.1a42.2 42.2 0 0 0 36 0l1.5 1.1a38.7 38.7 0 0 1-6.1 3 43.6 43.6 0 0 0 3.8 6.2 58.8 58.8 0 0 0 18-9.2c1.5-15.8-2.6-29.5-10.6-42.1ZM23.7 38.5c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2Zm23.6 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2Z"/></svg>
+          Login with Discord
+        </a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="error-page">
+    <div class="error-wrap">
+      <div class="error-code">404</div>
+      <div class="error-icon">✈</div>
+      <h1 class="error-title">FLIGHT PATH NOT FOUND</h1>
+      <p class="error-sub">The page you're looking for has departed the sector.<br>
+      It may have been removed, renamed, or never existed in this airspace.</p>
+
+      <div class="error-links">
+        <a href="index.html" class="btn btn-primary">⌂ Return Home</a>
+        <a href="dashboard.html" class="btn btn-secondary">◈ Dashboard</a>
+        <a href="missions.html" class="btn btn-secondary">◉ Mission Board</a>
+      </div>
+
+      <div class="error-grid">
+        <a href="notam.html" class="error-quick">
+          <div class="error-quick-icon">⚠</div>
+          <div class="error-quick-label">NOTAMs</div>
+          <div class="error-quick-desc">Active notices</div>
+        </a>
+        <a href="training.html" class="error-quick">
+          <div class="error-quick-icon">◎</div>
+          <div class="error-quick-label">Training</div>
+          <div class="error-quick-desc">Courses & checkrides</div>
+        </a>
+        <a href="events.html" class="error-quick">
+          <div class="error-quick-icon">◗</div>
+          <div class="error-quick-label">Events</div>
+          <div class="error-quick-desc">Upcoming operations</div>
+        </a>
+        <a href="sops.html" class="error-quick">
+          <div class="error-quick-icon">≡</div>
+          <div class="error-quick-label">SOPs</div>
+          <div class="error-quick-desc">Rules & procedures</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -738,6 +738,33 @@ footer { background: var(--bg-secondary); border-top: 1px solid var(--border); p
   .grid-4 { grid-template-columns: 1fr 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
 }
+/* ── Hamburger ──────────────────────────────────────────────── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  background: none;
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  padding: 7px 9px;
+  margin-left: auto;
+  transition: background var(--t);
+}
+.hamburger:hover { background: var(--bg-card); }
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
 @media (max-width: 768px) {
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
   .steps { grid-template-columns: 1fr; }
@@ -750,6 +777,33 @@ footer { background: var(--bg-secondary); border-top: 1px solid var(--border); p
   .profile-stats { grid-template-columns: 1fr 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
-  .nav-links { display: none; }
   .page-header { flex-direction: column; align-items: flex-start; }
+
+  .hamburger { display: flex; }
+  .nav-actions { display: none; }
+
+  .nav-links {
+    display: none;
+    position: fixed;
+    top: var(--nav-h);
+    left: 0; right: 0;
+    background: rgba(11, 31, 58, 0.98);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px 20px;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 998;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+  .nav-links.open {
+    display: flex;
+  }
+  .nav-links .nav-link {
+    font-size: 0.95rem;
+    padding: 12px 14px;
+    border-radius: var(--r-md);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-links .nav-link:last-child { border-bottom: none; }
 }

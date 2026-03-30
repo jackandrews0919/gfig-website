@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events — GFIG</title>
+  <meta name="description" content="GFIG Events — Upcoming group inspection operations, fly-ins, checkride sessions and community events.">
+  <meta property="og:title" content="GFIG Events — Upcoming Operations">
+  <meta property="og:description" content="Upcoming group inspection operations, fly-ins, checkride sessions and community events.">
+  <meta property="og:image" content="https://jackandrews0919.github.io/gfig-website/logo.png">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <style>
+    .events-hero {
+      background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-alt) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 36px 40px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .events-hero-title { font-family: var(--font-head); font-size: 1.5rem; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .events-hero-sub { color: var(--text-sub); font-size: 0.9rem; max-width: 500px; line-height: 1.6; }
+    .events-hero-stat { text-align: center; }
+    .events-hero-stat-num { font-family: var(--font-head); font-size: 2rem; color: var(--orange); }
+    .events-hero-stat-label { font-size: 0.75rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.1em; }
+
+    .events-tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+    .event-tab {
+      padding: 10px 18px;
+      background: none;
+      border: none;
+      color: var(--text-sub);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all var(--t);
+      margin-bottom: -1px;
+    }
+    .event-tab:hover { color: var(--text); }
+    .event-tab.active { color: var(--blue-light); border-bottom-color: var(--blue); }
+
+    .event-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+
+    .event-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      transition: border-color var(--t), transform var(--t);
+    }
+    .event-card:hover { border-color: var(--blue); transform: translateY(-2px); }
+
+    .event-banner {
+      height: 8px;
+    }
+    .event-banner.group-op  { background: linear-gradient(90deg, var(--blue), #0044aa); }
+    .event-banner.checkride { background: linear-gradient(90deg, var(--orange), #cc4400); }
+    .event-banner.training  { background: linear-gradient(90deg, #00c9a7, #007a66); }
+    .event-banner.flyin     { background: linear-gradient(90deg, #9c59ff, #5a00cc); }
+    .event-banner.community { background: linear-gradient(90deg, var(--pass), #007a44); }
+
+    .event-body { padding: 20px; }
+    .event-type-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 3px 8px;
+      border-radius: var(--r-sm);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .badge-group   { background: var(--active-bg); color: var(--active); border: 1px solid rgba(64,170,255,0.28); }
+    .badge-checkride { background: rgba(255,106,0,0.1); color: var(--orange); border: 1px solid rgba(255,106,0,0.28); }
+    .badge-training  { background: rgba(0,201,167,0.1); color: #00c9a7; border: 1px solid rgba(0,201,167,0.28); }
+    .badge-flyin     { background: rgba(156,89,255,0.1); color: #9c59ff; border: 1px solid rgba(156,89,255,0.28); }
+    .badge-community { background: var(--pass-bg); color: var(--pass); border: 1px solid var(--pass-border); }
+
+    .event-title { font-weight: 700; font-size: 1rem; margin-bottom: 8px; line-height: 1.3; }
+    .event-desc { font-size: 0.84rem; color: var(--text-sub); line-height: 1.6; margin-bottom: 16px; }
+
+    .event-meta { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .event-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-sub);
+    }
+    .event-meta-icon { width: 16px; text-align: center; flex-shrink: 0; }
+    .event-meta-val { color: var(--text); font-family: var(--font-mono); }
+
+    .event-slots {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--bg-secondary);
+      border-radius: var(--r-md);
+      margin-bottom: 14px;
+      font-size: 0.8rem;
+    }
+    .event-slots-label { color: var(--text-sub); }
+    .event-slots-bar-wrap { flex: 1; height: 5px; background: var(--border); border-radius: 3px; margin: 0 12px; }
+    .event-slots-bar { height: 100%; border-radius: 3px; background: var(--blue); transition: width 0.4s ease; }
+    .event-slots-count { color: var(--text); font-weight: 600; white-space: nowrap; }
+
+    .event-footer { display: flex; gap: 8px; }
+
+    .past-card { opacity: 0.55; }
+    .past-card:hover { opacity: 0.75; }
+
+    .featured-event {
+      background: linear-gradient(135deg, rgba(0,119,255,0.08) 0%, var(--bg-card) 60%);
+      border-color: rgba(0,119,255,0.4);
+    }
+    .featured-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 2px 7px;
+      border-radius: var(--r-sm);
+      background: rgba(255,214,0,0.12);
+      color: #ffd700;
+      border: 1px solid rgba(255,214,0,0.3);
+      margin-left: 6px;
+    }
+
+    .countdown-wrap {
+      display: flex;
+      gap: 10px;
+      margin: 12px 0;
+    }
+    .countdown-unit {
+      text-align: center;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 8px 12px;
+      min-width: 56px;
+    }
+    .countdown-num { font-family: var(--font-head); font-size: 1.3rem; color: var(--blue-light); line-height: 1; }
+    .countdown-label { font-size: 0.64rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 3px; }
+
+    @media (max-width: 768px) {
+      .events-hero { flex-direction: column; }
+      .event-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="logo.png" alt="GFIG – Global Flight Inspection Group Virtual" class="nav-logo-img">
+      </a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html"     class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html"  class="nav-link">◉ Missions</a>
+        <a href="notam.html"     class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html"  class="nav-link">◎ Training</a>
+        <a href="events.html"    class="nav-link active">◗ Events</a>
+        <a href="sops.html"      class="nav-link">≡ SOPs</a>
+        <a href="profile.html"   class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot">
+          <div class="nav-avatar">JH</div>
+          <div class="nav-pilot-info">
+            <div class="nav-pilot-name">CPT Harrison</div>
+            <div class="nav-pilot-rank">Senior Inspector</div>
+          </div>
+          <div class="nav-online"></div>
+        </div>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Page ── -->
+  <div class="page">
+    <div class="container">
+
+      <div class="page-header">
+        <div>
+          <h1>◗ EVENTS &amp; OPERATIONS</h1>
+          <p>Upcoming group sorties, fly-ins, checkride sessions and community events</p>
+        </div>
+        <a href="https://discord.gg/gfig" target="_blank" rel="noopener" class="btn btn-discord" id="discord-link">
+          <svg width="15" height="11" viewBox="0 0 71 55" fill="white"><path d="M60.1 4.9A58.5 58.5 0 0 0 45.5.7a40.5 40.5 0 0 0-1.8 3.7 54.1 54.1 0 0 0-16.4 0A37.9 37.9 0 0 0 25.5.7 58.4 58.4 0 0 0 10.9 5C1.6 19.4-1 33.3.3 47.1a59 59 0 0 0 18 9.1 44.3 44.3 0 0 0 3.8-6.2 38.4 38.4 0 0 1-6.1-2.9l1.5-1.1a42.2 42.2 0 0 0 36 0l1.5 1.1a38.7 38.7 0 0 1-6.1 3 43.6 43.6 0 0 0 3.8 6.2 58.8 58.8 0 0 0 18-9.2c1.5-15.8-2.6-29.5-10.6-42.1ZM23.7 38.5c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2Zm23.6 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2Z"/></svg>
+          Join Discord
+        </a>
+      </div>
+
+      <!-- Hero -->
+      <div class="events-hero">
+        <div>
+          <div class="events-hero-title">OPERATION CALIBRATE ALPHA <span class="featured-badge">★ FEATURED</span></div>
+          <div class="events-hero-sub">The largest GFIG group operation of 2026. Simultaneous coordinated inspection sorties across all 6 global regions. All inspectors welcome — from Trainees to Directors.</div>
+          <div class="countdown-wrap" id="countdown-wrap">
+            <div class="countdown-unit"><div class="countdown-num" id="cd-d">--</div><div class="countdown-label">Days</div></div>
+            <div class="countdown-unit"><div class="countdown-num" id="cd-h">--</div><div class="countdown-label">Hrs</div></div>
+            <div class="countdown-unit"><div class="countdown-num" id="cd-m">--</div><div class="countdown-label">Min</div></div>
+            <div class="countdown-unit"><div class="countdown-num" id="cd-s">--</div><div class="countdown-label">Sec</div></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px;">
+            <a href="#event-alpha" class="btn btn-primary">View Details</a>
+            <a href="https://discord.gg/gfig" target="_blank" rel="noopener" class="btn btn-secondary" id="discord-event-link">RSVP on Discord</a>
+          </div>
+        </div>
+        <div style="display:flex;gap:32px;flex-wrap:wrap;">
+          <div class="events-hero-stat">
+            <div class="events-hero-stat-num">6</div>
+            <div class="events-hero-stat-label">Regions</div>
+          </div>
+          <div class="events-hero-stat">
+            <div class="events-hero-stat-num">36</div>
+            <div class="events-hero-stat-label">Signed Up</div>
+          </div>
+          <div class="events-hero-stat">
+            <div class="events-hero-stat-num">05 APR</div>
+            <div class="events-hero-stat-label">Date</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="events-tabs">
+        <button class="event-tab active" onclick="showEventTab('upcoming', this)">Upcoming</button>
+        <button class="event-tab" onclick="showEventTab('recurring', this)">Recurring</button>
+        <button class="event-tab" onclick="showEventTab('past', this)">Past Events</button>
+      </div>
+
+      <!-- Upcoming -->
+      <div id="tab-upcoming">
+        <div class="event-grid">
+
+          <!-- Featured: Operation Calibrate Alpha -->
+          <div class="event-card featured-event" id="event-alpha">
+            <div class="event-banner group-op"></div>
+            <div class="event-body">
+              <span class="event-type-badge badge-group">Group Operation</span>
+              <span class="featured-badge">★ Featured</span>
+              <div class="event-title">Operation CALIBRATE ALPHA</div>
+              <div class="event-desc">Simultaneous coordinated inspection sorties across all 6 GFIG global regions. Priority airports include EGLL, KJFK, OMDB, WSSS, FAOR, SBGR. Each regional team completes a full ILS + RNAV validation flight.</div>
+              <div class="event-meta">
+                <div class="event-meta-row"><span class="event-meta-icon">📅</span><span>Date</span><span class="event-meta-val">05 APR 2026</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">🕑</span><span>Time</span><span class="event-meta-val">1400Z – 2200Z</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">🌐</span><span>Network</span><span class="event-meta-val">VATSIM / IVAO / Offline</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">✈</span><span>Aircraft</span><span class="event-meta-val">Any inspection-equipped</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">⭐</span><span>Min Rank</span><span class="event-meta-val">Trainee (all welcome)</span></div>
+              </div>
+              <div class="event-slots">
+                <span class="event-slots-label">Slots</span>
+                <div class="event-slots-bar-wrap"><div class="event-slots-bar" style="width:60%"></div></div>
+                <span class="event-slots-count">36 / 60 registered</span>
+              </div>
+              <div class="event-footer">
+                <button class="btn btn-primary" style="flex:1;" onclick="rsvpEvent(this,'CALIBRATE ALPHA')">✔ RSVP</button>
+                <a href="https://discord.gg/gfig" target="_blank" rel="noopener" class="btn btn-discord" id="discord-alpha" style="flex:1;text-align:center;">Discord Event</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Checkride Session -->
+          <div class="event-card">
+            <div class="event-banner checkride"></div>
+            <div class="event-body">
+              <span class="event-type-badge badge-checkride">Checkride Session</span>
+              <div class="event-title">ILS Calibration Checkride — April Batch</div>
+              <div class="event-desc">Formal checkride examination for inspectors completing Module 2 (ILS Fundamentals). Results certified by Chief Inspector. Pass required for ILS mission clearance.</div>
+              <div class="event-meta">
+                <div class="event-meta-row"><span class="event-meta-icon">📅</span><span>Date</span><span class="event-meta-val">08 APR 2026</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">🕑</span><span>Time</span><span class="event-meta-val">1800Z – 2100Z</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">👨‍✈️</span><span>Examiner</span><span class="event-meta-val">Chief Inspector MORGAN</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">⭐</span><span>Prerequisite</span><span class="event-meta-val">Module 2 complete</span></div>
+              </div>
+              <div class="event-slots">
+                <span class="event-slots-label">Slots</span>
+                <div class="event-slots-bar-wrap"><div class="event-slots-bar" style="width:75%"></div></div>
+                <span class="event-slots-count">6 / 8 taken</span>
+              </div>
+              <div class="event-footer">
+                <a href="training.html" class="btn btn-primary" style="flex:1;">◎ Book via Training</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Training Day -->
+          <div class="event-card">
+            <div class="event-banner training"></div>
+            <div class="event-body">
+              <span class="event-type-badge badge-training">Training Day</span>
+              <div class="event-title">New Inspector Orientation — April 2026</div>
+              <div class="event-desc">Mandatory orientation for all inspectors who joined in March. Covers GFIG SOPs, Discord server tour, mission claiming procedure, and first training flight briefing.</div>
+              <div class="event-meta">
+                <div class="event-meta-row"><span class="event-meta-icon">📅</span><span>Date</span><span class="event-meta-val">12 APR 2026</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">🕑</span><span>Time</span><span class="event-meta-val">1500Z – 1700Z</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">👥</span><span>Target</span><span class="event-meta-val">New Trainees (Mar 2026)</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">⭐</span><span>Rank</span><span class="event-meta-val">Trainee only</span></div>
+              </div>
+              <div class="event-slots">
+                <span class="event-slots-label">Slots</span>
+                <div class="event-slots-bar-wrap"><div class="event-slots-bar" style="width:40%"></div></div>
+                <span class="event-slots-count">8 / 20 registered</span>
+              </div>
+              <div class="event-footer">
+                <button class="btn btn-primary" style="flex:1;" onclick="rsvpEvent(this,'New Inspector Orientation')">✔ RSVP</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fly-in -->
+          <div class="event-card">
+            <div class="event-banner flyin"></div>
+            <div class="event-body">
+              <span class="event-type-badge badge-flyin">Fly-In</span>
+              <div class="event-title">GFIG Community Fly-In — EGLL to LFPG</div>
+              <div class="event-desc">Social fly-in open to all members. EGLL → LFPG in formation. Inspection of both ILS systems and a group debrief on Discord afterwards. Great networking event.</div>
+              <div class="event-meta">
+                <div class="event-meta-row"><span class="event-meta-icon">📅</span><span>Date</span><span class="event-meta-val">19 APR 2026</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">🕑</span><span>Time</span><span class="event-meta-val">1300Z – 1700Z</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">🌐</span><span>Network</span><span class="event-meta-val">VATSIM preferred</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">✈</span><span>Route</span><span class="event-meta-val">EGLL → LFPG</span></div>
+              </div>
+              <div class="event-slots">
+                <span class="event-slots-label">Slots</span>
+                <div class="event-slots-bar-wrap"><div class="event-slots-bar" style="width:22%"></div></div>
+                <span class="event-slots-count">11 / 50 registered</span>
+              </div>
+              <div class="event-footer">
+                <button class="btn btn-primary" style="flex:1;" onclick="rsvpEvent(this,'EGLL→LFPG Fly-In')">✔ RSVP</button>
+                <a href="https://discord.gg/gfig" target="_blank" rel="noopener" class="btn btn-secondary" id="discord-flyin" style="flex:1;text-align:center;">Discord</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Director Q&A -->
+          <div class="event-card">
+            <div class="event-banner community"></div>
+            <div class="event-body">
+              <span class="event-type-badge badge-community">Community</span>
+              <div class="event-title">Director Q&amp;A — State of GFIG April 2026</div>
+              <div class="event-desc">Monthly town hall with GFIG Directors. Q&amp;A on upcoming operations, new mission regions, rank structure updates and community feedback. Discord voice + text.</div>
+              <div class="event-meta">
+                <div class="event-meta-row"><span class="event-meta-icon">📅</span><span>Date</span><span class="event-meta-val">26 APR 2026</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">🕑</span><span>Time</span><span class="event-meta-val">1900Z – 2030Z</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">📍</span><span>Platform</span><span class="event-meta-val">Discord Voice</span></div>
+              </div>
+              <div class="event-slots">
+                <span class="event-slots-label">Slots</span>
+                <div class="event-slots-bar-wrap"><div class="event-slots-bar" style="width:18%;background:var(--pass)"></div></div>
+                <span class="event-slots-count">Open — all welcome</span>
+              </div>
+              <div class="event-footer">
+                <button class="btn btn-primary" style="flex:1;" onclick="rsvpEvent(this,'Director Q&A')">✔ RSVP</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Recurring -->
+      <div id="tab-recurring" style="display:none;">
+        <div class="event-grid">
+
+          <div class="event-card">
+            <div class="event-banner group-op"></div>
+            <div class="event-body">
+              <span class="event-type-badge badge-group">Weekly</span>
+              <div class="event-title">Weekly Inspection Debrief</div>
+              <div class="event-desc">Every Sunday 1800Z. Inspectors discuss completed flights from the week, share findings, review PASS/MONITOR/FAIL results and coordinate upcoming missions on Discord.</div>
+              <div class="event-meta">
+                <div class="event-meta-row"><span class="event-meta-icon">🔁</span><span>Frequency</span><span class="event-meta-val">Every Sunday</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">🕑</span><span>Time</span><span class="event-meta-val">1800Z – 1900Z</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">📍</span><span>Platform</span><span class="event-meta-val">Discord Voice</span></div>
+              </div>
+              <div class="event-footer" style="margin-top:14px;">
+                <a href="https://discord.gg/gfig" target="_blank" rel="noopener" class="btn btn-discord" id="discord-weekly" style="flex:1;text-align:center;">Join on Discord</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="event-card">
+            <div class="event-banner checkride"></div>
+            <div class="event-body">
+              <span class="event-type-badge badge-checkride">Bi-Weekly</span>
+              <div class="event-title">Open Checkride Sessions</div>
+              <div class="event-desc">1st and 3rd Wednesday of each month. Book a slot via the Training Centre. Examiners available for Module 1–5 checkrides. Results posted to Discord within 24 hours.</div>
+              <div class="event-meta">
+                <div class="event-meta-row"><span class="event-meta-icon">🔁</span><span>Frequency</span><span class="event-meta-val">1st &amp; 3rd Wednesday</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">🕑</span><span>Time</span><span class="event-meta-val">1700Z – 2000Z</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">⭐</span><span>Prerequisite</span><span class="event-meta-val">Module complete</span></div>
+              </div>
+              <div class="event-footer" style="margin-top:14px;">
+                <a href="training.html" class="btn btn-primary" style="flex:1;">◎ Book Checkride</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="event-card">
+            <div class="event-banner training"></div>
+            <div class="event-body">
+              <span class="event-type-badge badge-training">Monthly</span>
+              <div class="event-title">New Member Orientation</div>
+              <div class="event-desc">First Saturday of every month at 1500Z. For all new members joining that month. Covers SOPs, Discord structure, mission system and first inspection brief.</div>
+              <div class="event-meta">
+                <div class="event-meta-row"><span class="event-meta-icon">🔁</span><span>Frequency</span><span class="event-meta-val">1st Saturday monthly</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">🕑</span><span>Time</span><span class="event-meta-val">1500Z – 1700Z</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">👥</span><span>Target</span><span class="event-meta-val">New Trainees</span></div>
+              </div>
+              <div class="event-footer" style="margin-top:14px;">
+                <a href="https://discord.gg/gfig" target="_blank" rel="noopener" class="btn btn-discord" id="discord-orientation" style="flex:1;text-align:center;">Register on Discord</a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Past -->
+      <div id="tab-past" style="display:none;">
+        <div class="event-grid">
+
+          <div class="event-card past-card">
+            <div class="event-banner group-op"></div>
+            <div class="event-body">
+              <span class="event-type-badge badge-group">Group Operation</span>
+              <div class="event-title">Operation PRECISION STRIKE — Mar 2026</div>
+              <div class="event-desc">23 inspectors flew simultaneous sorties across Europe and North America. 18 ILS systems validated. 2 FAIL results flagged for follow-up. Record participation.</div>
+              <div class="event-meta">
+                <div class="event-meta-row"><span class="event-meta-icon">📅</span><span>Date</span><span class="event-meta-val">15 MAR 2026</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">✅</span><span>Result</span><span class="event-meta-val">23 sorties completed</span></div>
+              </div>
+              <div class="event-footer" style="margin-top:14px;">
+                <button class="btn btn-secondary" style="flex:1;" disabled>Completed</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="event-card past-card">
+            <div class="event-banner flyin"></div>
+            <div class="event-body">
+              <span class="event-type-badge badge-flyin">Fly-In</span>
+              <div class="event-title">GFIG Winter Fly-In — KJFK to KORD</div>
+              <div class="event-desc">17 members flew the KJFK → KORD route in formation. ILS RWY 27L at KORD validated. Community event with voice debrief on Discord.</div>
+              <div class="event-meta">
+                <div class="event-meta-row"><span class="event-meta-icon">📅</span><span>Date</span><span class="event-meta-val">01 MAR 2026</span></div>
+                <div class="event-meta-row"><span class="event-meta-icon">✅</span><span>Attendance</span><span class="event-meta-val">17 members</span></div>
+              </div>
+              <div class="event-footer" style="margin-top:14px;">
+                <button class="btn btn-secondary" style="flex:1;" disabled>Completed</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    function showEventTab(tab, btn) {
+      ['upcoming','recurring','past'].forEach(t => {
+        document.getElementById('tab-' + t).style.display = t === tab ? '' : 'none';
+      });
+      document.querySelectorAll('.event-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function rsvpEvent(btn, name) {
+      btn.textContent = '✓ Registered';
+      btn.disabled = true;
+      btn.style.background = 'var(--pass-bg)';
+      btn.style.color = 'var(--pass)';
+      btn.style.borderColor = 'var(--pass-border)';
+      if (typeof showToast === 'function') showToast('Registered for: ' + name, 'success');
+    }
+
+    // Countdown to 05 APR 2026 14:00 UTC
+    function updateCountdown() {
+      const target = new Date('2026-04-05T14:00:00Z');
+      const now    = new Date();
+      const diff   = target - now;
+      if (diff <= 0) {
+        document.getElementById('countdown-wrap').innerHTML = '<span style="color:var(--pass);font-weight:600;">EVENT IS LIVE NOW</span>';
+        return;
+      }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      document.getElementById('cd-d').textContent = String(d).padStart(2,'0');
+      document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+      document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+      document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+    }
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+  </script>
+</body>
+</html>

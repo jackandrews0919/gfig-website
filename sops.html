@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOPs &amp; Rules — GFIG</title>
+  <meta name="description" content="GFIG Standard Operating Procedures — Inspector Code of Conduct, Mission Protocols, Reporting Standards and Rank Progression.">
+  <meta property="og:title" content="GFIG Standard Operating Procedures">
+  <meta property="og:description" content="Inspector Code of Conduct, Mission Protocols, Reporting Standards and Rank Progression.">
+  <meta property="og:image" content="https://jackandrews0919.github.io/gfig-website/logo.png">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <style>
+    .sops-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    .sops-nav {
+      position: sticky;
+      top: calc(var(--nav-h) + 24px);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 16px;
+    }
+    .sops-nav-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      padding: 0 4px;
+    }
+    .sops-nav-link {
+      display: block;
+      padding: 8px 10px;
+      font-size: 0.83rem;
+      color: var(--text-sub);
+      border-radius: var(--r-md);
+      transition: all var(--t);
+      text-decoration: none;
+      margin-bottom: 2px;
+    }
+    .sops-nav-link:hover { background: var(--bg-hover); color: var(--text); }
+    .sops-nav-link.active { background: var(--active-bg); color: var(--blue-light); }
+    .sops-nav-link .sops-nav-num {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-right: 6px;
+    }
+    .sops-nav-divider { height: 1px; background: var(--border); margin: 10px 0; }
+
+    .sops-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-bottom: 16px;
+      scroll-margin-top: calc(var(--nav-h) + 24px);
+    }
+    .sops-section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 20px 24px;
+      cursor: pointer;
+      user-select: none;
+      transition: background var(--t);
+    }
+    .sops-section-header:hover { background: var(--bg-hover); }
+    .sops-section-num {
+      font-family: var(--font-head);
+      font-size: 0.75rem;
+      color: var(--blue);
+      letter-spacing: 0.1em;
+      background: var(--active-bg);
+      border: 1px solid rgba(64,170,255,0.28);
+      padding: 4px 10px;
+      border-radius: var(--r-sm);
+      flex-shrink: 0;
+    }
+    .sops-section-title {
+      font-family: var(--font-head);
+      font-size: 0.95rem;
+      letter-spacing: 0.06em;
+      flex: 1;
+    }
+    .sops-chevron {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      transition: transform 0.25s ease;
+    }
+    .sops-section.open .sops-chevron { transform: rotate(180deg); }
+
+    .sops-body {
+      display: none;
+      padding: 0 24px 24px;
+      border-top: 1px solid var(--border);
+    }
+    .sops-section.open .sops-body { display: block; }
+
+    .sops-body h3 {
+      font-family: var(--font-head);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      color: var(--blue-light);
+      margin: 22px 0 10px;
+      text-transform: uppercase;
+    }
+    .sops-body p {
+      font-size: 0.88rem;
+      color: var(--text-sub);
+      line-height: 1.75;
+      margin-bottom: 10px;
+    }
+    .sops-body ul { padding-left: 0; margin-bottom: 12px; }
+    .sops-body ul li {
+      font-size: 0.88rem;
+      color: var(--text-sub);
+      line-height: 1.7;
+      padding: 4px 0 4px 20px;
+      position: relative;
+    }
+    .sops-body ul li::before {
+      content: '›';
+      position: absolute;
+      left: 6px;
+      color: var(--blue);
+    }
+    .sops-body ol { padding-left: 22px; margin-bottom: 12px; }
+    .sops-body ol li {
+      font-size: 0.88rem;
+      color: var(--text-sub);
+      line-height: 1.7;
+      padding: 3px 0;
+    }
+    .sops-highlight {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--blue);
+      border-radius: var(--r-md);
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.87rem;
+      color: var(--text-sub);
+      line-height: 1.7;
+    }
+    .sops-highlight.warn { border-left-color: var(--monitor); }
+    .sops-highlight.danger { border-left-color: var(--fail); }
+    .sops-highlight.success { border-left-color: var(--pass); }
+
+    .rank-table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+    .rank-table th {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-sub);
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .rank-table td {
+      padding: 10px 12px;
+      font-size: 0.84rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-sub);
+    }
+    .rank-table tr:last-child td { border-bottom: none; }
+    .rank-table tr:hover td { background: var(--bg-hover); }
+    .rank-table td:first-child { font-weight: 600; color: var(--text); }
+
+    .sops-meta {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 14px 20px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--text-sub);
+    }
+    .sops-meta strong { color: var(--text); }
+
+    @media (max-width: 900px) {
+      .sops-layout { grid-template-columns: 1fr; }
+      .sops-nav { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="logo.png" alt="GFIG – Global Flight Inspection Group Virtual" class="nav-logo-img">
+      </a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html"     class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html"  class="nav-link">◉ Missions</a>
+        <a href="notam.html"     class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html"  class="nav-link">◎ Training</a>
+        <a href="events.html"    class="nav-link">◗ Events</a>
+        <a href="sops.html"      class="nav-link active">≡ SOPs</a>
+        <a href="profile.html"   class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot">
+          <div class="nav-avatar">JH</div>
+          <div class="nav-pilot-info">
+            <div class="nav-pilot-name">CPT Harrison</div>
+            <div class="nav-pilot-rank">Senior Inspector</div>
+          </div>
+          <div class="nav-online"></div>
+        </div>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Page ── -->
+  <div class="page">
+    <div class="container">
+
+      <div class="page-header">
+        <div>
+          <h1>≡ STANDARD OPERATING PROCEDURES</h1>
+          <p>Rules, protocols and standards governing all GFIG operations</p>
+        </div>
+        <span style="font-size:0.78rem;color:var(--text-sub);">Version <strong style="color:var(--text);">2.4</strong> &nbsp;·&nbsp; Effective <strong style="color:var(--text);">01 MAR 2026</strong></span>
+      </div>
+
+      <div class="sops-layout">
+
+        <!-- Sidebar Nav -->
+        <div class="sops-nav">
+          <div class="sops-nav-title">Sections</div>
+          <a href="#s1" class="sops-nav-link" onclick="openSection('s1')"><span class="sops-nav-num">1.</span> Code of Conduct</a>
+          <a href="#s2" class="sops-nav-link" onclick="openSection('s2')"><span class="sops-nav-num">2.</span> Mission Protocols</a>
+          <a href="#s3" class="sops-nav-link" onclick="openSection('s3')"><span class="sops-nav-num">3.</span> Reporting Standards</a>
+          <a href="#s4" class="sops-nav-link" onclick="openSection('s4')"><span class="sops-nav-num">4.</span> Communication</a>
+          <a href="#s5" class="sops-nav-link" onclick="openSection('s5')"><span class="sops-nav-num">5.</span> Rank &amp; Progression</a>
+          <a href="#s6" class="sops-nav-link" onclick="openSection('s6')"><span class="sops-nav-num">6.</span> Awards &amp; Recognition</a>
+          <a href="#s7" class="sops-nav-link" onclick="openSection('s7')"><span class="sops-nav-num">7.</span> Disciplinary Policy</a>
+          <a href="#s8" class="sops-nav-link" onclick="openSection('s8')"><span class="sops-nav-num">8.</span> Technical Standards</a>
+          <div class="sops-nav-divider"></div>
+          <a href="training.html" class="sops-nav-link">◎ Training Centre</a>
+          <a href="missions.html" class="sops-nav-link">◉ Mission Board</a>
+        </div>
+
+        <!-- Content -->
+        <div>
+
+          <!-- Section 1 -->
+          <div class="sops-section open" id="s1">
+            <div class="sops-meta">
+              <span>Section <strong>1.0</strong></span>
+              <span>Last revised: <strong>01 MAR 2026</strong></span>
+              <span>Applies to: <strong>All Members</strong></span>
+            </div>
+            <div class="sops-section-header" onclick="toggleSection(this)">
+              <span class="sops-section-num">1.0</span>
+              <span class="sops-section-title">INSPECTOR CODE OF CONDUCT</span>
+              <span class="sops-chevron">▼</span>
+            </div>
+            <div class="sops-body">
+              <h3>1.1 General Conduct</h3>
+              <p>All GFIG members are expected to conduct themselves with professionalism at all times, both in-sim and within the GFIG Discord community. GFIG is a virtual organization but operates to a high standard of realism and mutual respect.</p>
+              <ul>
+                <li>Treat all members and staff with respect at all times</li>
+                <li>Represent GFIG positively on VATSIM, IVAO and other platforms</li>
+                <li>Do not share confidential operational data outside the organization</li>
+                <li>Respond to direct messages from staff within 72 hours when operationally necessary</li>
+                <li>Maintain at minimum one completed inspection mission per 30 days to retain active status</li>
+              </ul>
+
+              <h3>1.2 Inspection Integrity</h3>
+              <p>The accuracy and integrity of inspection results is the foundation of GFIG. Falsifying or embellishing inspection data undermines the entire organization.</p>
+              <div class="sops-highlight danger">
+                <strong>Zero Tolerance:</strong> Deliberately filing false inspection results (marking a system PASS when it did not meet standards) is grounds for immediate removal from GFIG without appeal.
+              </div>
+              <ul>
+                <li>Report only what you actually observed during the inspection sortie</li>
+                <li>If uncertain, file MONITOR and request a follow-up inspection rather than guessing</li>
+                <li>Do not share your in-progress inspection data with other inspectors before filing</li>
+                <li>Inspection results are final once submitted — contact staff to amend if a genuine error occurred</li>
+              </ul>
+
+              <h3>1.3 Activity Requirements</h3>
+              <ul>
+                <li><strong>Active status:</strong> Minimum 1 completed inspection per calendar month</li>
+                <li><strong>LOA (Leave of Absence):</strong> Notify staff via Discord if offline for more than 30 days</li>
+                <li><strong>Inactive:</strong> Accounts with no activity for 60+ days without LOA will be moved to Reserve status</li>
+                <li><strong>Reserve status:</strong> Rank preserved, return to Active with one completed inspection</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Section 2 -->
+          <div class="sops-section" id="s2">
+            <div class="sops-meta">
+              <span>Section <strong>2.0</strong></span>
+              <span>Last revised: <strong>15 FEB 2026</strong></span>
+              <span>Applies to: <strong>All Inspectors</strong></span>
+            </div>
+            <div class="sops-section-header" onclick="toggleSection(this)">
+              <span class="sops-section-num">2.0</span>
+              <span class="sops-section-title">MISSION PROTOCOLS</span>
+              <span class="sops-chevron">▼</span>
+            </div>
+            <div class="sops-body">
+              <h3>2.1 Claiming a Mission</h3>
+              <ol>
+                <li>Browse the Mission Board and select an available mission matching your certification level</li>
+                <li>Read the full mission brief before claiming — you are responsible for its requirements</li>
+                <li>Click Claim Mission — the mission is now locked to you for 72 hours</li>
+                <li>If you cannot complete within 72 hours, release the mission from your Dashboard</li>
+                <li>Do not claim missions you are not certified for — check SOPs Section 5 for certification requirements</li>
+              </ol>
+
+              <h3>2.2 Pre-Flight Requirements</h3>
+              <ul>
+                <li>Review the NOTAM Board for any active advisories affecting your mission route</li>
+                <li>File a flight plan with appropriate remarks (GFIG INSPECTION)</li>
+                <li>Have the GFIG inspection checklist open during the sortie (see Training Module documentation)</li>
+                <li>Ensure you are on the correct network (VATSIM/IVAO) or file offline with a note in your report</li>
+              </ul>
+
+              <div class="sops-highlight warn">
+                <strong>Important:</strong> Inspection sorties must be flown using realistic simulation settings. Auto-pilot only is not sufficient for approach calibration phases — manual flying is required in the final approach sector.
+              </div>
+
+              <h3>2.3 Mission Completion</h3>
+              <p>Upon completing the inspection sortie, you must file your inspection report within 24 hours. Failure to submit a report within 24 hours may result in the mission being reassigned.</p>
+              <ul>
+                <li>Complete all 4 steps of the Inspection Report form</li>
+                <li>Include accurate flight data (departure time, arrival time, flight level, fuel)</li>
+                <li>Document all findings in the Notes section — detail matters</li>
+                <li>Select the correct result: PASS, MONITOR, or FAIL</li>
+                <li>For FAIL results, clearly state the recommended action in the Action Required field</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Section 3 -->
+          <div class="sops-section" id="s3">
+            <div class="sops-meta">
+              <span>Section <strong>3.0</strong></span>
+              <span>Last revised: <strong>28 MAR 2026</strong></span>
+              <span>Applies to: <strong>All Inspectors</strong></span>
+            </div>
+            <div class="sops-section-header" onclick="toggleSection(this)">
+              <span class="sops-section-num">3.0</span>
+              <span class="sops-section-title">REPORTING STANDARDS</span>
+              <span class="sops-chevron">▼</span>
+            </div>
+            <div class="sops-body">
+              <h3>3.1 Result Definitions</h3>
+              <div class="sops-highlight success">
+                <strong>PASS</strong> — The system being inspected meets all published tolerances. Navigation aids are functioning within specification. No corrective action required. System cleared for operational use.
+              </div>
+              <div class="sops-highlight warn">
+                <strong>MONITOR</strong> — The system is operational but shows minor degradation or anomalies within acceptable but notable tolerances. A follow-up inspection is recommended within 30 days. System remains in operational service.
+              </div>
+              <div class="sops-highlight danger">
+                <strong>FAIL</strong> — The system does not meet minimum required tolerances. Immediate corrective action is required. The system should be taken out of service until rectified. Inspector must document specific anomalies and recommended action.
+              </div>
+
+              <h3>3.2 Report Quality Standards</h3>
+              <ul>
+                <li>Minimum 50 words in the Notes/Findings field for PASS results</li>
+                <li>Minimum 100 words for MONITOR results — describe the anomaly clearly</li>
+                <li>Minimum 150 words for FAIL results — describe fault, measurements, and recommended action</li>
+                <li>Include specific altitude, speed and deviation data where relevant</li>
+                <li>Avoid vague language — "ILS seemed off" is not acceptable; "Localizer deviation of ±0.05° in final approach sector 6NM from threshold" is acceptable</li>
+              </ul>
+
+              <h3>3.3 RNP-AR Specific Requirements</h3>
+              <p>Updated 28 MAR 2026 per NOTAM GFIG-N-2026-024. Inspectors must complete Module 4 before filing RNP-AR reports.</p>
+              <ul>
+                <li>RNAV accuracy tolerance for approach segment: ±0.02NM</li>
+                <li>Document FMS position versus actual position at each waypoint</li>
+                <li>Include RF leg radius accuracy measurements</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Section 4 -->
+          <div class="sops-section" id="s4">
+            <div class="sops-meta">
+              <span>Section <strong>4.0</strong></span>
+              <span>Last revised: <strong>01 JAN 2026</strong></span>
+              <span>Applies to: <strong>All Members</strong></span>
+            </div>
+            <div class="sops-section-header" onclick="toggleSection(this)">
+              <span class="sops-section-num">4.0</span>
+              <span class="sops-section-title">COMMUNICATION PROCEDURES</span>
+              <span class="sops-chevron">▼</span>
+            </div>
+            <div class="sops-body">
+              <h3>4.1 Discord Structure</h3>
+              <p>The GFIG Discord server is the primary communication platform. All members must be on the Discord server to maintain active status.</p>
+              <ul>
+                <li><strong>#announcements</strong> — Staff-only. Read all announcements promptly</li>
+                <li><strong>#notams</strong> — Bot-posted NOTAMs mirroring the website NOTAM Board</li>
+                <li><strong>#completed-ops</strong> — Bot-posted inspection report summaries (auto-generated on report submission)</li>
+                <li><strong>#mission-board</strong> — Live mission updates from the bot</li>
+                <li><strong>#general</strong> — General community discussion</li>
+                <li><strong>#briefing-room</strong> — Pre-flight discussions and mission coordination</li>
+                <li><strong>#help-desk</strong> — Questions for staff</li>
+              </ul>
+
+              <h3>4.2 Radio Callsigns</h3>
+              <p>GFIG inspection flights on VATSIM/IVAO must use the approved callsign format:</p>
+              <div class="sops-highlight">
+                <strong>Callsign Format:</strong> [DIVISION]-[GFIG ID]<br>
+                Example: <span style="font-family:var(--font-mono);">FLIGHT CHECK — GFIG-INS-0042</span><br><br>
+                Approved division callsigns: FLIGHT CHECK (US), CALIBRATION (UK), FLIGHT INSPECTION (Canada/Pacific)
+              </div>
+
+              <h3>4.3 In-Sim Communication</h3>
+              <ul>
+                <li>Notify ATC of your inspection sortie intention when making initial contact</li>
+                <li>Request Priority Handling if required for approach calibration (only when necessary)</li>
+                <li>Be professional and concise on frequency — you represent GFIG to the wider VATSIM community</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Section 5 -->
+          <div class="sops-section" id="s5">
+            <div class="sops-meta">
+              <span>Section <strong>5.0</strong></span>
+              <span>Last revised: <strong>01 JAN 2026</strong></span>
+              <span>Applies to: <strong>All Members</strong></span>
+            </div>
+            <div class="sops-section-header" onclick="toggleSection(this)">
+              <span class="sops-section-num">5.0</span>
+              <span class="sops-section-title">RANK &amp; PROGRESSION</span>
+              <span class="sops-chevron">▼</span>
+            </div>
+            <div class="sops-body">
+              <h3>5.1 Rank Structure</h3>
+              <table class="rank-table">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Points Required</th>
+                    <th>Module Required</th>
+                    <th>Mission Access</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="rank-badge rank-trainee">Trainee</span></td>
+                    <td>0</td>
+                    <td>None (Orientation only)</td>
+                    <td>Training missions only</td>
+                  </tr>
+                  <tr>
+                    <td><span class="rank-badge rank-junior">Junior Inspector</span></td>
+                    <td>500</td>
+                    <td>Module 1 + Checkride</td>
+                    <td>Standard ILS missions</td>
+                  </tr>
+                  <tr>
+                    <td><span class="rank-badge rank-inspector">Inspector</span></td>
+                    <td>1,500</td>
+                    <td>Module 2 + Checkride</td>
+                    <td>ILS + VOR missions</td>
+                  </tr>
+                  <tr>
+                    <td><span class="rank-badge rank-senior">Senior Inspector</span></td>
+                    <td>3,500</td>
+                    <td>Module 3 + Checkride</td>
+                    <td>All standard missions</td>
+                  </tr>
+                  <tr>
+                    <td><span class="rank-badge rank-chief">Chief Inspector</span></td>
+                    <td>7,000</td>
+                    <td>Module 4 + Checkride</td>
+                    <td>All missions + RNAV/RNP</td>
+                  </tr>
+                  <tr>
+                    <td><span class="rank-badge rank-director">Director</span></td>
+                    <td>12,000 + Nomination</td>
+                    <td>Module 5 + Staff Vote</td>
+                    <td>All missions + Staff privileges</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h3>5.2 Point Earning</h3>
+              <ul>
+                <li><strong>PASS result:</strong> 100 pts</li>
+                <li><strong>MONITOR result:</strong> 120 pts (additional value for detailed monitoring)</li>
+                <li><strong>FAIL result (verified):</strong> 150 pts (catching a genuine fault is valuable)</li>
+                <li><strong>Group Operation participation:</strong> +50 pts bonus</li>
+                <li><strong>Checkride passed:</strong> +200 pts</li>
+                <li><strong>Training Module completed:</strong> +100 pts</li>
+              </ul>
+
+              <div class="sops-highlight warn">
+                Rank promotions are not automatic. After meeting point and module requirements, open a ticket in <strong>#help-desk</strong> on Discord to request a rank review.
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 6 -->
+          <div class="sops-section" id="s6">
+            <div class="sops-meta">
+              <span>Section <strong>6.0</strong></span>
+              <span>Last revised: <strong>01 JAN 2026</strong></span>
+              <span>Applies to: <strong>All Members</strong></span>
+            </div>
+            <div class="sops-section-header" onclick="toggleSection(this)">
+              <span class="sops-section-num">6.0</span>
+              <span class="sops-section-title">AWARDS &amp; RECOGNITION</span>
+              <span class="sops-chevron">▼</span>
+            </div>
+            <div class="sops-body">
+              <h3>6.1 Mission Awards</h3>
+              <ul>
+                <li><strong>First Blood</strong> — Complete your first inspection mission</li>
+                <li><strong>10-Mission Badge</strong> — Complete 10 missions</li>
+                <li><strong>50-Mission Badge</strong> — Complete 50 missions</li>
+                <li><strong>100-Mission Badge</strong> — Complete 100 missions</li>
+                <li><strong>Centurion</strong> — Complete 100+ hours of inspection flight time</li>
+                <li><strong>Globe Trotter</strong> — Complete missions in all 6 GFIG regions</li>
+              </ul>
+
+              <h3>6.2 Quality Awards</h3>
+              <ul>
+                <li><strong>Eagle Eye</strong> — File 10 verified FAIL reports that led to system rectification</li>
+                <li><strong>Precision Inspector</strong> — 25+ consecutive PASS results with no monitoring flags</li>
+                <li><strong>NOTAM Hero</strong> — Discover a fault that triggers a new GFIG NOTAM</li>
+              </ul>
+
+              <h3>6.3 Community Awards</h3>
+              <ul>
+                <li><strong>Team Player</strong> — Participate in 5+ Group Operations</li>
+                <li><strong>Instructor Wings</strong> — Achieve Chief Inspector rank and conduct 3+ checkrides</li>
+                <li><strong>Founding Member</strong> — Joined GFIG in the first 90 days of operations</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Section 7 -->
+          <div class="sops-section" id="s7">
+            <div class="sops-meta">
+              <span>Section <strong>7.0</strong></span>
+              <span>Last revised: <strong>01 JAN 2026</strong></span>
+              <span>Applies to: <strong>All Members</strong></span>
+            </div>
+            <div class="sops-section-header" onclick="toggleSection(this)">
+              <span class="sops-section-num">7.0</span>
+              <span class="sops-section-title">DISCIPLINARY POLICY</span>
+              <span class="sops-chevron">▼</span>
+            </div>
+            <div class="sops-body">
+              <h3>7.1 Disciplinary Process</h3>
+              <ol>
+                <li><strong>Verbal Warning</strong> — First minor infraction. Issued via Discord DM from a Director.</li>
+                <li><strong>Written Warning</strong> — Second infraction or first serious infraction. Documented on your member record.</li>
+                <li><strong>Temporary Suspension</strong> — Serious misconduct or third infraction. 7–30 days. During suspension, missions cannot be claimed.</li>
+                <li><strong>Permanent Removal</strong> — Severe violations (data falsification, harassment, etc.) or repeated suspensions.</li>
+              </ol>
+
+              <h3>7.2 Zero Tolerance Violations</h3>
+              <div class="sops-highlight danger">
+                The following result in immediate permanent removal with no appeal:<br><br>
+                — Deliberately falsifying inspection results<br>
+                — Harassment or discrimination of any member<br>
+                — Sharing GFIG confidential data publicly<br>
+                — Impersonating a GFIG Director or staff member
+              </div>
+
+              <h3>7.3 Appeals</h3>
+              <p>Members may appeal Written Warnings and Temporary Suspensions by opening a private ticket via Discord within 14 days of the disciplinary action. Appeals are reviewed by two Directors who were not involved in the original decision.</p>
+            </div>
+          </div>
+
+          <!-- Section 8 -->
+          <div class="sops-section" id="s8">
+            <div class="sops-meta">
+              <span>Section <strong>8.0</strong></span>
+              <span>Last revised: <strong>28 MAR 2026</strong></span>
+              <span>Applies to: <strong>All Inspectors</strong></span>
+            </div>
+            <div class="sops-section-header" onclick="toggleSection(this)">
+              <span class="sops-section-num">8.0</span>
+              <span class="sops-section-title">TECHNICAL STANDARDS</span>
+              <span class="sops-chevron">▼</span>
+            </div>
+            <div class="sops-body">
+              <h3>8.1 Simulator Requirements</h3>
+              <ul>
+                <li>Microsoft Flight Simulator 2020/2024, P3D v5+, or X-Plane 12 are the approved platforms</li>
+                <li>Realistic simulation settings required — no time acceleration during inspection phases</li>
+                <li>Weather must be set to real-world or manually to 10+ miles visibility unless testing low-visibility approaches</li>
+                <li>AI traffic may be used but must not interfere with the inspection approach</li>
+              </ul>
+
+              <h3>8.2 ILS Inspection Tolerances</h3>
+              <ul>
+                <li><strong>Localizer:</strong> ±0.03° (PASS) / ±0.05° (MONITOR) / &gt;±0.05° (FAIL)</li>
+                <li><strong>Glideslope:</strong> ±0.04° (PASS) / ±0.07° (MONITOR) / &gt;±0.07° (FAIL)</li>
+                <li><strong>Marker Beacons:</strong> Within 200m of charted fix (PASS) / 200–400m (MONITOR) / &gt;400m (FAIL)</li>
+              </ul>
+
+              <h3>8.3 VOR/DME Tolerances</h3>
+              <ul>
+                <li><strong>VOR radial:</strong> ±1° (PASS) / ±2° (MONITOR) / &gt;±2° (FAIL)</li>
+                <li><strong>DME distance:</strong> ±0.1NM (PASS) / ±0.3NM (MONITOR) / &gt;±0.3NM (FAIL)</li>
+              </ul>
+
+              <h3>8.4 RNAV/RNP Tolerances</h3>
+              <ul>
+                <li><strong>RNAV en-route:</strong> RNP 2 — total system error ≤2NM</li>
+                <li><strong>RNAV approach:</strong> RNP 0.3 — total system error ≤0.3NM</li>
+                <li><strong>RNP-AR approach:</strong> ±0.02NM (updated MAR 2026 per NOTAM GFIG-N-2026-024)</li>
+              </ul>
+            </div>
+          </div>
+
+        </div><!-- /content -->
+      </div><!-- /layout -->
+
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    function toggleSection(header) {
+      header.closest('.sops-section').classList.toggle('open');
+    }
+
+    function openSection(id) {
+      const el = document.getElementById(id);
+      if (el && !el.classList.contains('open')) {
+        el.classList.add('open');
+      }
+    }
+
+    // Highlight current nav link on scroll
+    const sections = document.querySelectorAll('.sops-section');
+    const navLinks = document.querySelectorAll('.sops-nav-link');
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(s => {
+        if (window.scrollY >= s.offsetTop - 120) current = s.id;
+      });
+      navLinks.forEach(l => {
+        l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+      });
+    });
+  </script>
+</body>
+</html>
