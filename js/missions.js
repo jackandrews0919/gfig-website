@@ -12,6 +12,9 @@ function getClassFromType(typeStr) {
   if (t.includes('vor') || t.includes('ndb') || t.includes('survey') || t.includes('dme')) return 'b';
   if (t.includes('approach') || t.includes('rnav') || t.includes('rnp')) return 'c';
   if (t.includes('procedure') || t.includes('sid') || t.includes('star') || t.includes('advanced')) return 'd';
+  if (t.startsWith('spy-') || t.includes('surveillance') || t.includes('patrol') || t.includes('coastal') || t.includes('border')) return 'f';
+  if (t.startsWith('heli-') || t.includes('aerial') || t.includes('media') || t.includes('event coverage') || t.includes('news')) return 'g';
+  if (t.startsWith('uas-') || t.includes('drone') || t.includes('geospatial') || t.includes('precision survey')) return 'h';
   return 'e'; // traffic, flight test, low vis, steep, departure, sensor, ovp
 }
 
@@ -35,7 +38,11 @@ function applyFilters() {
     const cardPriority = card.dataset.priority || '';
     const cardStatus   = card.dataset.status   || '';
     const cardText     = card.textContent.toLowerCase();
-    const cardClass    = cardType.startsWith('ovp-') ? 'e' : (TYPE_CLASS[cardType] || '');
+    const cardClass    = cardType.startsWith('ovp-') ? 'e'
+                       : cardType.startsWith('spy-') ? 'f'
+                       : cardType.startsWith('heli-') ? 'g'
+                       : cardType.startsWith('uas-') ? 'h'
+                       : (TYPE_CLASS[cardType] || '');
 
     const matchSearch   = !search   || cardText.includes(search);
     const matchRegion   = !region   || cardRegion   === region;
@@ -100,7 +107,10 @@ function openMissionModal(id, dep, arr, type, priority, aircraft, region, brief)
     b: { label: 'Class B — VOR / NDB',       color: 'var(--blue)'    },
     c: { label: 'Class C — RNAV',            color: 'var(--monitor)' },
     d: { label: 'Class D — Advanced',        color: 'var(--danger)'  },
-    e: { label: 'Class E — OVP',             color: '#8891f5'        }
+    e: { label: 'Class E — OVP',             color: '#8891f5'        },
+    f: { label: 'Class F — Surveillance',    color: '#f4c430'        },
+    g: { label: 'Class G — Aerial Media',    color: '#26c6da'        },
+    h: { label: 'Class H — UAS Survey',      color: '#66bb6a'        }
   }[missionClass] || { label: 'Standard', color: 'var(--text-sub)' };
 
   detailsEl.innerHTML = `
@@ -110,9 +120,15 @@ function openMissionModal(id, dep, arr, type, priority, aircraft, region, brief)
     <div><div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Classification</div><div style="font-family:var(--font-mono); font-size:0.78rem; color:${classInfo.color};">${classInfo.label}</div></div>
   `;
 
-  /* Show OVP notice for Class E */
-  const ovpNotice = document.getElementById('modal-ovp-notice');
-  if (ovpNotice) ovpNotice.style.display = missionClass === 'e' ? 'block' : 'none';
+  /* Show relevant specialist notice, hide all others */
+  const ovpNotice  = document.getElementById('modal-ovp-notice');
+  const spyNotice  = document.getElementById('modal-spy-notice');
+  const heliNotice = document.getElementById('modal-heli-notice');
+  const uasNotice  = document.getElementById('modal-uas-notice');
+  if (ovpNotice)  ovpNotice.style.display  = missionClass === 'e' ? 'block' : 'none';
+  if (spyNotice)  spyNotice.style.display  = missionClass === 'f' ? 'block' : 'none';
+  if (heliNotice) heliNotice.style.display = missionClass === 'g' ? 'block' : 'none';
+  if (uasNotice)  uasNotice.style.display  = missionClass === 'h' ? 'block' : 'none';
 
   document.getElementById('mission-modal').classList.add('open');
   document.body.style.overflow = 'hidden';

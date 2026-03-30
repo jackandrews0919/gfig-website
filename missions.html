@@ -101,6 +101,21 @@
             <option value="ovp-flighttest">Flight Test / Research</option>
             <option value="ovp-sensor">Sensor &amp; Surveillance</option>
           </optgroup>
+          <optgroup label="── CLASS F · SURVEILLANCE ──">
+            <option value="spy-surveillance">Airspace Surveillance</option>
+            <option value="spy-coastal">Coastal / Border Monitoring</option>
+            <option value="spy-patrol">Area Patrol</option>
+          </optgroup>
+          <optgroup label="── CLASS G · AERIAL MEDIA ──">
+            <option value="heli-media">Aerial Photography / Media</option>
+            <option value="heli-event">Event Coverage</option>
+            <option value="heli-news">News Support</option>
+          </optgroup>
+          <optgroup label="── CLASS H · UAS SURVEY ──">
+            <option value="uas-survey">UAS Navaid Survey</option>
+            <option value="uas-inspection">Precision Drone Inspection</option>
+            <option value="uas-geosurvey">Geospatial Calibration</option>
+          </optgroup>
         </select>
         <select class="filter-select" id="filter-class">
           <option value="">All Classes</option>
@@ -109,6 +124,9 @@
           <option value="c">Class C — RNAV</option>
           <option value="d">Class D — Advanced</option>
           <option value="e">Class E — OVP (A319 / 737 / 727)</option>
+          <option value="f">Class F — Surveillance (Spylander)</option>
+          <option value="g">Class G — Aerial Media (Helicopter)</option>
+          <option value="h">Class H — UAS Survey (Drone)</option>
         </select>
         <select class="filter-select" id="filter-priority">
           <option value="">All Priority</option>
@@ -452,6 +470,72 @@
           </div>
         </div>
 
+        <!-- ── Class F: Spylander / Surveillance (UK) ── -->
+        <div class="mission-card" data-region="europe" data-type="spy-surveillance" data-priority="priority" data-status="available" onclick="openMissionModal('GFI-2026-0298','EGSS','EGPF','Airspace Surveillance','Priority','Spylander IS-3T — GFIG SPY XX','Europe','Surveillance patrol along UK airspace corridors EGSS to EGPF. Maintain low-altitude profile, operate under GFIG SPY callsign. Report anomalous traffic and navaid signal discrepancies. UK partner-coordinated mission.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0298</div>
+              <div class="mission-route">EGSS <span class="mission-route-arrow">→</span> EGPF</div>
+            </div>
+            <span class="badge badge-priority">Priority</span>
+          </div>
+          <div class="text-sm text-sub">Airspace Surveillance <span class="mission-class class-f">CLASS F</span></div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">Spylander IS-3T</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Europe</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">2h 50m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+190 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0298')">Claim Mission</button>
+          </div>
+        </div>
+
+        <!-- ── Class G: Helicopter Media ── -->
+        <div class="mission-card" data-region="europe" data-type="heli-event" data-priority="routine" data-status="available" onclick="openMissionModal('GFI-2026-0297','EGLC','EGLL','Event Coverage','Routine','Airbus H125 — GFIG MEDIA XX','Europe','Aerial media coverage support for London airshow activity. H125 required. Low-altitude flight corridor pre-approved by LTCC. File media brief with event coordinator on departure. Maintain safe separation from display aircraft.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0297</div>
+              <div class="mission-route">EGLC <span class="mission-route-arrow">→</span> EGLL</div>
+            </div>
+            <span class="badge badge-routine">Routine</span>
+          </div>
+          <div class="text-sm text-sub">Event Coverage <span class="mission-class class-g">CLASS G</span></div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">Airbus H125</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Europe</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">1h 15m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+130 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0297')">Claim Mission</button>
+          </div>
+        </div>
+
+        <!-- ── Class H: UAS Drone Survey (NavCan) ── -->
+        <div class="mission-card" data-region="northamerica" data-type="uas-survey" data-priority="routine" data-status="available" onclick="openMissionModal('GFI-2026-0296','CYVR','CYYZ','UAS Navaid Survey','Routine','Schiebel Camcopter S-100 — GFIG UAS XX','North America','NavCan partner drone survey mission, VOR/DME overfly and signal integrity check CYVR to CYYZ corridor. Operate Schiebel Camcopter S-100 under NavCan coordination. File UAS flight plan via TC Canada portal prior to departure.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0296</div>
+              <div class="mission-route">CYVR <span class="mission-route-arrow">→</span> CYYZ</div>
+            </div>
+            <span class="badge badge-routine">Routine</span>
+          </div>
+          <div class="text-sm text-sub">UAS Navaid Survey <span class="mission-class class-h">CLASS H</span></div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">Camcopter S-100</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">N. America</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">4h 20m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+210 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0296')">Claim Mission</button>
+          </div>
+        </div>
+
       </div><!-- end mission-grid -->
 
       <!-- Load More -->
@@ -481,6 +565,18 @@
       <div id="modal-ovp-notice" style="display:none; background:rgba(88,101,242,0.06); border:1px solid rgba(88,101,242,0.22); border-radius:var(--r); padding:10px 14px; font-size:0.8rem; color:#8891f5; line-height:1.55; margin-bottom:12px;">
         ✈ <strong>CLASS E — OPERATIONAL VALIDATION PLATFORM</strong><br>
         This mission requires an A319, B737-700, or B727-200 operating as <strong>GFIG OPS XX</strong>. Do NOT use King Air or other calibration aircraft. Fly at realistic airline speeds. All operations must reflect standard airline procedures.
+      </div>
+      <div id="modal-spy-notice" style="display:none; background:rgba(244,196,48,0.05); border:1px solid rgba(244,196,48,0.22); border-radius:var(--r); padding:10px 14px; font-size:0.8rem; color:#f4c430; line-height:1.55; margin-bottom:12px;">
+        🔍 <strong>CLASS F — SURVEILLANCE OPERATION</strong><br>
+        This mission requires the <strong>Britten-Norman Spylander IS-3T</strong> operating as <strong>GFIG SPY XX</strong>. UK &amp; European airspace only. Maintain low-altitude patrol profile. Coordinate with UK partner agency prior to departure. Do NOT use jet or calibration aircraft.
+      </div>
+      <div id="modal-heli-notice" style="display:none; background:rgba(38,198,218,0.05); border:1px solid rgba(38,198,218,0.22); border-radius:var(--r); padding:10px 14px; font-size:0.8rem; color:#26c6da; line-height:1.55; margin-bottom:12px;">
+        🚁 <strong>CLASS G — AERIAL MEDIA (HELICOPTER)</strong><br>
+        This mission requires an <strong>Airbus H125</strong> or <strong>Bell 206B JetRanger</strong> operating as <strong>GFIG MEDIA XX</strong>. Fixed-wing aircraft are not permitted. Observe all low-altitude airspace restrictions and media corridor clearances.
+      </div>
+      <div id="modal-uas-notice" style="display:none; background:rgba(102,187,106,0.05); border:1px solid rgba(102,187,106,0.22); border-radius:var(--r); padding:10px 14px; font-size:0.8rem; color:#66bb6a; line-height:1.55; margin-bottom:12px;">
+        🛸 <strong>CLASS H — UAS / DRONE SURVEY</strong><br>
+        This mission is a partner agency UAS operation. Use <strong>Schiebel Camcopter S-100</strong> or <strong>DJI Matrice 350 RTK</strong> as <strong>GFIG UAS XX</strong>. File UAS flight plan with the relevant authority (NavCan / NATS / EASA) before departure. Manned aircraft are not permitted for Class H.
       </div>
       <div class="alert alert-warn" style="font-size:0.82rem;">
         📋 After claiming, your mission will appear under "My Active Missions" on the Dashboard. File your report within 24 hours of completion.

@@ -915,6 +915,53 @@ footer { background: var(--bg-secondary); border-top: 1px solid var(--border); p
 .mission-class.class-c { background: rgba(255,171,64,0.08); color: var(--monitor); border: 1px solid rgba(255,171,64,0.2); }
 .mission-class.class-d { background: rgba(255,82,82,0.08);  color: var(--danger);  border: 1px solid rgba(255,82,82,0.2);  }
 .mission-class.class-e { background: rgba(88,101,242,0.08); color: #8891f5;        border: 1px solid rgba(88,101,242,0.2); }
+.mission-class.class-f { background: rgba(244,196,48,0.08); color: #f4c430;        border: 1px solid rgba(244,196,48,0.2); }
+.mission-class.class-g { background: rgba(38,198,218,0.08); color: #26c6da;        border: 1px solid rgba(38,198,218,0.2); }
+.mission-class.class-h { background: rgba(102,187,106,0.08);color: #66bb6a;        border: 1px solid rgba(102,187,106,0.2);}
+
+/* ── Specialist fleet tags (Spylander / Helicopter / UAS) ── */
+.fleet-spy-tag {
+  font-family: var(--font-head);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 3px 9px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 10px;
+  background: rgba(244,196,48,0.08);
+  color: #f4c430;
+  border: 1px solid rgba(244,196,48,0.25);
+}
+.fleet-heli-tag {
+  font-family: var(--font-head);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 3px 9px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 10px;
+  background: rgba(38,198,218,0.08);
+  color: #26c6da;
+  border: 1px solid rgba(38,198,218,0.25);
+}
+.fleet-uas-tag {
+  font-family: var(--font-head);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 3px 9px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 10px;
+  background: rgba(102,187,106,0.08);
+  color: #66bb6a;
+  border: 1px solid rgba(102,187,106,0.25);
+}
+.fleet-card-division.spy  { background: linear-gradient(90deg, #f4c430 0%, var(--orange) 100%); }
+.fleet-card-division.heli { background: linear-gradient(90deg, #26c6da 0%, var(--blue) 100%); }
+.fleet-card-division.uas  { background: linear-gradient(90deg, #66bb6a 0%, #26c6da 100%); }
 
 /* ── Global capability cards ── */
 .global-cap-card {
