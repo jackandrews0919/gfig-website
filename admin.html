@@ -581,14 +581,60 @@
               <input class="admin-input" type="text" placeholder="e.g. RWY 27R ILS">
             </div>
             <div class="admin-form-group">
+              <label class="admin-form-label">MISSION CLASS</label>
+              <select class="admin-select">
+                <option>Class A — ILS Calibration (King Air / King Air 350ER)</option>
+                <option>Class B — VOR / NDB / Survey (King Air)</option>
+                <option>Class C — RNAV / Approach (Falcon 20 / Learjet)</option>
+                <option>Class D — Advanced Procedure (Citation CJ4 / Falcon 20)</option>
+                <option>Class E — OVP (A319 / 737-700 / 727-200 only)</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
               <label class="admin-form-label">TYPE</label>
               <select class="admin-select">
-                <option>ILS Calibration</option>
-                <option>VOR Check</option>
-                <option>NDB Survey</option>
-                <option>RNAV/RNP Validation</option>
-                <option>Approach Design</option>
-                <option>SID/STAR Survey</option>
+                <optgroup label="── Class A ──">
+                  <option>ILS Calibration</option>
+                </optgroup>
+                <optgroup label="── Class B ──">
+                  <option>VOR Check</option>
+                  <option>NDB Calibration</option>
+                  <option>Airport Survey</option>
+                </optgroup>
+                <optgroup label="── Class C ──">
+                  <option>Approach Validation</option>
+                  <option>RNAV / RNP Check</option>
+                </optgroup>
+                <optgroup label="── Class D ──">
+                  <option>Procedure Validation</option>
+                  <option>SID / STAR Advanced</option>
+                </optgroup>
+                <optgroup label="── Class E · OVP ──">
+                  <option>RNAV/RNP Airline Procedures</option>
+                  <option>Traffic Flow Validation</option>
+                  <option>Low Visibility (CAT II/III)</option>
+                  <option>Steep Approach Validation</option>
+                  <option>Departure Procedure Validation</option>
+                  <option>Flight Test / Research</option>
+                  <option>Sensor &amp; Surveillance</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">AIRCRAFT</label>
+              <select class="admin-select">
+                <optgroup label="── Inspection Fleet ──">
+                  <option>King Air B200 (Class A/B)</option>
+                  <option>King Air 350ER (Class A/B)</option>
+                  <option>Falcon 20 (Class C/D)</option>
+                  <option>Learjet 60XR (Class A/C)</option>
+                  <option>Citation CJ4 (Class C/D)</option>
+                </optgroup>
+                <optgroup label="── OVP Fleet (Class E only) ──">
+                  <option>A319 — GFIG OPS XX</option>
+                  <option>737-700 — GFIG OPS XX</option>
+                  <option>727-200 — GFIG OPS XX</option>
+                </optgroup>
               </select>
             </div>
             <div class="admin-form-group">

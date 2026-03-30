@@ -84,12 +84,31 @@
         </select>
         <select class="filter-select" id="filter-type">
           <option value="">All Types</option>
-          <option value="ils">ILS Calibration</option>
-          <option value="vor">VOR Check</option>
-          <option value="ndb">NDB Calibration</option>
-          <option value="approach">Approach Validation</option>
-          <option value="survey">Airport Survey</option>
-          <option value="procedure">Procedure Validation</option>
+          <optgroup label="── CLASS A / B / C / D ──">
+            <option value="ils">ILS Calibration</option>
+            <option value="vor">VOR Check</option>
+            <option value="ndb">NDB Calibration</option>
+            <option value="approach">Approach Validation</option>
+            <option value="survey">Airport Survey</option>
+            <option value="procedure">Procedure Validation</option>
+          </optgroup>
+          <optgroup label="── CLASS E · OVP ──">
+            <option value="ovp-rnav">RNAV/RNP Airline Procedures</option>
+            <option value="ovp-traffic">Traffic Flow Validation</option>
+            <option value="ovp-lowvis">Low Visibility (CAT II/III)</option>
+            <option value="ovp-steep">Steep Approach Validation</option>
+            <option value="ovp-departure">Departure Procedure Validation</option>
+            <option value="ovp-flighttest">Flight Test / Research</option>
+            <option value="ovp-sensor">Sensor &amp; Surveillance</option>
+          </optgroup>
+        </select>
+        <select class="filter-select" id="filter-class">
+          <option value="">All Classes</option>
+          <option value="a">Class A — ILS Calibration</option>
+          <option value="b">Class B — VOR / NDB</option>
+          <option value="c">Class C — RNAV</option>
+          <option value="d">Class D — Advanced</option>
+          <option value="e">Class E — OVP (A319 / 737 / 727)</option>
         </select>
         <select class="filter-select" id="filter-priority">
           <option value="">All Priority</option>
@@ -370,6 +389,69 @@
           </div>
         </div>
 
+        <div class="mission-card" data-region="europe" data-type="ovp-rnav" data-priority="priority" data-status="available" onclick="openMissionModal('GFI-2026-0295','EGLL','EGNX','RNAV/RNP Airline Procedures','Priority','A319 — GFIG OPS XX','Europe','Validate RNAV approach and SID/STAR procedures at EGNX using airline speed profile. A319 required. Full fuel load, realistic passenger weights. DO NOT calibrate navaids.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0295</div>
+              <div class="mission-route">EGLL <span class="mission-route-arrow">→</span> EGNX</div>
+            </div>
+            <span class="badge badge-priority">Priority</span>
+          </div>
+          <div class="text-sm text-sub">RNAV/RNP Airline Procedures <span class="mission-class class-e">CLASS E</span></div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">A319 — GFIG OPS XX</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Europe</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">1h 10m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+220 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0295')">Claim Mission</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="northamerica" data-type="ovp-traffic" data-priority="routine" data-status="available" onclick="openMissionModal('GFI-2026-0294','KJFK','KORD','Traffic Flow Validation','Routine','737-700 — GFIG OPS XX','North America','Traffic pattern stress test across KSEA-KORD high-density corridor. Multiple approaches, holds, go-arounds. Validate ATC departure flow procedures. Airline procedures only.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0294</div>
+              <div class="mission-route">KJFK <span class="mission-route-arrow">→</span> KORD</div>
+            </div>
+            <span class="badge badge-routine">Routine</span>
+          </div>
+          <div class="text-sm text-sub">Traffic Flow Validation <span class="mission-class class-e">CLASS E</span></div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">737-700 — GFIG OPS XX</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">N. America</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">2h 30m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+180 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0294')">Claim Mission</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="asiapacific" data-type="ovp-flighttest" data-priority="priority" data-status="available" onclick="openMissionModal('GFI-2026-0293','WSSS','VHHH','Flight Test / Research','Priority','727-200 — GFIG OPS XX','Asia-Pacific','Research platform mission. Sensor sweep and surveillance simulation across the VHHH corridors. Complex airspace — file WX reports and carry full fuel reserves. B727 research platform only.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0293</div>
+              <div class="mission-route">WSSS <span class="mission-route-arrow">→</span> VHHH</div>
+            </div>
+            <span class="badge badge-priority">Priority</span>
+          </div>
+          <div class="text-sm text-sub">Flight Test / Research <span class="mission-class class-e">CLASS E</span></div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">727-200 — GFIG OPS XX</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Asia-Pacific</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">3h 40m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+260 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0293')">Claim Mission</button>
+          </div>
+        </div>
+
       </div><!-- end mission-grid -->
 
       <!-- Load More -->
@@ -395,6 +477,10 @@
       <div class="form-group">
         <div class="form-label">Mission Brief</div>
         <div class="alert alert-info" id="modal-brief" style="font-size:0.85rem;"></div>
+      </div>
+      <div id="modal-ovp-notice" style="display:none; background:rgba(88,101,242,0.06); border:1px solid rgba(88,101,242,0.22); border-radius:var(--r); padding:10px 14px; font-size:0.8rem; color:#8891f5; line-height:1.55; margin-bottom:12px;">
+        ✈ <strong>CLASS E — OPERATIONAL VALIDATION PLATFORM</strong><br>
+        This mission requires an A319, B737-700, or B727-200 operating as <strong>GFIG OPS XX</strong>. Do NOT use King Air or other calibration aircraft. Fly at realistic airline speeds. All operations must reflect standard airline procedures.
       </div>
       <div class="alert alert-warn" style="font-size:0.82rem;">
         📋 After claiming, your mission will appear under "My Active Missions" on the Dashboard. File your report within 24 hours of completion.

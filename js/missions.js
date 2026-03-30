@@ -5,6 +5,16 @@
 
 let currentMissionData = {};
 
+/* ── Mission type → class mapping ── */
+function getClassFromType(typeStr) {
+  const t = typeStr.toLowerCase();
+  if (t.includes('ils') || t.includes('localizer') || t.includes('glide slope')) return 'a';
+  if (t.includes('vor') || t.includes('ndb') || t.includes('survey') || t.includes('dme')) return 'b';
+  if (t.includes('approach') || t.includes('rnav') || t.includes('rnp')) return 'c';
+  if (t.includes('procedure') || t.includes('sid') || t.includes('star') || t.includes('advanced')) return 'd';
+  return 'e'; // traffic, flight test, low vis, steep, departure, sensor, ovp
+}
+
 // ── Filter missions ──────────────────────────────────────────────
 function applyFilters() {
   const search   = (document.getElementById('mission-search')?.value || '').toLowerCase();
@@ -12,6 +22,9 @@ function applyFilters() {
   const type     = document.getElementById('filter-type')?.value || '';
   const priority = document.getElementById('filter-priority')?.value || '';
   const status   = document.getElementById('filter-status')?.value || '';
+  const mClass   = document.getElementById('filter-class')?.value || '';
+
+  const TYPE_CLASS = { ils:'a', vor:'b', ndb:'b', survey:'b', approach:'c', procedure:'d' };
 
   const cards = document.querySelectorAll('#mission-grid .mission-card');
   let visible = 0;
@@ -22,14 +35,16 @@ function applyFilters() {
     const cardPriority = card.dataset.priority || '';
     const cardStatus   = card.dataset.status   || '';
     const cardText     = card.textContent.toLowerCase();
+    const cardClass    = cardType.startsWith('ovp-') ? 'e' : (TYPE_CLASS[cardType] || '');
 
     const matchSearch   = !search   || cardText.includes(search);
     const matchRegion   = !region   || cardRegion   === region;
     const matchType     = !type     || cardType     === type;
     const matchPriority = !priority || cardPriority === priority;
     const matchStatus   = !status   || cardStatus   === status;
+    const matchClass    = !mClass   || cardClass    === mClass;
 
-    const show = matchSearch && matchRegion && matchType && matchPriority && matchStatus;
+    const show = matchSearch && matchRegion && matchType && matchPriority && matchStatus && matchClass;
     card.style.display = show ? '' : 'none';
     if (show) visible++;
   });
@@ -39,7 +54,7 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  ['filter-region', 'filter-type', 'filter-priority', 'filter-status'].forEach(id => {
+  ['filter-region', 'filter-type', 'filter-priority', 'filter-status', 'filter-class'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -78,12 +93,26 @@ function openMissionModal(id, dep, arr, type, priority, aircraft, region, brief)
 
   const detailsEl = document.getElementById('modal-details');
   const priorityClass = priority.toLowerCase() === 'urgent' ? 'badge-urgent' : priority.toLowerCase() === 'priority' ? 'badge-priority' : 'badge-routine';
+
+  const missionClass = getClassFromType(type);
+  const classInfo = {
+    a: { label: 'Class A — ILS Calibration', color: 'var(--pass)'    },
+    b: { label: 'Class B — VOR / NDB',       color: 'var(--blue)'    },
+    c: { label: 'Class C — RNAV',            color: 'var(--monitor)' },
+    d: { label: 'Class D — Advanced',        color: 'var(--danger)'  },
+    e: { label: 'Class E — OVP',             color: '#8891f5'        }
+  }[missionClass] || { label: 'Standard', color: 'var(--text-sub)' };
+
   detailsEl.innerHTML = `
     <div><div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Aircraft</div><div style="font-family:var(--font-mono); font-size:0.9rem; color:var(--text);">${aircraft}</div></div>
     <div><div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Region</div><div style="font-size:0.9rem; color:var(--text);">${region}</div></div>
     <div><div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Priority</div><div><span class="badge ${priorityClass}">${priority}</span></div></div>
-    <div><div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Type</div><div style="font-size:0.9rem; color:var(--text);">${type}</div></div>
+    <div><div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Classification</div><div style="font-family:var(--font-mono); font-size:0.78rem; color:${classInfo.color};">${classInfo.label}</div></div>
   `;
+
+  /* Show OVP notice for Class E */
+  const ovpNotice = document.getElementById('modal-ovp-notice');
+  if (ovpNotice) ovpNotice.style.display = missionClass === 'e' ? 'block' : 'none';
 
   document.getElementById('mission-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
