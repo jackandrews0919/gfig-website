@@ -511,7 +511,7 @@
           <div class="activity-feed">
             <div class="activity-feed-head">RECENT ACTIVITY</div>
             <div class="activity-item"><div class="activity-dot" style="background:var(--pass)"></div><div><div>CPT Harrison submitted ILS report — EGLL RWY 27R</div><div class="activity-time">14 min ago</div></div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:var(--blue)"></div><div><div>New member joined: FO Chen — UK Division</div><div class="activity-time">1 hr ago</div></div></div>
+            <div class="activity-item"><div class="activity-dot" style="background:var(--blue)"></div><div><div>New member joined: FO Chen — Europe Region</div><div class="activity-time">1 hr ago</div></div></div>
             <div class="activity-item"><div class="activity-dot" style="background:var(--orange)"></div><div><div>NOTAM GF-2025-047 created — CYYZ maintenance</div><div class="activity-time">3 hr ago</div></div></div>
             <div class="activity-item"><div class="activity-dot" style="background:var(--pass)"></div><div><div>Mission GF-2025-0088 completed — KEWR VOR-A</div><div class="activity-time">5 hr ago</div></div></div>
             <div class="activity-item"><div class="activity-dot" style="background:var(--monitor)"></div><div><div>ILS G/S deviation noted — KORD RWY 10C review needed</div><div class="activity-time">8 hr ago</div></div></div>
@@ -545,16 +545,16 @@
             <input type="text" class="admin-search" placeholder="Search callsign or name…" oninput="filterTable(this, 'members-tbody')">
           </div>
           <table class="admin-table">
-            <thead><tr><th>CALLSIGN</th><th>NAME</th><th>RANK</th><th>DIVISION</th><th>FLIGHTS</th><th>JOINED</th><th>STATUS</th><th></th></tr></thead>
+            <thead><tr><th>CALLSIGN</th><th>NAME</th><th>RANK</th><th>REGION</th><th>FLIGHTS</th><th>JOINED</th><th>STATUS</th><th></th></tr></thead>
             <tbody id="members-tbody">
-              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GFIG-DIR-0001</td><td>DIR Williams</td><td><span class="rank-badge rank-director">Director</span></td><td>US</td><td>312</td><td>Jan 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GFIG-INS-0042</td><td>CPT Harrison</td><td><span class="rank-badge rank-senior">Senior Insp.</span></td><td>UK</td><td>187</td><td>Mar 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0067</td><td>FO Martinez</td><td><span class="rank-badge rank-inspector">Inspector</span></td><td>US</td><td>94</td><td>Apr 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0091</td><td>CPT Okonkwo</td><td><span class="rank-badge rank-senior">Senior Insp.</span></td><td>CA</td><td>143</td><td>May 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono)">GFIG-JR-0108</td><td>FO Chen</td><td><span class="rank-badge rank-junior">Junior Insp.</span></td><td>UK</td><td>12</td><td>Jun 2025</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0053</td><td>FO Tanaka</td><td><span class="rank-badge rank-inspector">Inspector</span></td><td>CA</td><td>76</td><td>Mar 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0039</td><td>INS Rivera</td><td><span class="rank-badge rank-junior">Junior Insp.</span></td><td>US</td><td>41</td><td>Feb 2024</td><td><span class="status-badge badge-reserve">Reserve</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0077</td><td>CPT Al-Farsi</td><td><span class="rank-badge rank-senior">Senior Insp.</span></td><td>UK</td><td>118</td><td>Apr 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GFIG-DIR-0001</td><td>DIR Williams</td><td><span class="rank-badge rank-director">Director</span></td><td>North America</td><td>312</td><td>Jan 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GFIG-INS-0042</td><td>CPT Harrison</td><td><span class="rank-badge rank-senior">Senior Insp.</span></td><td>Europe</td><td>187</td><td>Mar 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0067</td><td>FO Martinez</td><td><span class="rank-badge rank-inspector">Inspector</span></td><td>North America</td><td>94</td><td>Apr 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0091</td><td>CPT Okonkwo</td><td><span class="rank-badge rank-senior">Senior Insp.</span></td><td>Africa</td><td>143</td><td>May 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono)">GFIG-JR-0108</td><td>FO Chen</td><td><span class="rank-badge rank-junior">Junior Insp.</span></td><td>Asia-Pacific</td><td>12</td><td>Jun 2025</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0053</td><td>FO Tanaka</td><td><span class="rank-badge rank-inspector">Inspector</span></td><td>Asia-Pacific</td><td>76</td><td>Mar 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0039</td><td>INS Rivera</td><td><span class="rank-badge rank-junior">Junior Insp.</span></td><td>Latin America</td><td>41</td><td>Feb 2024</td><td><span class="status-badge badge-reserve">Reserve</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0077</td><td>CPT Al-Farsi</td><td><span class="rank-badge rank-senior">Senior Insp.</span></td><td>Middle East</td><td>118</td><td>Apr 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
             </tbody>
           </table>
         </div>
@@ -592,12 +592,15 @@
               </select>
             </div>
             <div class="admin-form-group">
-              <label class="admin-form-label">DIVISION</label>
+              <label class="admin-form-label">OPERATING REGION</label>
               <select class="admin-select">
-                <option>UK — CALIBRATION</option>
-                <option>US — FLIGHT CHECK</option>
-                <option>CA — FLIGHT INSPECTION</option>
-                <option>Any</option>
+                <option>Europe</option>
+                <option>North America</option>
+                <option>Asia-Pacific</option>
+                <option>Middle East</option>
+                <option>Africa</option>
+                <option>Latin America</option>
+                <option>Any Region</option>
               </select>
             </div>
             <div class="admin-form-group">
@@ -624,13 +627,13 @@
         <div class="admin-table-wrap">
           <div class="admin-table-head"><div class="admin-table-title">ACTIVE MISSIONS</div></div>
           <table class="admin-table">
-            <thead><tr><th>ID</th><th>LOCATION</th><th>TYPE</th><th>DIVISION</th><th>CLAIMED BY</th><th>STATUS</th><th></th></tr></thead>
+            <thead><tr><th>ID</th><th>LOCATION</th><th>TYPE</th><th>REGION</th><th>CLAIMED BY</th><th>STATUS</th><th></th></tr></thead>
             <tbody>
-              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0092</td><td>EGLL RWY 27L</td><td>ILS Calibration</td><td>UK</td><td>—</td><td><span class="status-badge badge-active">Available</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0091</td><td>KJFK RWY 13R</td><td>RNAV/RNP</td><td>US</td><td>CPT Harrison</td><td><span class="status-badge badge-pending">Claimed</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0090</td><td>CYVR VOR YVR</td><td>VOR Check</td><td>CA</td><td>—</td><td><span class="status-badge badge-active">Available</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0089</td><td>EGCC RWY 05R</td><td>ILS Calibration</td><td>UK</td><td>FO Martinez</td><td><span class="status-badge badge-pending">Claimed</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0088</td><td>KEWR VOR-A</td><td>VOR Check</td><td>US</td><td>CPT Okonkwo</td><td><span class="status-badge" style="background:rgba(0,230,118,0.06);color:var(--pass);border:1px solid rgba(0,230,118,0.15)">Completed</span></td><td><button class="tbl-action-btn success">Review</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0092</td><td>EGLL RWY 27L</td><td>ILS Calibration</td><td>Europe</td><td>—</td><td><span class="status-badge badge-active">Available</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0091</td><td>KJFK RWY 13R</td><td>RNAV/RNP</td><td>North America</td><td>CPT Harrison</td><td><span class="status-badge badge-pending">Claimed</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0090</td><td>CYVR VOR YVR</td><td>VOR Check</td><td>North America</td><td>—</td><td><span class="status-badge badge-active">Available</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0089</td><td>EGCC RWY 05R</td><td>ILS Calibration</td><td>Europe</td><td>FO Martinez</td><td><span class="status-badge badge-pending">Claimed</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0088</td><td>KEWR VOR-A</td><td>VOR Check</td><td>North America</td><td>CPT Okonkwo</td><td><span class="status-badge" style="background:rgba(0,230,118,0.06);color:var(--pass);border:1px solid rgba(0,230,118,0.15)">Completed</span></td><td><button class="tbl-action-btn success">Review</button></td></tr>
             </tbody>
           </table>
         </div>
@@ -711,7 +714,7 @@
             </div>
             <div class="admin-form-group">
               <label class="admin-form-label">ICAO / REGION</label>
-              <input class="admin-input" type="text" placeholder="e.g. EGLL or UK Division" id="notam-icao">
+              <input class="admin-input" type="text" placeholder="e.g. EGLL or Europe Region" id="notam-icao">
             </div>
             <div class="admin-form-group">
               <label class="admin-form-label">EXPIRES</label>
@@ -736,7 +739,7 @@
             <tbody>
               <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-047</td><td><span class="notam-type notam-maint">MAINT</span></td><td>CYYZ ILS RWY 06L maintenance suspension</td><td>CYYZ</td><td>22 Jun</td><td>26 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
               <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-046</td><td><span class="notam-type notam-ops">OPS</span></td><td>KJFK East Complex approaches paused pending re-survey</td><td>KJFK</td><td>20 Jun</td><td>30 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-045</td><td><span class="notam-type notam-trng">TRNG</span></td><td>UK Division recurrency training week</td><td>EGNX</td><td>17 Jun</td><td>24 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
+              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-045</td><td><span class="notam-type notam-trng">TRNG</span></td><td>Europe recurrency training week</td><td>EGNX</td><td>17 Jun</td><td>24 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
             </tbody>
           </table>
         </div>
@@ -858,7 +861,7 @@
           <div class="admin-form-title">ANNOUNCEMENT BANNER TEXT</div>
           <div class="admin-form-group" style="margin-bottom:14px">
             <label class="admin-form-label">BANNER MESSAGE</label>
-            <input class="admin-input" type="text" id="banner-text" placeholder="e.g. ⚠ UK Division maintenance window 22–24 Jun. See NOTAM GF-2025-047.">
+            <input class="admin-input" type="text" id="banner-text" placeholder="e.g. ⚠ ILS maintenance at CYYZ RWY 06L. See NOTAM GF-2025-047.">
           </div>
           <button class="btn btn-primary" onclick="toast('Banner settings saved')">Save Banner</button>
         </div>

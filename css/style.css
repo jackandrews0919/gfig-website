@@ -831,14 +831,11 @@ footer { background: var(--bg-secondary); border-top: 1px solid var(--border); p
   box-shadow: 0 8px 32px rgba(0,119,255,0.12);
 }
 
-.fleet-card-division { height: 5px; }
-.fleet-card-division.uk { background: linear-gradient(90deg, #012169 0%, #fff 45%, #C8102E 100%); }
-.fleet-card-division.us { background: linear-gradient(90deg, #B22234 0%, #fff 45%, #3C3B6E 100%); }
-.fleet-card-division.ca { background: linear-gradient(90deg, #FF0000 0%, #fff 50%, #FF0000 100%); }
+.fleet-card-division { height: 5px; background: linear-gradient(90deg, var(--orange) 0%, var(--blue) 100%); }
 
 .fleet-card-body { padding: 20px; }
 
-.fleet-division-tag {
+.fleet-role-tag {
   font-family: var(--font-head);
   font-size: 0.65rem;
   font-weight: 700;
@@ -847,10 +844,33 @@ footer { background: var(--bg-secondary); border-top: 1px solid var(--border); p
   border-radius: 4px;
   display: inline-block;
   margin-bottom: 10px;
+  background: rgba(255,106,0,0.08);
+  color: var(--orange);
+  border: 1px solid rgba(255,106,0,0.2);
 }
-.fleet-division-tag.uk { background: rgba(1,33,105,0.15); color: #6699ff; border: 1px solid rgba(1,33,105,0.3); }
-.fleet-division-tag.us { background: rgba(60,59,110,0.15); color: #9999ee; border: 1px solid rgba(60,59,110,0.3); }
-.fleet-division-tag.ca { background: rgba(255,0,0,0.08); color: #ff7777; border: 1px solid rgba(255,0,0,0.2); }
+
+/* ── Global capability cards ── */
+.global-cap-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 28px 24px;
+  text-align: center;
+  transition: border-color var(--t), transform var(--t);
+}
+.global-cap-card:hover { transform: translateY(-2px); border-color: var(--orange); }
+.global-cap-icon { font-size: 2.2rem; margin-bottom: 12px; }
+.global-cap-name {
+  font-family: var(--font-head);
+  font-size: 0.88rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+.global-cap-desc {
+  font-size: 0.78rem;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
 
 .fleet-aircraft-name {
   font-family: var(--font-head);
@@ -932,7 +952,7 @@ footer { background: var(--bg-secondary); border-top: 1px solid var(--border); p
 }
 
 /* ================================================================
-   ADMIN PANEL � rank badge overrides for admin table
+   ADMIN PANEL � rank badge overrides for admin table
    ================================================================ */
 
 .rank-badge {
@@ -964,7 +984,7 @@ footer { background: var(--bg-secondary); border-top: 1px solid var(--border); p
 .notam-trng  { background: rgba(0,230,118,0.08); color: var(--pass);    border: 1px solid rgba(0,230,118,0.15); }
 
 /* ================================================================
-   RESPONSIVE � fleet on small screens
+   RESPONSIVE � fleet on small screens
    ================================================================ */
 
 @media (max-width: 600px) {
