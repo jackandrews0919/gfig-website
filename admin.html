@@ -757,6 +757,22 @@
 
         <div class="admin-section-divider"></div>
 
+        <!-- New Applications -->
+        <div class="webhook-card">
+          <div class="webhook-header">
+            <div class="webhook-icon">📋</div>
+            <div>
+              <div class="webhook-channel-name">#new-applications</div>
+              <div class="webhook-channel-desc">Posts when someone submits an inspector application via <strong>join.html</strong>.</div>
+            </div>
+          </div>
+          <div class="webhook-row">
+            <input type="url" class="webhook-input" id="wh-applications" placeholder="https://discord.com/api/webhooks/…" autocomplete="off">
+            <button class="webhook-test-btn" onclick="testWebhook('wh-applications', 'new-applications')">Test</button>
+            <button class="webhook-save-btn" onclick="saveWebhook('wh-applications', 'wh_applications')">Save</button>
+          </div>
+        </div>
+
         <!-- Completed Operations -->
         <div class="webhook-card">
           <div class="webhook-header">
@@ -864,6 +880,35 @@
             <input class="admin-input" type="text" id="banner-text" placeholder="e.g. ⚠ ILS maintenance at CYYZ RWY 06L. See NOTAM GF-2025-047.">
           </div>
           <button class="btn btn-primary" onclick="toast('Banner settings saved')">Save Banner</button>
+        </div>
+
+        <div class="admin-form">
+          <div class="admin-form-title">EMAILJS — APPLICATION CONFIRMATION EMAILS</div>
+          <div class="alert alert-info" style="font-size:0.8rem; margin-bottom:18px; line-height:1.6;">
+            EmailJS sends automatic confirmation emails to applicants when they submit via <strong>join.html</strong>.<br>
+            <a href="https://www.emailjs.com" target="_blank" rel="noopener" style="color:var(--blue);">Sign up free at emailjs.com</a>, create a service &amp; email template, then paste your credentials below.<br><br>
+            <strong>Required template variables:</strong>
+            <code style="font-family:var(--font-mono);font-size:0.78rem;color:var(--orange)">to_name</code>&nbsp;
+            <code style="font-family:var(--font-mono);font-size:0.78rem;color:var(--orange)">to_email</code>&nbsp;
+            <code style="font-family:var(--font-mono);font-size:0.78rem;color:var(--orange)">ref_number</code>&nbsp;
+            <code style="font-family:var(--font-mono);font-size:0.78rem;color:var(--orange)">discord_username</code>&nbsp;
+            <code style="font-family:var(--font-mono);font-size:0.78rem;color:var(--orange)">simulator</code>&nbsp;
+            <code style="font-family:var(--font-mono);font-size:0.78rem;color:var(--orange)">experience</code>&nbsp;
+            <code style="font-family:var(--font-mono);font-size:0.78rem;color:var(--orange)">hours</code>
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-form-label">PUBLIC KEY</label>
+            <input class="admin-input" type="text" id="ejs-public-key" placeholder="e.g. abcXYZ123…" autocomplete="off">
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-form-label">SERVICE ID</label>
+            <input class="admin-input" type="text" id="ejs-service-id" placeholder="e.g. service_xxxxxxx" autocomplete="off">
+          </div>
+          <div class="admin-form-group" style="margin-bottom:18px">
+            <label class="admin-form-label">TEMPLATE ID</label>
+            <input class="admin-input" type="text" id="ejs-template-id" placeholder="e.g. template_xxxxxxx" autocomplete="off">
+          </div>
+          <button class="btn btn-secondary" onclick="saveEmailJS()">Save EmailJS Config</button>
         </div>
       </section>
 
@@ -989,11 +1034,39 @@
       }
     }
 
+    /* ── EmailJS config ── */
+    function saveEmailJS() {
+      const pub  = document.getElementById('ejs-public-key').value.trim();
+      const svc  = document.getElementById('ejs-service-id').value.trim();
+      const tmpl = document.getElementById('ejs-template-id').value.trim();
+      if (!pub || !svc || !tmpl) { toast('Please fill in all three EmailJS fields'); return; }
+      localStorage.setItem('gfig_ejs_public_key',  pub);
+      localStorage.setItem('gfig_ejs_service_id',  svc);
+      localStorage.setItem('gfig_ejs_template_id', tmpl);
+      toast('✓ EmailJS credentials saved');
+    }
+
     /* ── Restore saved webhook URLs ── */
     (function restoreWebhooks() {
-      const map = { 'wh-completed': 'gfig_wh_completed', 'wh-notams': 'gfig_wh_notams', 'wh-announce': 'gfig_wh_announce' };
+      const map = {
+        'wh-applications': 'gfig_wh_applications',
+        'wh-completed':    'gfig_wh_completed',
+        'wh-notams':       'gfig_wh_notams',
+        'wh-announce':     'gfig_wh_announce'
+      };
       Object.entries(map).forEach(([id, key]) => {
-        const el = document.getElementById(id);
+        const el  = document.getElementById(id);
+        const val = localStorage.getItem(key);
+        if (el && val) el.value = val;
+      });
+      /* Restore EmailJS fields */
+      const ejsMap = {
+        'ejs-public-key':  'gfig_ejs_public_key',
+        'ejs-service-id':  'gfig_ejs_service_id',
+        'ejs-template-id': 'gfig_ejs_template_id'
+      };
+      Object.entries(ejsMap).forEach(([id, key]) => {
+        const el  = document.getElementById(id);
         const val = localStorage.getItem(key);
         if (el && val) el.value = val;
       });

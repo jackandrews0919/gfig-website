@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apply to Join — GFIG</title>
+  <meta name="description" content="Apply to join the Global Flight Inspection Group Virtual. Fill out your inspector application and receive your callsign within 24–48 hours.">
+  <meta property="og:title" content="Join GFIG — Inspector Application">
+  <meta property="og:description" content="Apply to join GFIG Virtual — the premier virtual flight inspection organisation on VATSIM & IVAO.">
+  <meta property="og:image" content="https://jackandrews0919.github.io/gfig-website/logo.png">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <!-- EmailJS SDK — configure keys in Admin Panel > Settings -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    .join-page { padding: 48px 0 80px; }
+
+    .join-header { text-align: center; margin-bottom: 44px; }
+    .join-header h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 8px 0 12px; color: var(--text); }
+    .join-header p { color: var(--text-sub); font-size: 0.93rem; max-width: 540px; margin: 0 auto; line-height: 1.7; }
+
+    .join-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 28px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .join-grid { grid-template-columns: 1fr; }
+      .join-sidebar { order: -1; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    }
+    @media (max-width: 600px) {
+      .join-sidebar { grid-template-columns: 1fr; }
+    }
+
+    /* ── Form card ── */
+    .join-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 36px 36px 32px;
+    }
+    @media (max-width: 600px) { .join-card { padding: 24px 20px 20px; } }
+
+    .join-section { margin-bottom: 28px; }
+    .join-section-title {
+      font-family: var(--font-head);
+      font-size: 0.67rem;
+      letter-spacing: 0.15em;
+      color: var(--text-sub);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+    }
+
+    .join-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 520px) { .join-row { grid-template-columns: 1fr; } }
+
+    .join-field { margin-bottom: 16px; }
+    .join-field:last-child { margin-bottom: 0; }
+
+    .join-label {
+      display: block;
+      font-family: var(--font-head);
+      font-size: 0.67rem;
+      letter-spacing: 0.1em;
+      color: var(--text-sub);
+      margin-bottom: 7px;
+    }
+    .join-label .req { color: var(--orange); }
+    .join-label .opt { color: var(--text-muted); font-family: var(--font-body); letter-spacing: 0; font-size: 0.72rem; text-transform: none; }
+
+    .join-input {
+      width: 100%;
+      background: rgba(11, 31, 58, 0.9);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      padding: 10px 14px;
+      box-sizing: border-box;
+      transition: border-color var(--t), box-shadow var(--t);
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .join-input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,106,0,0.08); }
+    .join-input::placeholder { color: var(--text-muted); }
+    .join-input.error { border-color: var(--danger); }
+
+    select.join-input {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%23667a8a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    textarea.join-input {
+      min-height: 112px;
+      resize: vertical;
+      line-height: 1.65;
+    }
+
+    .char-info { font-size: 0.72rem; color: var(--text-muted); text-align: right; margin-top: 5px; transition: color 0.2s; }
+    .char-info.ok { color: var(--pass); }
+
+    /* Checkbox */
+    .join-checkbox { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; user-select: none; }
+    .join-checkbox input[type="checkbox"] {
+      width: 16px; height: 16px;
+      margin-top: 2px;
+      accent-color: var(--orange);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .join-checkbox span { font-size: 0.83rem; color: var(--text-sub); line-height: 1.55; }
+    .join-checkbox span a { color: var(--orange); text-decoration: none; }
+    .join-checkbox span a:hover { text-decoration: underline; }
+
+    /* Error box */
+    .join-error {
+      background: rgba(255, 82, 82, 0.06);
+      border: 1px solid rgba(255, 82, 82, 0.25);
+      border-radius: var(--r);
+      color: var(--danger);
+      font-size: 0.83rem;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+
+    /* Submit */
+    .join-submit { width: 100%; margin-top: 6px; padding: 14px 24px; font-size: 0.88rem; letter-spacing: 0.08em; }
+    .join-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Success screen ── */
+    .join-success {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 48px 36px 40px;
+      text-align: center;
+    }
+    @media (max-width: 600px) { .join-success { padding: 32px 20px 28px; } }
+
+    .success-icon {
+      width: 54px; height: 54px;
+      background: rgba(0, 230, 118, 0.08);
+      border: 2px solid var(--pass);
+      border-radius: 50%;
+      font-size: 1.4rem;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 18px;
+      color: var(--pass);
+    }
+    .success-title {
+      font-family: var(--font-head);
+      font-size: 1.3rem;
+      color: var(--text);
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+    }
+    .success-ref {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      color: var(--orange);
+      background: rgba(255, 106, 0, 0.08);
+      border: 1px solid rgba(255, 106, 0, 0.22);
+      border-radius: 6px;
+      padding: 9px 22px;
+      display: inline-block;
+      margin-bottom: 20px;
+      letter-spacing: 0.12em;
+    }
+    .success-msg { color: var(--text-sub); font-size: 0.9rem; line-height: 1.7; max-width: 440px; margin: 0 auto 22px; }
+    .success-steps { text-align: left; margin: 0 0 24px; display: flex; flex-direction: column; gap: 10px; }
+    .success-step { display: flex; align-items: center; gap: 10px; font-size: 0.83rem; color: var(--text-sub); }
+    .ss-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pass); flex-shrink: 0; }
+    .ss-dot.pending { background: var(--border); }
+    .success-discord-btn {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      background: #5865F2; color: white; border-radius: 8px;
+      padding: 13px 24px; text-decoration: none;
+      font-family: var(--font-head); font-size: 0.82rem; letter-spacing: 0.08em;
+      margin-bottom: 12px; transition: background 0.15s;
+    }
+    .success-discord-btn:hover { background: #4752C4; }
+
+    /* ── Sidebar ── */
+    .info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 22px 22px 18px;
+      margin-bottom: 16px;
+    }
+    .info-card:last-child { margin-bottom: 0; }
+    .info-card-title {
+      font-family: var(--font-head);
+      font-size: 0.67rem;
+      letter-spacing: 0.14em;
+      color: var(--text-sub);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+    .info-step { display: flex; gap: 12px; margin-bottom: 14px; }
+    .info-step:last-child { margin-bottom: 0; }
+    .info-step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(255, 106, 0, 0.08); border: 1px solid rgba(255, 106, 0, 0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-head); font-size: 0.6rem; color: var(--orange);
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .info-step-title { font-size: 0.85rem; color: var(--text); font-weight: 600; margin-bottom: 3px; }
+    .info-step-desc { font-size: 0.78rem; color: var(--text-sub); line-height: 1.5; }
+    .req-item { display: flex; gap: 9px; align-items: flex-start; font-size: 0.81rem; color: var(--text-sub); margin-bottom: 9px; line-height: 1.5; }
+    .req-item:last-child { margin-bottom: 0; }
+    .req-check { color: var(--pass); flex-shrink: 0; margin-top: 1px; font-size: 0.78rem; }
+    .discord-info-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: #5865F2; color: white; border-radius: 7px;
+      padding: 10px 18px; text-decoration: none;
+      font-family: var(--font-head); font-size: 0.76rem; letter-spacing: 0.08em;
+      margin-top: 12px; transition: background 0.15s;
+    }
+    .discord-info-btn:hover { background: #4752C4; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="logo.png" alt="GFIG – Global Flight Inspection Group Virtual" class="nav-logo-img">
+      </a>
+      <div class="nav-actions">
+        <a href="login.html" class="btn btn-secondary" style="font-size:0.82rem;padding:7px 16px;">Member Login →</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Page ── -->
+  <div class="page join-page">
+    <div class="container">
+
+      <!-- Page Header -->
+      <div class="join-header">
+        <div class="section-tag">Recruitment</div>
+        <h1>Join GFIG Virtual</h1>
+        <p>Fill in your inspector application below. Approved members receive a unique callsign, full mission board access, and a welcome brief within 24–48 hours.</p>
+      </div>
+
+      <div class="join-grid">
+
+        <!-- ── Form / Success wrap ── -->
+        <div id="form-wrap">
+
+          <!-- Application Form -->
+          <div class="join-card" id="form-card">
+            <form id="apply-form" novalidate>
+
+              <!-- 01 PERSONAL DETAILS -->
+              <div class="join-section">
+                <div class="join-section-title">01 — PERSONAL DETAILS</div>
+                <div class="join-row">
+                  <div class="join-field">
+                    <label class="join-label" for="f-name">FULL NAME <span class="req">*</span></label>
+                    <input class="join-input" type="text" id="f-name" autocomplete="name" placeholder="Your full name" required>
+                  </div>
+                  <div class="join-field">
+                    <label class="join-label" for="f-email">EMAIL ADDRESS <span class="req">*</span></label>
+                    <input class="join-input" type="email" id="f-email" autocomplete="email" placeholder="your@email.com" required>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 02 VIRTUAL AVIATION PROFILE -->
+              <div class="join-section">
+                <div class="join-section-title">02 — VIRTUAL AVIATION PROFILE</div>
+                <div class="join-row">
+                  <div class="join-field">
+                    <label class="join-label" for="f-discord">DISCORD USERNAME <span class="req">*</span></label>
+                    <input class="join-input" type="text" id="f-discord" placeholder="e.g. username" required>
+                  </div>
+                  <div class="join-field">
+                    <label class="join-label" for="f-vatsim">VATSIM CID <span class="opt">(optional)</span></label>
+                    <input class="join-input" type="text" id="f-vatsim" placeholder="e.g. 1234567" inputmode="numeric" pattern="[0-9]{6,8}">
+                  </div>
+                </div>
+                <div class="join-row">
+                  <div class="join-field">
+                    <label class="join-label" for="f-ivao">IVAO VID <span class="opt">(optional)</span></label>
+                    <input class="join-input" type="text" id="f-ivao" placeholder="e.g. 123456" inputmode="numeric" pattern="[0-9]{5,7}">
+                  </div>
+                  <div class="join-field">
+                    <label class="join-label" for="f-sim">PRIMARY SIMULATOR <span class="req">*</span></label>
+                    <select class="join-input" id="f-sim" required>
+                      <option value="" disabled selected>Select simulator…</option>
+                      <option>MSFS 2024</option>
+                      <option>MSFS 2020</option>
+                      <option>X-Plane 12</option>
+                      <option>X-Plane 11</option>
+                      <option>Prepar3D v5</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="join-row">
+                  <div class="join-field">
+                    <label class="join-label" for="f-exp">EXPERIENCE LEVEL <span class="req">*</span></label>
+                    <select class="join-input" id="f-exp" required>
+                      <option value="" disabled selected>Select level…</option>
+                      <option>Student Pilot</option>
+                      <option>Private Pilot</option>
+                      <option>Commercial Pilot</option>
+                      <option>ATP / Airline</option>
+                      <option>Real-World Pilot</option>
+                    </select>
+                  </div>
+                  <div class="join-field">
+                    <label class="join-label" for="f-hours">APPROX. LOGGED HOURS <span class="req">*</span></label>
+                    <select class="join-input" id="f-hours" required>
+                      <option value="" disabled selected>Select range…</option>
+                      <option>Under 100 hours</option>
+                      <option>100 – 500 hours</option>
+                      <option>500 – 1,000 hours</option>
+                      <option>1,000 – 2,500 hours</option>
+                      <option>2,500+ hours</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 03 YOUR APPLICATION -->
+              <div class="join-section">
+                <div class="join-section-title">03 — YOUR APPLICATION</div>
+                <div class="join-field">
+                  <label class="join-label" for="f-reason">WHY DO YOU WANT TO JOIN GFIG? <span class="req">*</span></label>
+                  <textarea class="join-input" id="f-reason" placeholder="Tell us about your interest in flight inspection operations and what you'd bring to the group (minimum 30 characters)…" required minlength="30"></textarea>
+                  <div class="char-info" id="reason-counter">0 characters</div>
+                </div>
+                <div class="join-field">
+                  <label class="join-label" for="f-source">HOW DID YOU HEAR ABOUT US? <span class="opt">(optional)</span></label>
+                  <select class="join-input" id="f-source">
+                    <option value="" selected>Prefer not to say</option>
+                    <option>Discord</option>
+                    <option>VATSIM Forums</option>
+                    <option>Reddit</option>
+                    <option>Friend / Referral</option>
+                    <option>YouTube / Content Creator</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div class="join-field">
+                  <label class="join-checkbox">
+                    <input type="checkbox" id="f-agree" required>
+                    <span>I agree to follow the <a href="sops.html" target="_blank">GFIG SOPs</a> and code of conduct, and confirm all information provided is accurate. <span class="req">*</span></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="join-error" id="form-error" style="display:none;"></div>
+
+              <button type="button" class="btn btn-primary join-submit" id="submit-btn" onclick="submitApplication()">
+                SUBMIT APPLICATION →
+              </button>
+
+            </form>
+          </div><!-- /form-card -->
+
+          <!-- ── Success Screen ── -->
+          <div class="join-success" id="success-card" style="display:none;">
+            <div class="success-icon">✓</div>
+            <div class="success-title">APPLICATION RECEIVED</div>
+            <div class="success-ref" id="success-ref">GFIG-APP-0000</div>
+            <p class="success-msg" id="success-msg">Your application is being processed by the GFIG team. A confirmation email has been sent to your inbox. You'll hear back within 24–48 hours.</p>
+            <div class="success-steps">
+              <div class="success-step"><span class="ss-dot"></span>Application received and queued for review</div>
+              <div class="success-step"><span class="ss-dot"></span>Confirmation email sent to your inbox</div>
+              <div class="success-step"><span class="ss-dot pending"></span>GFIG staff review — 24 to 48 hours</div>
+              <div class="success-step"><span class="ss-dot pending"></span>Inspector callsign issued &amp; portal access granted</div>
+              <div class="success-step"><span class="ss-dot pending"></span>Orientation mission brief posted to Discord</div>
+            </div>
+            <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="success-discord-btn">
+              <svg width="18" height="14" viewBox="0 0 71 55" fill="currentColor"><path d="M60.1 4.9A58.5 58.5 0 0 0 45.5.7a40.5 40.5 0 0 0-1.8 3.7 54.1 54.1 0 0 0-16.4 0A37.9 37.9 0 0 0 25.5.7 58.4 58.4 0 0 0 10.9 5C1.6 19.4-1 33.3.3 47.1a59 59 0 0 0 18 9.1 44.3 44.3 0 0 0 3.8-6.2 38.4 38.4 0 0 1-6.1-2.9l1.5-1.1a42.2 42.2 0 0 0 36 0l1.5 1.1a38.7 38.7 0 0 1-6.1 3 43.6 43.6 0 0 0 3.8 6.2 58.8 58.8 0 0 0 18-9.2c1.5-15.8-2.6-29.5-10.6-42.1ZM23.7 38.5c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2Zm23.6 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2Z"/></svg>
+              Join the Discord While You Wait
+            </a>
+            <a href="index.html" class="btn btn-secondary w-full" style="text-align:center; margin-top:4px;">← Back to Home</a>
+          </div><!-- /success-card -->
+
+        </div><!-- /form-wrap -->
+
+        <!-- ── Sidebar ── -->
+        <div class="join-sidebar">
+
+          <div class="info-card">
+            <div class="info-card-title">WHAT HAPPENS NEXT</div>
+            <div class="info-step">
+              <div class="info-step-num">01</div>
+              <div>
+                <div class="info-step-title">Application Review</div>
+                <div class="info-step-desc">GFIG staff review your application. You'll get an email update within 24–48 hours.</div>
+              </div>
+            </div>
+            <div class="info-step">
+              <div class="info-step-num">02</div>
+              <div>
+                <div class="info-step-title">Callsign Issued</div>
+                <div class="info-step-desc">On approval you're assigned a unique <span style="font-family:var(--font-mono);color:var(--orange);font-size:0.8rem">GFIG-INS-XXXX</span> callsign and inspector profile.</div>
+              </div>
+            </div>
+            <div class="info-step">
+              <div class="info-step-num">03</div>
+              <div>
+                <div class="info-step-title">Portal Access</div>
+                <div class="info-step-desc">Log in to the member portal, browse the mission board, and access training materials.</div>
+              </div>
+            </div>
+            <div class="info-step">
+              <div class="info-step-num">04</div>
+              <div>
+                <div class="info-step-title">First Mission</div>
+                <div class="info-step-desc">Your orientation mission is posted to Discord. Complete it to earn your first inspection certification.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-card-title">REQUIREMENTS</div>
+            <div class="req-item"><span class="req-check">✓</span><span>Any flight simulator — MSFS, X-Plane, P3D all accepted</span></div>
+            <div class="req-item"><span class="req-check">✓</span><span>Discord account for mission updates and communication</span></div>
+            <div class="req-item"><span class="req-check">✓</span><span>VATSIM or IVAO membership recommended, not required</span></div>
+            <div class="req-item"><span class="req-check">✓</span><span>Commitment to following GFIG Standard Operating Procedures</span></div>
+            <div class="req-item"><span class="req-check">✓</span><span>No minimum hours — all experience levels welcome</span></div>
+          </div>
+
+          <div class="info-card" style="border-color:rgba(88,101,242,0.2);">
+            <div class="info-card-title" style="border-color:rgba(88,101,242,0.2);color:#8891f5;">DISCORD COMMUNITY</div>
+            <p style="font-size:0.8rem; color:var(--text-sub); margin:0; line-height:1.6;">Join our server now to meet existing members and get a feel for operations before your application is reviewed.</p>
+            <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="discord-info-btn">
+              <svg width="15" height="12" viewBox="0 0 71 55" fill="currentColor"><path d="M60.1 4.9A58.5 58.5 0 0 0 45.5.7a40.5 40.5 0 0 0-1.8 3.7 54.1 54.1 0 0 0-16.4 0A37.9 37.9 0 0 0 25.5.7 58.4 58.4 0 0 0 10.9 5C1.6 19.4-1 33.3.3 47.1a59 59 0 0 0 18 9.1 44.3 44.3 0 0 0 3.8-6.2 38.4 38.4 0 0 1-6.1-2.9l1.5-1.1a42.2 42.2 0 0 0 36 0l1.5 1.1a38.7 38.7 0 0 1-6.1 3 43.6 43.6 0 0 0 3.8 6.2 58.8 58.8 0 0 0 18-9.2c1.5-15.8-2.6-29.5-10.6-42.1ZM23.7 38.5c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2Zm23.6 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2Z"/></svg>
+              discord.gg/pyMHMCzApW
+            </a>
+          </div>
+
+        </div><!-- /sidebar -->
+
+      </div><!-- /join-grid -->
+
+    </div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-logo">✈ GFIG</div>
+          <p class="footer-desc">Global Flight Inspection Group — Maintaining the highest standards of virtual aviation through systematic flight inspection operations worldwide.</p>
+        </div>
+        <div>
+          <div class="footer-col-title">Navigation</div>
+          <a href="index.html"  class="footer-link">Home</a>
+          <a href="login.html"  class="footer-link">Member Login</a>
+          <a href="sops.html"   class="footer-link">SOPs</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Community</div>
+          <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="footer-link">Discord Server</a>
+          <a href="sops.html"   class="footer-link">Rules &amp; SOPs</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Global Flight Inspection Group</span>
+        <span>Not affiliated with any real-world aviation authority.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script>
+    /* ── EmailJS — credentials come from Admin Panel > Settings ── */
+    const EJS = {
+      publicKey:  localStorage.getItem('gfig_ejs_public_key')  || '',
+      serviceId:  localStorage.getItem('gfig_ejs_service_id')  || '',
+      templateId: localStorage.getItem('gfig_ejs_template_id') || ''
+    };
+    if (EJS.publicKey) {
+      emailjs.init({ publicKey: EJS.publicKey });
+    }
+
+    /* ── Character counter for reason field ── */
+    const reasonTa  = document.getElementById('f-reason');
+    const reasonCtr = document.getElementById('reason-counter');
+    reasonTa.addEventListener('input', function () {
+      const n = this.value.length;
+      reasonCtr.textContent = n + ' character' + (n === 1 ? '' : 's');
+      reasonCtr.classList.toggle('ok', n >= 30);
+    });
+
+    /* ── Submit ── */
+    async function submitApplication() {
+      const btn    = document.getElementById('submit-btn');
+      const errBox = document.getElementById('form-error');
+      errBox.style.display = 'none';
+
+      /* Collect values */
+      const name    = document.getElementById('f-name').value.trim();
+      const email   = document.getElementById('f-email').value.trim();
+      const discord = document.getElementById('f-discord').value.trim();
+      const vatsim  = document.getElementById('f-vatsim').value.trim();
+      const ivao    = document.getElementById('f-ivao').value.trim();
+      const sim     = document.getElementById('f-sim').value;
+      const exp     = document.getElementById('f-exp').value;
+      const hours   = document.getElementById('f-hours').value;
+      const reason  = document.getElementById('f-reason').value.trim();
+      const source  = document.getElementById('f-source').value;
+      const agreed  = document.getElementById('f-agree').checked;
+
+      /* Validate */
+      if (!name || !email || !discord || !sim || !exp || !hours || !reason) {
+        return showErr('Please fill in all required fields marked with *.');
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return showErr('Please enter a valid email address.');
+      }
+      if (reason.length < 30) {
+        return showErr('Your reason needs to be at least 30 characters.');
+      }
+      if (!agreed) {
+        return showErr('You must agree to the GFIG SOPs and code of conduct to apply.');
+      }
+
+      btn.disabled    = true;
+      btn.textContent = 'SUBMITTING…';
+
+      /* Generate application reference */
+      const ref = 'GFIG-APP-' + String(Math.floor(1000 + Math.random() * 9000));
+
+      /* ── 1. Discord webhook — notify admins ── */
+      const webhookUrl = localStorage.getItem('gfig_wh_applications');
+      if (webhookUrl) {
+        try {
+          await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: 'GFIG Applications',
+              embeds: [{
+                title: '🆕 New Application — ' + ref,
+                color: 0xff6a00,
+                fields: [
+                  { name: 'Name',        value: name,                   inline: true  },
+                  { name: 'Email',       value: email,                  inline: true  },
+                  { name: 'Discord',     value: discord,                inline: true  },
+                  { name: 'VATSIM CID',  value: vatsim  || '—',         inline: true  },
+                  { name: 'IVAO VID',    value: ivao    || '—',         inline: true  },
+                  { name: 'Simulator',   value: sim,                    inline: true  },
+                  { name: 'Experience',  value: exp,                    inline: true  },
+                  { name: 'Hours',       value: hours,                  inline: true  },
+                  { name: 'Source',      value: source  || '—',         inline: true  },
+                  { name: 'Application', value: reason.substring(0, 1000), inline: false }
+                ],
+                footer:    { text: 'GFIG Applications System · ' + ref },
+                timestamp: new Date().toISOString()
+              }]
+            })
+          });
+        } catch (e) {
+          console.warn('Applications webhook failed:', e);
+        }
+      }
+
+      /* ── 2. EmailJS — confirmation to applicant ── */
+      if (EJS.publicKey && EJS.serviceId && EJS.templateId) {
+        try {
+          await emailjs.send(EJS.serviceId, EJS.templateId, {
+            to_name:          name,
+            to_email:         email,
+            ref_number:       ref,
+            discord_username: discord,
+            simulator:        sim,
+            experience:       exp,
+            hours:            hours
+          });
+        } catch (e) {
+          console.warn('EmailJS send failed:', e);
+        }
+      }
+
+      /* ── 3. Show success screen ── */
+      document.getElementById('form-card').style.display   = 'none';
+      const sc = document.getElementById('success-card');
+      sc.style.display = 'block';
+      document.getElementById('success-ref').textContent = ref;
+
+      if (!EJS.publicKey) {
+        document.getElementById('success-msg').textContent =
+          'Your application has been received and is being processed by the GFIG team. You\'ll hear back within 24–48 hours.';
+      } else {
+        document.getElementById('success-msg').textContent =
+          'Your application is being processed by the GFIG team. A confirmation has been sent to ' + email + '. You\'ll hear back within 24–48 hours.';
+      }
+
+      sc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function showErr(msg) {
+      const e = document.getElementById('form-error');
+      e.textContent = msg;
+      e.style.display = 'block';
+      const btn = document.getElementById('submit-btn');
+      btn.disabled    = false;
+      btn.textContent = 'SUBMIT APPLICATION →';
+      e.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  </script>
+</body>
+</html>
