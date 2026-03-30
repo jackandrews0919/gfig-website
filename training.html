@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training Centre — GFIG</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈</text></svg>">
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="logo.png" alt="GFIG – Global Flight Inspection Group Virtual" class="nav-logo-img">
+      </a>
+      <div class="nav-links">
+        <a href="index.html"     class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html"  class="nav-link">◉ Missions</a>
+        <a href="training.html"  class="nav-link active">◎ Training</a>
+        <a href="profile.html"   class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot">
+          <div class="nav-avatar">JH</div>
+          <div class="nav-pilot-info">
+            <div class="nav-pilot-name">CPT Harrison</div>
+            <div class="nav-pilot-rank">Senior Inspector</div>
+          </div>
+          <div class="nav-online"></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Page ── -->
+  <div class="page">
+    <div class="container">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1>Training Centre</h1>
+          <p>Complete courses and pass checkrides to earn inspection certifications and advance your rank.</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="badge badge-active">3 In Progress</span>
+          <button class="btn btn-primary" onclick="document.getElementById('checkride-section').scrollIntoView({behavior:'smooth'})">Book Checkride</button>
+        </div>
+      </div>
+
+      <!-- Progress Overview -->
+      <div class="card mb-32">
+        <div class="card-header">
+          <span class="card-title">Training Progress Overview</span>
+          <span class="text-sm text-sub">CPT Harrison · Senior Inspector</span>
+        </div>
+        <div class="grid-4">
+          <div style="text-align:center;">
+            <div style="font-family:var(--font-head); font-size:1.8rem; font-weight:700; color:var(--pass);">5</div>
+            <div class="text-xs text-muted mt-4">Courses Completed</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-family:var(--font-head); font-size:1.8rem; font-weight:700; color:var(--blue-light);">3</div>
+            <div class="text-xs text-muted mt-4">In Progress</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-family:var(--font-head); font-size:1.8rem; font-weight:700; color:var(--orange);">5</div>
+            <div class="text-xs text-muted mt-4">Certifications Earned</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-family:var(--font-head); font-size:1.8rem; font-weight:700;">62%</div>
+            <div class="text-xs text-muted mt-4">Overall Completion</div>
+          </div>
+        </div>
+        <hr class="divider">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span class="text-sm">Total Course Progress</span>
+          <span class="text-sm font-mono text-blue">62%</span>
+        </div>
+        <div class="prog-wrap">
+          <div class="prog-bar" style="width:62%;"></div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="showTrainingTab('all', this)">All Courses</div>
+        <div class="tab" onclick="showTrainingTab('inprogress', this)">In Progress (3)</div>
+        <div class="tab" onclick="showTrainingTab('completed', this)">Completed (5)</div>
+        <div class="tab" onclick="showTrainingTab('available', this)">Available (4)</div>
+        <div class="tab" onclick="showTrainingTab('locked', this)">Locked</div>
+      </div>
+
+      <!-- ── Course Grid ── -->
+      <div class="grid-auto animate-stagger mb-32">
+
+        <!-- COURSE 1: Foundation -->
+        <div class="course-card" data-status="completed">
+          <div class="course-bar green"></div>
+          <div class="course-body">
+            <div class="course-category">◎ Foundation</div>
+            <div class="course-title">GFIG Orientation & SOPs</div>
+            <div class="course-desc">Introduction to GFIG operations, reporting standards, Discord integration, and inspector responsibilities.</div>
+            <div class="course-meta">
+              <span>📖 6 modules</span>
+              <span>⏱ ~2h</span>
+              <span>⭐ Beginner</span>
+            </div>
+            <div class="prog-wrap">
+              <div class="prog-bar green" style="width:100%;"></div>
+            </div>
+          </div>
+          <div class="course-footer">
+            <span class="badge badge-pass">✓ Complete</span>
+            <button class="btn btn-sm btn-secondary" onclick="openCourse('GFIG Orientation & SOPs')">Review</button>
+          </div>
+        </div>
+
+        <!-- COURSE 2 -->
+        <div class="course-card" data-status="completed">
+          <div class="course-bar green"></div>
+          <div class="course-body">
+            <div class="course-category">📡 ILS Systems</div>
+            <div class="course-title">ILS Theory & Type A Calibration</div>
+            <div class="course-desc">Instrument Landing System fundamentals, glide slope geometry, localizer alignment, and Category I calibration procedures.</div>
+            <div class="course-meta">
+              <span>📖 8 modules</span>
+              <span>⏱ ~4h</span>
+              <span>⭐⭐ Intermediate</span>
+            </div>
+            <div class="prog-wrap">
+              <div class="prog-bar green" style="width:100%;"></div>
+            </div>
+          </div>
+          <div class="course-footer">
+            <span class="badge badge-pass">✓ Complete</span>
+            <button class="btn btn-sm btn-secondary" onclick="openCourse('ILS Type A')">Review</button>
+          </div>
+        </div>
+
+        <!-- COURSE 3 -->
+        <div class="course-card" data-status="completed">
+          <div class="course-bar green"></div>
+          <div class="course-body">
+            <div class="course-category">📡 ILS Systems</div>
+            <div class="course-title">ILS Type B — CAT-II/III Procedures</div>
+            <div class="course-desc">Advanced ILS calibration for Category II and III precision approaches. Decision height standards and autoland verification.</div>
+            <div class="course-meta">
+              <span>📖 10 modules</span>
+              <span>⏱ ~5h</span>
+              <span>⭐⭐⭐ Advanced</span>
+            </div>
+            <div class="prog-wrap">
+              <div class="prog-bar green" style="width:100%;"></div>
+            </div>
+          </div>
+          <div class="course-footer">
+            <span class="badge badge-pass">✓ Complete</span>
+            <button class="btn btn-sm btn-secondary" onclick="openCourse('ILS Type B')">Review</button>
+          </div>
+        </div>
+
+        <!-- COURSE 4 -->
+        <div class="course-card" data-status="completed">
+          <div class="course-bar blue"></div>
+          <div class="course-body">
+            <div class="course-category">📻 VOR / DME</div>
+            <div class="course-title">VOR & DME Calibration Techniques</div>
+            <div class="course-desc">VHF omnidirectional range signal check, bearing accuracy, DME range verification, and frequency monitoring procedures.</div>
+            <div class="course-meta">
+              <span>📖 7 modules</span>
+              <span>⏱ ~3h 30m</span>
+              <span>⭐⭐ Intermediate</span>
+            </div>
+            <div class="prog-wrap">
+              <div class="prog-bar" style="width:100%;"></div>
+            </div>
+          </div>
+          <div class="course-footer">
+            <span class="badge badge-pass">✓ Complete</span>
+            <button class="btn btn-sm btn-secondary" onclick="openCourse('VOR DME')">Review</button>
+          </div>
+        </div>
+
+        <!-- COURSE 5 -->
+        <div class="course-card" data-status="completed">
+          <div class="course-bar blue"></div>
+          <div class="course-body">
+            <div class="course-category">🗺 Procedures</div>
+            <div class="course-title">Approach Procedure Validation</div>
+            <div class="course-desc">RNAV (GPS/RNP), conventional VOR and NDB approach validation, minimum altitude checks, and obstacle clearance analysis.</div>
+            <div class="course-meta">
+              <span>📖 9 modules</span>
+              <span>⏱ ~4h</span>
+              <span>⭐⭐ Intermediate</span>
+            </div>
+            <div class="prog-wrap">
+              <div class="prog-bar" style="width:100%;"></div>
+            </div>
+          </div>
+          <div class="course-footer">
+            <span class="badge badge-pass">✓ Complete</span>
+            <button class="btn btn-sm btn-secondary" onclick="openCourse('Approach Validation')">Review</button>
+          </div>
+        </div>
+
+        <!-- COURSE 6 — In Progress -->
+        <div class="course-card" data-status="inprogress">
+          <div class="course-bar orange"></div>
+          <div class="course-body">
+            <div class="course-category">🔊 NDB Systems</div>
+            <div class="course-title">NDB Calibration & Coverage Checks</div>
+            <div class="course-desc">Non-directional beacon theory, bearing accuracy verification, coverage flight patterns, and signal strength analysis.</div>
+            <div class="course-meta">
+              <span>📖 6 modules</span>
+              <span>⏱ ~3h</span>
+              <span>⭐⭐ Intermediate</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:8px;">
+              <span class="text-xs text-sub">Progress: 4/6 modules</span>
+              <span class="text-xs text-orange">67%</span>
+            </div>
+            <div class="prog-wrap">
+              <div class="prog-bar orange" style="width:67%;"></div>
+            </div>
+          </div>
+          <div class="course-footer">
+            <span class="badge badge-pending">In Progress</span>
+            <button class="btn btn-sm btn-primary" onclick="openCourse('NDB Calibration')">Continue</button>
+          </div>
+        </div>
+
+        <!-- COURSE 7 — In Progress -->
+        <div class="course-card" data-status="inprogress">
+          <div class="course-bar orange"></div>
+          <div class="course-body">
+            <div class="course-category">✈ SID / STAR</div>
+            <div class="course-title">SID & STAR Procedure Validation</div>
+            <div class="course-desc">Standard instrument departure and arrival procedure validation. Track accuracy, altitude constraints, and chart cross-check methodology.</div>
+            <div class="course-meta">
+              <span>📖 8 modules</span>
+              <span>⏱ ~4h</span>
+              <span>⭐⭐ Intermediate</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:8px;">
+              <span class="text-xs text-sub">Progress: 3/8 modules</span>
+              <span class="text-xs text-orange">38%</span>
+            </div>
+            <div class="prog-wrap">
+              <div class="prog-bar orange" style="width:38%;"></div>
+            </div>
+          </div>
+          <div class="course-footer">
+            <span class="badge badge-pending">In Progress</span>
+            <button class="btn btn-sm btn-primary" onclick="openCourse('SID STAR')">Continue</button>
+          </div>
+        </div>
+
+        <!-- COURSE 8 — In Progress -->
+        <div class="course-card" data-status="inprogress">
+          <div class="course-bar orange"></div>
+          <div class="course-body">
+            <div class="course-category">📐 Surveys</div>
+            <div class="course-title">Airport Survey Operations</div>
+            <div class="course-desc">Full-airport geometry surveys, runway threshold positioning, taxiway verification, and obstacle limitation surface checks.</div>
+            <div class="course-meta">
+              <span>📖 7 modules</span>
+              <span>⏱ ~3h 30m</span>
+              <span>⭐⭐⭐ Advanced</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:8px;">
+              <span class="text-xs text-sub">Progress: 2/7 modules</span>
+              <span class="text-xs text-orange">29%</span>
+            </div>
+            <div class="prog-wrap">
+              <div class="prog-bar orange" style="width:29%;"></div>
+            </div>
+          </div>
+          <div class="course-footer">
+            <span class="badge badge-pending">In Progress</span>
+            <button class="btn btn-sm btn-primary" onclick="openCourse('Airport Survey')">Continue</button>
+          </div>
+        </div>
+
+        <!-- COURSE 9 — Available -->
+        <div class="course-card" data-status="available">
+          <div class="course-bar" style="background: linear-gradient(90deg, #9933ff, #cc66ff);"></div>
+          <div class="course-body">
+            <div class="course-category" style="color:#bb88ff;">📡 ATC Operations</div>
+            <div class="course-title">ATC Coordination for Inspectors</div>
+            <div class="course-desc">How to coordinate with virtual ATC during inspection flights. Phraseology, special callsigns, and priority handling procedures.</div>
+            <div class="course-meta">
+              <span>📖 5 modules</span>
+              <span>⏱ ~2h</span>
+              <span>⭐ Beginner</span>
+            </div>
+            <div class="prog-wrap mt-16">
+              <div class="prog-bar" style="width:0%; background: linear-gradient(90deg, #9933ff, #cc66ff);"></div>
+            </div>
+          </div>
+          <div class="course-footer">
+            <span class="badge badge-routine">Not Started</span>
+            <button class="btn btn-sm btn-primary" onclick="openCourse('ATC Coordination')">Start Course</button>
+          </div>
+        </div>
+
+        <!-- COURSE 10 — Locked -->
+        <div class="course-card" data-status="locked" style="opacity:0.65;">
+          <div class="course-bar" style="background: var(--border);"></div>
+          <div class="course-body">
+            <div class="course-category" style="color:var(--text-muted);">🔒 ILS Specialist</div>
+            <div class="course-title">CAT-III ILS Specialist Rating</div>
+            <div class="course-desc">Advanced autoland-category ILS calibration. Aircraft performance analysis, RVR requirements, and regulatory standards.</div>
+            <div class="course-meta" style="color:var(--text-muted);">
+              <span>📖 12 modules</span>
+              <span>⏱ ~6h</span>
+              <span>⭐⭐⭐ Expert</span>
+            </div>
+            <div class="alert alert-info mt-16" style="font-size:0.78rem; padding:10px 12px;">
+              🔒 Requires: ILS Type B cert + 50 ILS missions completed
+            </div>
+          </div>
+          <div class="course-footer">
+            <span class="badge badge-routine">Locked</span>
+            <button class="btn btn-sm btn-secondary" disabled>Locked</button>
+          </div>
+        </div>
+
+        <!-- COURSE 11 — Locked -->
+        <div class="course-card" data-status="locked" style="opacity:0.65;">
+          <div class="course-bar" style="background: var(--border);"></div>
+          <div class="course-body">
+            <div class="course-category" style="color:var(--text-muted);">🔒 Chief Track</div>
+            <div class="course-title">Inspector Management & Quality</div>
+            <div class="course-desc">Report quality assurance, reviewing junior inspector submissions, mentorship responsibilities, and escalation procedures.</div>
+            <div class="course-meta" style="color:var(--text-muted);">
+              <span>📖 10 modules</span>
+              <span>⏱ ~5h</span>
+              <span>⭐⭐⭐ Expert</span>
+            </div>
+            <div class="alert alert-info mt-16" style="font-size:0.78rem; padding:10px 12px;">
+              🔒 Requires: Senior Inspector rank + 100 missions
+            </div>
+          </div>
+          <div class="course-footer">
+            <span class="badge badge-routine">Locked</span>
+            <button class="btn btn-sm btn-secondary" disabled>Locked</button>
+          </div>
+        </div>
+
+      </div><!-- end course grid -->
+
+      <!-- ── Checkride Section ── -->
+      <div id="checkride-section">
+        <div class="section-header" style="text-align:left; margin-bottom:28px;">
+          <div class="section-tag">Certification</div>
+          <h2 class="section-title" style="font-size:1.4rem;">Book a Checkride</h2>
+          <p class="section-desc" style="margin:0; text-align:left;">Complete the corresponding course, then book a checkride with a GFIG instructor to earn your certification.</p>
+        </div>
+
+        <div class="card mb-24">
+          <div class="card-header">
+            <span class="card-title">Schedule Checkride</span>
+            <span class="badge badge-training">Instructor Required</span>
+          </div>
+          <div class="form-row mb-20">
+            <div class="form-group">
+              <label class="form-label" for="checkride-type">Checkride Type</label>
+              <select class="form-control" id="checkride-type">
+                <option value="">— Select checkride —</option>
+                <option value="ndb" data-prereq="NDB Calibration course complete">NDB Calibration Checkride</option>
+                <option value="sidstar" data-prereq="SID/STAR Validation course complete">SID/STAR Procedure Checkride</option>
+                <option value="survey" data-prereq="Airport Survey course complete">Airport Survey Checkride</option>
+                <option value="atc">ATC Coordination Evaluation</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="checkride-instructor">Preferred Instructor</label>
+              <select class="form-control" id="checkride-instructor">
+                <option value="">— Any available instructor —</option>
+                <option value="chen">DIR Chen (All types)</option>
+                <option value="okonkwo">CHF Okonkwo (ILS, VOR, NDB)</option>
+                <option value="nakamura">CPT Nakamura (Procedures)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row mb-20">
+            <div class="form-group">
+              <label class="form-label" for="checkride-date">Preferred Date</label>
+              <input type="date" class="form-control" id="checkride-date">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="checkride-time">Preferred Time (UTC)</label>
+              <select class="form-control" id="checkride-time">
+                <option value="">— Select time slot —</option>
+                <option value="0800">08:00 UTC</option>
+                <option value="1000">10:00 UTC</option>
+                <option value="1200">12:00 UTC</option>
+                <option value="1400">14:00 UTC</option>
+                <option value="1600">16:00 UTC</option>
+                <option value="1800">18:00 UTC</option>
+                <option value="2000">20:00 UTC</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="checkride-notes">Additional Notes</label>
+            <textarea class="form-control" id="checkride-notes" rows="2" placeholder="Any scheduling constraints, timezone preferences, or special requests…"></textarea>
+          </div>
+          <div class="alert alert-info">
+            📋 Checkride requests are reviewed by the Training Team and confirmed within 48 hours via Discord DM. Once confirmed, you'll receive a mission brief in #checkrides on Discord.
+          </div>
+          <button class="btn btn-primary" onclick="submitCheckrideRequest()">Submit Checkride Request</button>
+        </div>
+
+        <!-- Available Instructors -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Certified Instructors</span>
+            <span class="badge badge-active">3 Online</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; align-items:center; gap:16px; padding:12px 0; border-bottom: 1px solid var(--border);">
+              <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,#9933ff,var(--orange)); display:flex; align-items:center; justify-content:center; font-weight:700; color:white; font-family:var(--font-head);">DC</div>
+              <div style="flex:1;">
+                <div style="font-weight:700;">DIR Chen &nbsp;<span class="rank-badge rank-director">Director</span></div>
+                <div class="text-sm text-sub">Certified: ILS (A+B), VOR, NDB, RNAV, SID/STAR, Survey, ATC</div>
+              </div>
+              <span class="badge badge-active">● Online</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:16px; padding:12px 0; border-bottom: 1px solid var(--border);">
+              <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--orange),#cc4400); display:flex; align-items:center; justify-content:center; font-weight:700; color:white; font-family:var(--font-head);">MO</div>
+              <div style="flex:1;">
+                <div style="font-weight:700;">CHF Okonkwo &nbsp;<span class="rank-badge rank-chief">Chief</span></div>
+                <div class="text-sm text-sub">Certified: ILS (A+B), VOR, NDB, Airport Survey</div>
+              </div>
+              <span class="badge badge-active">● Online</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:16px; padding:12px 0;">
+              <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--blue),#0044aa); display:flex; align-items:center; justify-content:justify; font-weight:700; color:white; font-family:var(--font-head); display:flex; align-items:center; justify-content:center;">KN</div>
+              <div style="flex:1;">
+                <div style="font-weight:700;">CPT Nakamura &nbsp;<span class="rank-badge rank-senior">Senior</span></div>
+                <div class="text-sm text-sub">Certified: RNAV, SID/STAR, Approach Validation</div>
+              </div>
+              <span class="badge badge-active" style="background:rgba(0,230,118,0.06); color:var(--text-muted); border-color:var(--border);">● Away</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-logo">✈ GFIG</div>
+          <p class="footer-desc">Global Flight Inspection Group — Maintaining the highest standards of virtual aviation through systematic flight inspection operations worldwide.</p>
+        </div>
+        <div>
+          <div class="footer-col-title">Navigation</div>
+          <a href="index.html"     class="footer-link">Home</a>
+          <a href="dashboard.html" class="footer-link">Dashboard</a>
+          <a href="missions.html"  class="footer-link">Mission Board</a>
+          <a href="report.html"    class="footer-link">Submit Report</a>
+          <a href="profile.html"   class="footer-link">Pilot Profile</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Courses</div>
+          <a href="#" class="footer-link">Foundation</a>
+          <a href="#" class="footer-link">ILS Systems</a>
+          <a href="#" class="footer-link">VOR / DME</a>
+          <a href="#" class="footer-link">NDB Calibration</a>
+          <a href="#" class="footer-link">Procedures</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Community</div>
+          <a href="#" class="footer-link">Discord Server</a>
+          <a href="#" class="footer-link">Rules & SOPs</a>
+          <a href="#" class="footer-link">Support</a>
+          <a href="#" class="footer-link">About GFIG</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Global Flight Inspection Group</span>
+        <span>Not affiliated with any real-world aviation authority.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script>
+    function showTrainingTab(filter, tabEl) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tabEl.classList.add('active');
+      const cards = document.querySelectorAll('.course-card');
+      cards.forEach(card => {
+        if (filter === 'all') { card.style.display = ''; return; }
+        card.style.display = card.dataset.status === filter ? '' : 'none';
+      });
+    }
+    function openCourse(name) {
+      alert('Course module: "' + name + '"\n\nCourse content will be available via the Discord #training-announcements channel and attached PDF brief. Navigate there to access the full module materials.');
+    }
+    function submitCheckrideRequest() {
+      const type = document.getElementById('checkride-type').value;
+      const date = document.getElementById('checkride-date').value;
+      if (!type || !date) {
+        alert('Please select a checkride type and preferred date.');
+        return;
+      }
+      alert('✓ Checkride request submitted!\n\nYou will receive a confirmation DM on Discord within 48 hours. Your request has also been posted to the #checkrides channel.');
+    }
+  </script>
+</body>
+</html>

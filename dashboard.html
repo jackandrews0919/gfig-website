@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — GFIG</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈</text></svg>">
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="logo.png" alt="GFIG – Global Flight Inspection Group Virtual" class="nav-logo-img">
+      </a>
+      <div class="nav-links">
+        <a href="index.html"     class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link active">◈ Dashboard</a>
+        <a href="missions.html"  class="nav-link">◉ Missions</a>
+        <a href="training.html"  class="nav-link">◎ Training</a>
+        <a href="profile.html"   class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot">
+          <div class="nav-avatar" id="nav-avatar">JH</div>
+          <div class="nav-pilot-info">
+            <div class="nav-pilot-name" id="nav-name">CPT Harrison</div>
+            <div class="nav-pilot-rank">Senior Inspector</div>
+          </div>
+          <div class="nav-online"></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Page ── -->
+  <div class="page">
+    <div class="container">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1>Operations Dashboard</h1>
+          <p>Welcome back, CPT Harrison — You have 3 active missions and 1 pending report.</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span class="live-dot">Operations Live</span>
+          <a href="missions.html" class="btn btn-primary">+ Claim Mission</a>
+        </div>
+      </div>
+
+      <!-- Metric Cards -->
+      <div class="grid-4 mb-24 animate-stagger">
+        <div class="metric-card">
+          <span class="metric-icon">📋</span>
+          <div class="metric-value">47</div>
+          <div class="metric-label">Active Network Missions</div>
+          <div class="metric-change up">↑ 8 since yesterday</div>
+        </div>
+        <div class="metric-card">
+          <span class="metric-icon">✈</span>
+          <div class="metric-value">3</div>
+          <div class="metric-label">My Active Missions</div>
+          <div class="metric-change neutral">1 pending report</div>
+        </div>
+        <div class="metric-card">
+          <span class="metric-icon">📊</span>
+          <div class="metric-value">26</div>
+          <div class="metric-label">My Missions This Month</div>
+          <div class="metric-change up">96.2% pass rate</div>
+        </div>
+        <div class="metric-card">
+          <span class="metric-icon">⭐</span>
+          <div class="metric-value">4,820</div>
+          <div class="metric-label">Inspector Points</div>
+          <div class="metric-change up">↑ 240 this week</div>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="dash-grid">
+
+        <!-- ── LEFT COLUMN ── -->
+        <div class="dash-main">
+
+          <!-- Active Network Missions -->
+          <div class="card mb-24">
+            <div class="card-header">
+              <span class="card-title">Live Network Missions</span>
+              <a href="missions.html" class="btn btn-sm btn-secondary">View All →</a>
+            </div>
+            <div class="table-wrap" style="border:none; border-radius: var(--r-md);">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mission ID</th>
+                    <th>Route</th>
+                    <th>Type</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Inspector</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="td-mono">GFI-2026-0291</td>
+                    <td><span class="td-route">EGLL <span class="td-route-arrow">→</span> EHAM</span></td>
+                    <td>ILS Calibration</td>
+                    <td><span class="badge badge-urgent">Urgent</span></td>
+                    <td><span class="badge badge-available">Available</span></td>
+                    <td class="text-muted text-sm">—</td>
+                    <td><a href="missions.html" class="btn btn-xs btn-primary">Claim</a></td>
+                  </tr>
+                  <tr>
+                    <td class="td-mono">GFI-2026-0290</td>
+                    <td><span class="td-route">KLAX <span class="td-route-arrow">→</span> KLAS</span></td>
+                    <td>VOR Check</td>
+                    <td><span class="badge badge-priority">Priority</span></td>
+                    <td><span class="badge badge-active">In Progress</span></td>
+                    <td class="text-sm"><strong>INS Lopez</strong></td>
+                    <td><a href="#" class="btn btn-xs btn-secondary">Brief</a></td>
+                  </tr>
+                  <tr>
+                    <td class="td-mono">GFI-2026-0289</td>
+                    <td><span class="td-route">RJTT <span class="td-route-arrow">→</span> RJBB</span></td>
+                    <td>Approach Val.</td>
+                    <td><span class="badge badge-routine">Routine</span></td>
+                    <td><span class="badge badge-available">Available</span></td>
+                    <td class="text-muted text-sm">—</td>
+                    <td><a href="missions.html" class="btn btn-xs btn-primary">Claim</a></td>
+                  </tr>
+                  <tr>
+                    <td class="td-mono">GFI-2026-0288</td>
+                    <td><span class="td-route">OMDB <span class="td-route-arrow">→</span> OTHH</span></td>
+                    <td>NDB Calibration</td>
+                    <td><span class="badge badge-priority">Priority</span></td>
+                    <td><span class="badge badge-available">Available</span></td>
+                    <td class="text-muted text-sm">—</td>
+                    <td><a href="missions.html" class="btn btn-xs btn-primary">Claim</a></td>
+                  </tr>
+                  <tr>
+                    <td class="td-mono">GFI-2026-0287</td>
+                    <td><span class="td-route">YSSY <span class="td-route-arrow">→</span> YMML</span></td>
+                    <td>Airport Survey</td>
+                    <td><span class="badge badge-routine">Routine</span></td>
+                    <td><span class="badge badge-active">In Progress</span></td>
+                    <td class="text-sm"><strong>CPT Wright</strong></td>
+                    <td><a href="#" class="btn btn-xs btn-secondary">Brief</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- My Active Missions -->
+          <div class="card mb-24">
+            <div class="card-header">
+              <span class="card-title">My Active Missions</span>
+              <span class="badge badge-active">3 Active</span>
+            </div>
+            <div class="table-wrap" style="border:none; border-radius: var(--r-md);">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mission ID</th>
+                    <th>Route</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="td-mono">GFI-2026-0285</td>
+                    <td><span class="td-route">EGKK <span class="td-route-arrow">→</span> EIDW</span></td>
+                    <td>ILS Calibration</td>
+                    <td><span class="badge badge-pending">Report Due</span></td>
+                    <td><a href="report.html" class="btn btn-xs btn-warn">Submit Report</a></td>
+                  </tr>
+                  <tr>
+                    <td class="td-mono">GFI-2026-0283</td>
+                    <td><span class="td-route">EGCC <span class="td-route-arrow">→</span> EGGD</span></td>
+                    <td>VOR Check</td>
+                    <td><span class="badge badge-active">Flying</span></td>
+                    <td><a href="#" class="btn btn-xs btn-secondary">Track</a></td>
+                  </tr>
+                  <tr>
+                    <td class="td-mono">GFI-2026-0281</td>
+                    <td><span class="td-route">EDDF <span class="td-route-arrow">→</span> EDDM</span></td>
+                    <td>Procedure Val.</td>
+                    <td><span class="badge badge-active">Flying</span></td>
+                    <td><a href="#" class="btn btn-xs btn-secondary">Track</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Network Activity Feed</span>
+              <span class="live-dot" style="font-size:0.68rem;">Live</span>
+            </div>
+            <div id="activity-feed">
+              <div class="activity-item">
+                <div class="activity-dot pass"></div>
+                <div>
+                  <div class="activity-text"><strong>CPT Harrison</strong> completed GFI-2026-0284 — ILS Calibration EGLL→EGCC</div>
+                  <div class="activity-time">14:32 UTC · 2 min ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot active"></div>
+                <div>
+                  <div class="activity-text"><strong>INS Lopez</strong> started mission GFI-2026-0290 — VOR Check KLAX→KLAS</div>
+                  <div class="activity-time">14:28 UTC · 6 min ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot monitor"></div>
+                <div>
+                  <div class="activity-text"><strong>INS Mercer</strong> filed MONITOR result on GFI-2026-0280 — ILS signal degradation noted</div>
+                  <div class="activity-time">14:15 UTC · 19 min ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot pass"></div>
+                <div>
+                  <div class="activity-text"><strong>CPT Nakamura</strong> passed checkride — ILS Type Rating certified ✓</div>
+                  <div class="activity-time">13:58 UTC · 36 min ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot active"></div>
+                <div>
+                  <div class="activity-text"><strong>CPT Wright</strong> claimed mission GFI-2026-0287 — Airport Survey YSSY→YMML</div>
+                  <div class="activity-time">13:44 UTC · 50 min ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot fail"></div>
+                <div>
+                  <div class="activity-text"><strong>URGENT:</strong> GFI-2026-0286 filed FAIL — ILS RWY 12L at OMDB out of tolerance. Chief Inspector notified.</div>
+                  <div class="activity-time">13:20 UTC · 1 hr 14 min ago</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- end dash-main -->
+
+        <!-- ── RIGHT SIDEBAR ── -->
+        <div class="dash-side">
+
+          <!-- My Status Card -->
+          <div class="card mb-24">
+            <div class="card-header">
+              <span class="card-title">My Inspector Status</span>
+              <div class="nav-online"></div>
+            </div>
+            <div style="text-align:center; padding: 12px 0 20px;">
+              <div style="width:72px; height:72px; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--orange)); display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-size:1.6rem; font-weight:700; color:white; border:3px solid var(--blue); box-shadow: 0 0 24px var(--blue-glow); margin: 0 auto 14px;">JH</div>
+              <div style="font-weight:700; font-size:1rem; margin-bottom:3px;">CPT Harrison</div>
+              <div style="font-family:var(--font-mono); color:var(--blue-light); font-size:0.82rem; margin-bottom:10px;">GFIG-INS-0042</div>
+              <span class="rank-badge rank-senior">Senior Inspector</span>
+            </div>
+            <hr class="divider">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; text-align:center;">
+              <div>
+                <div style="font-family:var(--font-head); font-size:1.3rem; font-weight:700;">142</div>
+                <div class="text-sm text-muted mt-4">Missions</div>
+              </div>
+              <div>
+                <div style="font-family:var(--font-head); font-size:1.3rem; font-weight:700; color:var(--pass);">96%</div>
+                <div class="text-sm text-muted mt-4">Pass Rate</div>
+              </div>
+              <div>
+                <div style="font-family:var(--font-head); font-size:1.3rem; font-weight:700;">4,820</div>
+                <div class="text-sm text-muted mt-4">Points</div>
+              </div>
+              <div>
+                <div style="font-family:var(--font-head); font-size:1.3rem; font-weight:700; color:var(--orange);">1,246h</div>
+                <div class="text-sm text-muted mt-4">Hours</div>
+              </div>
+            </div>
+            <hr class="divider">
+            <div class="text-xs text-sub" style="text-align:center;">
+              Next rank: <span class="text-orange font-bold">Chief Inspector</span> at 6,000 pts
+            </div>
+            <div class="prog-wrap mt-8">
+              <div class="prog-bar" style="width:80%;"></div>
+            </div>
+            <div class="text-xs text-muted mt-8" style="text-align:right;">4,820 / 6,000</div>
+          </div>
+
+          <!-- Leaderboard -->
+          <div class="card mb-24">
+            <div class="card-header">
+              <span class="card-title">Top Inspectors</span>
+              <span class="text-xs text-sub">This Month</span>
+            </div>
+            <div>
+              <div class="lb-item">
+                <div class="lb-rank gold">1</div>
+                <div class="lb-avatar">DC</div>
+                <div class="lb-info">
+                  <div class="lb-name">DIR Chen</div>
+                  <div class="lb-detail">Director · 38 missions</div>
+                </div>
+                <div class="lb-pts">8,400</div>
+              </div>
+              <div class="lb-item">
+                <div class="lb-rank silver">2</div>
+                <div class="lb-avatar">MO</div>
+                <div class="lb-info">
+                  <div class="lb-name">CHF Okonkwo</div>
+                  <div class="lb-detail">Chief · 34 missions</div>
+                </div>
+                <div class="lb-pts">7,120</div>
+              </div>
+              <div class="lb-item">
+                <div class="lb-rank bronze">3</div>
+                <div class="lb-avatar" style="background:linear-gradient(135deg,var(--blue),#00aaff);">KN</div>
+                <div class="lb-info">
+                  <div class="lb-name">CPT Nakamura</div>
+                  <div class="lb-detail">Senior · 30 missions</div>
+                </div>
+                <div class="lb-pts">5,960</div>
+              </div>
+              <div class="lb-item" style="background: rgba(0,119,255,0.05); border-radius: 6px; padding: 11px 6px;">
+                <div class="lb-rank" style="color:var(--blue-light);">4</div>
+                <div class="lb-avatar" style="background:linear-gradient(135deg,#0066cc,var(--orange)); border: 2px solid var(--blue);">JH</div>
+                <div class="lb-info">
+                  <div class="lb-name" style="color:var(--blue-light);">CPT Harrison <span class="text-xs text-muted">(you)</span></div>
+                  <div class="lb-detail">Senior · 26 missions</div>
+                </div>
+                <div class="lb-pts">4,820</div>
+              </div>
+              <div class="lb-item">
+                <div class="lb-rank">5</div>
+                <div class="lb-avatar">AL</div>
+                <div class="lb-info">
+                  <div class="lb-name">INS Lopez</div>
+                  <div class="lb-detail">Inspector · 24 missions</div>
+                </div>
+                <div class="lb-pts">3,840</div>
+              </div>
+              <div class="lb-item">
+                <div class="lb-rank">6</div>
+                <div class="lb-avatar">RW</div>
+                <div class="lb-info">
+                  <div class="lb-name">CPT Wright</div>
+                  <div class="lb-detail">Senior · 22 missions</div>
+                </div>
+                <div class="lb-pts">3,520</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="card">
+            <div class="card-title mb-16">Quick Actions</div>
+            <a href="report.html" class="quick-action">
+              <div class="quick-action-icon">📝</div>
+              <div>
+                <div class="quick-action-title">Submit Report</div>
+                <div class="quick-action-desc">File PASS / MONITOR / FAIL</div>
+              </div>
+            </a>
+            <a href="missions.html" class="quick-action">
+              <div class="quick-action-icon">🗺</div>
+              <div>
+                <div class="quick-action-title">Mission Board</div>
+                <div class="quick-action-desc">47 missions available</div>
+              </div>
+            </a>
+            <a href="training.html" class="quick-action">
+              <div class="quick-action-icon">🎓</div>
+              <div>
+                <div class="quick-action-title">Training Centre</div>
+                <div class="quick-action-desc">3 courses in progress</div>
+              </div>
+            </a>
+            <a href="profile.html" class="quick-action">
+              <div class="quick-action-icon">👤</div>
+              <div>
+                <div class="quick-action-title">My Profile</div>
+                <div class="quick-action-desc">View stats & certs</div>
+              </div>
+            </a>
+            <a href="#" class="quick-action">
+              <div class="quick-action-icon">📡</div>
+              <div>
+                <div class="quick-action-title">Request Checkride</div>
+                <div class="quick-action-desc">Book with an instructor</div>
+              </div>
+            </a>
+          </div>
+
+        </div><!-- end dash-side -->
+      </div><!-- end dash-grid -->
+
+    </div><!-- end container -->
+  </div><!-- end page -->
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-logo">✈ GFIG</div>
+          <p class="footer-desc">Global Flight Inspection Group — Maintaining the highest standards of virtual aviation through systematic flight inspection operations worldwide.</p>
+        </div>
+        <div>
+          <div class="footer-col-title">Navigation</div>
+          <a href="index.html"    class="footer-link">Home</a>
+          <a href="missions.html" class="footer-link">Mission Board</a>
+          <a href="report.html"   class="footer-link">Submit Report</a>
+          <a href="training.html" class="footer-link">Training Centre</a>
+          <a href="profile.html"  class="footer-link">Pilot Profile</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Operations</div>
+          <a href="missions.html" class="footer-link">Active Missions</a>
+          <a href="#"             class="footer-link">NOTAM Board</a>
+          <a href="#"             class="footer-link">ATC Coordination</a>
+          <a href="#"             class="footer-link">Events</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Community</div>
+          <a href="#" class="footer-link">Discord Server</a>
+          <a href="#" class="footer-link">Rules & SOPs</a>
+          <a href="#" class="footer-link">Support</a>
+          <a href="#" class="footer-link">About GFIG</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Global Flight Inspection Group</span>
+        <span>Not affiliated with any real-world aviation authority.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

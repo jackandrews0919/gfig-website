@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mission Board — GFIG</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈</text></svg>">
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="logo.png" alt="GFIG – Global Flight Inspection Group Virtual" class="nav-logo-img">
+      </a>
+      <div class="nav-links">
+        <a href="index.html"     class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html"  class="nav-link active">◉ Missions</a>
+        <a href="training.html"  class="nav-link">◎ Training</a>
+        <a href="profile.html"   class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot">
+          <div class="nav-avatar">JH</div>
+          <div class="nav-pilot-info">
+            <div class="nav-pilot-name">CPT Harrison</div>
+            <div class="nav-pilot-rank">Senior Inspector</div>
+          </div>
+          <div class="nav-online"></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Page ── -->
+  <div class="page">
+    <div class="container">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1>Mission Board</h1>
+          <p>Browse and claim available flight inspection missions across all regions.</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="live-dot">47 Available</span>
+          <span class="badge badge-active">12 In Progress</span>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <div class="search-wrap" style="flex:1; min-width:200px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search mission ID, ICAO, callsign…" id="mission-search">
+        </div>
+        <select class="filter-select" id="filter-region">
+          <option value="">All Regions</option>
+          <option value="europe">Europe</option>
+          <option value="northamerica">North America</option>
+          <option value="asiapacific">Asia-Pacific</option>
+          <option value="middleeast">Middle East</option>
+          <option value="africa">Africa</option>
+          <option value="latam">Latin America</option>
+        </select>
+        <select class="filter-select" id="filter-type">
+          <option value="">All Types</option>
+          <option value="ils">ILS Calibration</option>
+          <option value="vor">VOR Check</option>
+          <option value="ndb">NDB Calibration</option>
+          <option value="approach">Approach Validation</option>
+          <option value="survey">Airport Survey</option>
+          <option value="procedure">Procedure Validation</option>
+        </select>
+        <select class="filter-select" id="filter-priority">
+          <option value="">All Priority</option>
+          <option value="urgent">Urgent</option>
+          <option value="priority">Priority</option>
+          <option value="routine">Routine</option>
+        </select>
+        <select class="filter-select" id="filter-status">
+          <option value="">All Status</option>
+          <option value="available">Available</option>
+          <option value="active">In Progress</option>
+        </select>
+        <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+      </div>
+
+      <!-- Mission Count -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+        <p class="text-sm text-sub" id="mission-count">Showing 20 of 47 missions</p>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-icon" id="view-grid" title="Grid view" onclick="setView('grid')" style="color:var(--blue-light); border-color:var(--blue);">⊞</button>
+          <button class="btn btn-icon" id="view-list" title="List view" onclick="setView('list')">☰</button>
+        </div>
+      </div>
+
+      <!-- Mission Grid -->
+      <div class="grid-auto animate-stagger" id="mission-grid">
+
+        <!-- Mission Cards -->
+        <div class="mission-card" data-region="europe" data-type="ils" data-priority="urgent" data-status="available" onclick="openMissionModal('GFI-2026-0291','EGLL','EHAM','ILS Calibration','Urgent','B737 / A320','Europe','Calibrate ILS RWY 18R at EHAM. Localizer and glide slope check required. NOTAM active.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0291</div>
+              <div class="mission-route">EGLL <span class="mission-route-arrow">→</span> EHAM</div>
+            </div>
+            <span class="badge badge-urgent">Urgent</span>
+          </div>
+          <div class="text-sm text-sub">ILS Calibration</div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">B737 / A320</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Europe</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">1h 20m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+180 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0291')">Claim Mission</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="northamerica" data-type="vor" data-priority="priority" data-status="available" onclick="openMissionModal('GFI-2026-0289','KLAX','KLAS','VOR Check','Priority','B737','North America','VOR frequency and signal integrity check. KLAS 116.9 reporting anomalies in sector.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0289</div>
+              <div class="mission-route">KLAX <span class="mission-route-arrow">→</span> KLAS</div>
+            </div>
+            <span class="badge badge-priority">Priority</span>
+          </div>
+          <div class="text-sm text-sub">VOR Check</div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">B737</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">N. America</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">55m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+140 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0289')">Claim Mission</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="asiapacific" data-type="approach" data-priority="routine" data-status="available" onclick="openMissionModal('GFI-2026-0288','RJTT','RJBB','Approach Validation','Routine','A320','Asia-Pacific','Validate new RNAV approach procedures for RJBB RWY 06. SID/STAR cross-check required.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0288</div>
+              <div class="mission-route">RJTT <span class="mission-route-arrow">→</span> RJBB</div>
+            </div>
+            <span class="badge badge-routine">Routine</span>
+          </div>
+          <div class="text-sm text-sub">Approach Validation</div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">A320</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Asia-Pacific</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">1h 10m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+120 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0288')">Claim Mission</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="middleeast" data-type="ndb" data-priority="priority" data-status="available" onclick="openMissionModal('GFI-2026-0287','OMDB','OTHH','NDB Calibration','Priority','B737','Middle East','NDB signal check OMDB to OTHH corridor. Cross-check with ATIS feeds and ATC coordination required.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0287</div>
+              <div class="mission-route">OMDB <span class="mission-route-arrow">→</span> OTHH</div>
+            </div>
+            <span class="badge badge-priority">Priority</span>
+          </div>
+          <div class="text-sm text-sub">NDB Calibration</div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">B737</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Middle East</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">1h 05m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+140 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0287')">Claim Mission</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="africa" data-type="survey" data-priority="routine" data-status="available" onclick="openMissionModal('GFI-2026-0286','FAOR','FACT','Airport Survey','Routine','B737','Africa','Full runway and taxiway geometry verification. FAOR-FACT south corridor. AIP chart cross-check.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0286</div>
+              <div class="mission-route">FAOR <span class="mission-route-arrow">→</span> FACT</div>
+            </div>
+            <span class="badge badge-routine">Routine</span>
+          </div>
+          <div class="text-sm text-sub">Airport Survey</div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">B737</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Africa</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">2h 20m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+100 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0286')">Claim Mission</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="europe" data-type="ils" data-priority="routine" data-status="active">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0290</div>
+              <div class="mission-route">EDDF <span class="mission-route-arrow">→</span> EDDM</div>
+            </div>
+            <span class="badge badge-routine">Routine</span>
+          </div>
+          <div class="text-sm text-sub">ILS Calibration</div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">A320</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Europe</div></div>
+            <div><div class="mission-detail-label">Inspector</div><div class="mission-detail-val text-blue">CPT Wright</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+120 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-active">In Progress</span>
+            <button class="btn btn-sm btn-secondary">View Brief</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="asiapacific" data-type="survey" data-priority="priority" data-status="available" onclick="openMissionModal('GFI-2026-0284','YSSY','YMML','Airport Survey','Priority','B737','Asia-Pacific','Full airport survey YSSY to YMML. Obstacle clearance verification and chart cross-check required.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0284</div>
+              <div class="mission-route">YSSY <span class="mission-route-arrow">→</span> YMML</div>
+            </div>
+            <span class="badge badge-priority">Priority</span>
+          </div>
+          <div class="text-sm text-sub">Airport Survey</div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">B737</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Asia-Pacific</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">1h 30m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+140 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0284')">Claim Mission</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="northamerica" data-type="procedure" data-priority="urgent" data-status="available" onclick="openMissionModal('GFI-2026-0283','KJFK','KBOS','Procedure Validation','Urgent','B737 / A320','North America','SID/STAR validation for new departure routes from KJFK. ATC coordination required. Critical timeline.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0283</div>
+              <div class="mission-route">KJFK <span class="mission-route-arrow">→</span> KBOS</div>
+            </div>
+            <span class="badge badge-urgent">Urgent</span>
+          </div>
+          <div class="text-sm text-sub">Procedure Validation</div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">B737 / A320</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">N. America</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">1h 00m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+200 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0283')">Claim Mission</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="europe" data-type="vor" data-priority="routine" data-status="available" onclick="openMissionModal('GFI-2026-0282','EGKK','EIDW','VOR Check','Routine','A320','Europe','Routine VOR signal verification EGKK to EIDW corridor. Standard calibration procedures apply.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0282</div>
+              <div class="mission-route">EGKK <span class="mission-route-arrow">→</span> EIDW</div>
+            </div>
+            <span class="badge badge-routine">Routine</span>
+          </div>
+          <div class="text-sm text-sub">VOR Check</div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">A320</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Europe</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">1h 15m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+100 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0282')">Claim Mission</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="latam" data-type="ils" data-priority="priority" data-status="available" onclick="openMissionModal('GFI-2026-0281','SBGR','SBBE','ILS Calibration','Priority','B737','Latin America','ILS RWY 10 at SBBE - anomaly reported. Full calibration flight required. Glide slope check critical.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0281</div>
+              <div class="mission-route">SBGR <span class="mission-route-arrow">→</span> SBBE</div>
+            </div>
+            <span class="badge badge-priority">Priority</span>
+          </div>
+          <div class="text-sm text-sub">ILS Calibration</div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">B737</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Latin America</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">3h 10m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+180 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0281')">Claim Mission</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="middleeast" data-type="approach" data-priority="routine" data-status="available" onclick="openMissionModal('GFI-2026-0280','OERK','OEJN','Approach Validation','Routine','A320','Middle East','Validate RNAV(GPS) approach RWY 34R at OEJN. Chart amendment pending inspection sign-off.')">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0280</div>
+              <div class="mission-route">OERK <span class="mission-route-arrow">→</span> OEJN</div>
+            </div>
+            <span class="badge badge-routine">Routine</span>
+          </div>
+          <div class="text-sm text-sub">Approach Validation</div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">A320</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Middle East</div></div>
+            <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">1h 40m</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+120 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-available">Available</span>
+            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('GFI-2026-0280')">Claim Mission</button>
+          </div>
+        </div>
+
+        <div class="mission-card" data-region="europe" data-type="ndb" data-priority="routine" data-status="active">
+          <div class="mission-card-header">
+            <div>
+              <div class="mission-id">GFI-2026-0279</div>
+              <div class="mission-route">LEMD <span class="mission-route-arrow">→</span> LEBL</div>
+            </div>
+            <span class="badge badge-routine">Routine</span>
+          </div>
+          <div class="text-sm text-sub">NDB Calibration</div>
+          <div class="mission-details">
+            <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">B737</div></div>
+            <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">Europe</div></div>
+            <div><div class="mission-detail-label">Inspector</div><div class="mission-detail-val text-blue">INS Santos</div></div>
+            <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+100 pts</div></div>
+          </div>
+          <div class="mission-card-footer">
+            <span class="badge badge-active">In Progress</span>
+            <button class="btn btn-sm btn-secondary">View Brief</button>
+          </div>
+        </div>
+
+      </div><!-- end mission-grid -->
+
+      <!-- Load More -->
+      <div class="text-center mt-32">
+        <button class="btn btn-secondary" onclick="loadMoreMissions()">Load More Missions (27 remaining)</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Mission Modal ── -->
+  <div class="modal-overlay" id="mission-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="modal-title">Mission Brief</div>
+          <div class="td-mono mt-8" id="modal-id" style="font-size:0.8rem;"></div>
+        </div>
+        <button class="modal-close" onclick="closeMissionModal()">✕</button>
+      </div>
+      <div id="modal-route" style="font-family:var(--font-head); font-size:1.8rem; font-weight:700; letter-spacing:0.08em; margin-bottom:20px;"></div>
+      <div class="grid-2 mb-20" id="modal-details"></div>
+      <div class="form-group">
+        <div class="form-label">Mission Brief</div>
+        <div class="alert alert-info" id="modal-brief" style="font-size:0.85rem;"></div>
+      </div>
+      <div class="alert alert-warn" style="font-size:0.82rem;">
+        📋 After claiming, your mission will appear under "My Active Missions" on the Dashboard. File your report within 24 hours of completion.
+      </div>
+      <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-primary w-full" id="modal-claim-btn" onclick="confirmClaim()">✓ Claim This Mission</button>
+        <button class="btn btn-secondary" onclick="closeMissionModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-logo">✈ GFIG</div>
+          <p class="footer-desc">Global Flight Inspection Group — Maintaining the highest standards of virtual aviation through systematic flight inspection operations worldwide.</p>
+        </div>
+        <div>
+          <div class="footer-col-title">Navigation</div>
+          <a href="index.html"    class="footer-link">Home</a>
+          <a href="dashboard.html" class="footer-link">Dashboard</a>
+          <a href="report.html"   class="footer-link">Submit Report</a>
+          <a href="training.html" class="footer-link">Training Centre</a>
+          <a href="profile.html"  class="footer-link">Pilot Profile</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Filters</div>
+          <a href="#" class="footer-link" onclick="document.getElementById('filter-region').value='europe';applyFilters();return false;">Europe</a>
+          <a href="#" class="footer-link" onclick="document.getElementById('filter-region').value='northamerica';applyFilters();return false;">North America</a>
+          <a href="#" class="footer-link" onclick="document.getElementById('filter-region').value='asiapacific';applyFilters();return false;">Asia-Pacific</a>
+          <a href="#" class="footer-link" onclick="document.getElementById('filter-region').value='middleeast';applyFilters();return false;">Middle East</a>
+          <a href="#" class="footer-link" onclick="document.getElementById('filter-region').value='africa';applyFilters();return false;">Africa</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Community</div>
+          <a href="#" class="footer-link">Discord Server</a>
+          <a href="#" class="footer-link">Rules & SOPs</a>
+          <a href="#" class="footer-link">Support</a>
+          <a href="#" class="footer-link">About GFIG</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Global Flight Inspection Group</span>
+        <span>Not affiliated with any real-world aviation authority.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script src="js/missions.js"></script>
+</body>
+</html>

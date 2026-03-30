@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submit Report — GFIG</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈</text></svg>">
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="logo.png" alt="GFIG – Global Flight Inspection Group Virtual" class="nav-logo-img">
+      </a>
+      <div class="nav-links">
+        <a href="index.html"     class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html"  class="nav-link">◉ Missions</a>
+        <a href="training.html"  class="nav-link">◎ Training</a>
+        <a href="profile.html"   class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot">
+          <div class="nav-avatar">JH</div>
+          <div class="nav-pilot-info">
+            <div class="nav-pilot-name">CPT Harrison</div>
+            <div class="nav-pilot-rank">Senior Inspector</div>
+          </div>
+          <div class="nav-online"></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Page ── -->
+  <div class="page">
+    <div class="container" style="max-width: 960px;">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1>Submit Inspection Report</h1>
+          <p>File your mission report. Results are automatically posted to the Discord #inspection-reports channel.</p>
+        </div>
+        <a href="dashboard.html" class="btn btn-secondary">← Back to Dashboard</a>
+      </div>
+
+      <!-- Success Banner (hidden) -->
+      <div class="alert alert-success hidden" id="success-banner">
+        ✓ Report submitted successfully! Results have been posted to <strong>#inspection-reports</strong> on Discord. Your points have been updated.
+        <a href="dashboard.html" style="color:var(--pass); margin-left:12px; font-weight:700;">Go to Dashboard →</a>
+      </div>
+
+      <div id="report-form-wrap">
+
+        <!-- Step Indicator -->
+        <div style="display:flex; align-items:center; gap:0; margin-bottom:32px;">
+          <div id="step-ind-1" style="display:flex; align-items:center; gap:8px; color:var(--blue-light); font-family:var(--font-head); font-size:0.78rem; font-weight:700;">
+            <div style="width:28px; height:28px; border-radius:50%; background:var(--blue); display:flex; align-items:center; justify-content:center; font-size:0.8rem;">1</div>
+            MISSION
+          </div>
+          <div style="flex:1; height:1px; background:var(--border); margin:0 12px;"></div>
+          <div id="step-ind-2" style="display:flex; align-items:center; gap:8px; color:var(--text-muted); font-family:var(--font-head); font-size:0.78rem; font-weight:700;">
+            <div style="width:28px; height:28px; border-radius:50%; background:var(--bg-card); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:0.8rem;">2</div>
+            FLIGHT DATA
+          </div>
+          <div style="flex:1; height:1px; background:var(--border); margin:0 12px;"></div>
+          <div id="step-ind-3" style="display:flex; align-items:center; gap:8px; color:var(--text-muted); font-family:var(--font-head); font-size:0.78rem; font-weight:700;">
+            <div style="width:28px; height:28px; border-radius:50%; background:var(--bg-card); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:0.8rem;">3</div>
+            RESULT
+          </div>
+          <div style="flex:1; height:1px; background:var(--border); margin:0 12px;"></div>
+          <div id="step-ind-4" style="display:flex; align-items:center; gap:8px; color:var(--text-muted); font-family:var(--font-head); font-size:0.78rem; font-weight:700;">
+            <div style="width:28px; height:28px; border-radius:50%; background:var(--bg-card); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:0.8rem;">4</div>
+            REVIEW
+          </div>
+        </div>
+
+        <form id="report-form" onsubmit="submitReport(event)">
+
+          <!-- ── STEP 1: Mission Selection ── -->
+          <div id="step-1" class="card mb-24">
+            <div class="card-header">
+              <span class="card-title">① Mission Selection</span>
+              <span class="badge badge-active">Step 1 of 4</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="mission-select">Select Active Mission</label>
+              <select class="form-control" id="mission-select" onchange="populateMissionData(this.value)" required>
+                <option value="">— Select a mission to file report for —</option>
+                <option value="GFI-2026-0285">GFI-2026-0285 — EGKK → EIDW — ILS Calibration [REPORT DUE]</option>
+                <option value="GFI-2026-0283">GFI-2026-0283 — EGCC → EGGD — VOR Check</option>
+                <option value="GFI-2026-0281">GFI-2026-0281 — EDDF → EDDM — Procedure Validation</option>
+              </select>
+              <div class="form-hint">Only your active claimed missions will appear here.</div>
+            </div>
+
+            <!-- Auto-populated mission info -->
+            <div id="mission-info-card" class="hidden" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-md); padding: 18px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <div class="font-head" style="font-size:1.4rem; letter-spacing:0.06em;" id="info-route">—</div>
+                <span id="info-priority" class="badge badge-routine">Routine</span>
+              </div>
+              <div class="grid-2" style="gap:12px;">
+                <div><div class="form-label" style="margin-bottom:2px;">Mission Type</div><div class="text-sm" id="info-type">—</div></div>
+                <div><div class="form-label" style="margin-bottom:2px;">Aircraft Type</div><div class="text-sm font-mono" id="info-aircraft">—</div></div>
+                <div><div class="form-label" style="margin-bottom:2px;">Callsign</div><div class="text-sm font-mono text-blue" id="info-callsign">—</div></div>
+                <div><div class="form-label" style="margin-bottom:2px;">Region</div><div class="text-sm" id="info-region">—</div></div>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+              <button type="button" class="btn btn-primary" onclick="goToStep(2)" id="step1-next" disabled>Next: Flight Data →</button>
+            </div>
+          </div>
+
+          <!-- ── STEP 2: Flight Data ── -->
+          <div id="step-2" class="card mb-24 hidden">
+            <div class="card-header">
+              <span class="card-title">② Flight Data</span>
+              <span class="badge badge-active">Step 2 of 4</span>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="flight-date">Flight Date (UTC)</label>
+                <input type="date" class="form-control" id="flight-date" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="flight-time">Departure Time (UTC)</label>
+                <input type="time" class="form-control" id="flight-time" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="block-off">Block Off Time</label>
+                <input type="time" class="form-control" id="block-off" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="block-on">Block On Time</label>
+                <input type="time" class="form-control" id="block-on" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="cruise-alt">Cruise Altitude (ft)</label>
+                <input type="number" class="form-control" id="cruise-alt" placeholder="e.g. 15000" min="1000" max="60000" required>
+                <div class="form-hint">Altitude used during inspection runs</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="airspeed">Indicated Airspeed (kts)</label>
+                <input type="number" class="form-control" id="airspeed" placeholder="e.g. 230" min="80" max="600" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="atc-contact">ATC Contact (Y/N)</label>
+                <select class="form-control" id="atc-contact" required>
+                  <option value="">— Select —</option>
+                  <option value="yes">Yes — ATC online and coordinated</option>
+                  <option value="no">No — ATC offline, UNICOM used</option>
+                  <option value="partial">Partial — Handoff departed ATC coverage</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="network">Simulator Network</label>
+                <select class="form-control" id="network" required>
+                  <option value="">— Select —</option>
+                  <option value="vatsim">VATSIM</option>
+                  <option value="ivao">IVAO</option>
+                  <option value="poscon">POSCON</option>
+                  <option value="offline">Offline</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:20px;">
+              <button type="button" class="btn btn-secondary" onclick="goToStep(1)">← Back</button>
+              <button type="button" class="btn btn-primary" onclick="goToStep(3)">Next: Results →</button>
+            </div>
+          </div>
+
+          <!-- ── STEP 3: Findings & Result ── -->
+          <div id="step-3" class="card mb-24 hidden">
+            <div class="card-header">
+              <span class="card-title">③ Inspection Findings & Result</span>
+              <span class="badge badge-active">Step 3 of 4</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Overall Inspection Result</label>
+              <div class="result-selector">
+                <div class="result-option pass">
+                  <input type="radio" name="result" id="result-pass" value="pass">
+                  <label for="result-pass">
+                    <span class="result-icon">✅</span>
+                    PASS
+                    <span class="text-xs" style="margin-top:2px;">All parameters within tolerance</span>
+                  </label>
+                </div>
+                <div class="result-option monitor">
+                  <input type="radio" name="result" id="result-monitor" value="monitor">
+                  <label for="result-monitor">
+                    <span class="result-icon">⚠️</span>
+                    MONITOR
+                    <span class="text-xs" style="margin-top:2px;">Minor anomaly — watch and recheck</span>
+                  </label>
+                </div>
+                <div class="result-option fail">
+                  <input type="radio" name="result" id="result-fail" value="fail">
+                  <label for="result-fail">
+                    <span class="result-icon">🛑</span>
+                    FAIL
+                    <span class="text-xs" style="margin-top:2px;">Out of tolerance — action required</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-hint">MONITOR and FAIL results will trigger a Discord notification to the Chief Inspector.</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="freq-check">Frequency / Signal Check</label>
+              <select class="form-control" id="freq-check">
+                <option value="">— Select result —</option>
+                <option value="nominal">Nominal — within ±0.5%</option>
+                <option value="marginal">Marginal — within ±1.5%</option>
+                <option value="degraded">Degraded — outside tolerance</option>
+                <option value="na">N/A — not applicable to this mission type</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="approach-check">Approach Geometry / Localizer</label>
+              <select class="form-control" id="approach-check">
+                <option value="">— Select result —</option>
+                <option value="nominal">Nominal — correct alignment verified</option>
+                <option value="minor">Minor deviation — within acceptable range</option>
+                <option value="major">Major deviation — requires correction</option>
+                <option value="na">N/A — not applicable</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="obs-weather">Weather Conditions</label>
+                <select class="form-control" id="obs-weather">
+                  <option value="vmcgood">VMC — Good visibility</option>
+                  <option value="vmcmod">VMC — Moderate visibility</option>
+                  <option value="imc">IMC — Instrument conditions</option>
+                  <option value="cavok">CAVOK</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="obs-wind">Wind (kts / Direction)</label>
+                <input type="text" class="form-control" id="obs-wind" placeholder="e.g. 270/12kts">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="observations">Technical Observations</label>
+              <textarea class="form-control" id="observations" rows="4" placeholder="Describe any signal anomalies, deviations from expected readings, ATC coordination issues, or technical notes. Be specific about frequencies, altitudes, and approach geometry where applicable…" required></textarea>
+              <div class="form-hint">Minimum 50 characters required for MONITOR and FAIL results.</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="narrative">Flight Narrative</label>
+              <textarea class="form-control" id="narrative" rows="3" placeholder="Brief summary of the overall flight — any deviations from planned route, ATC instructions, NOTAM compliance, or other notable events…"></textarea>
+            </div>
+
+            <div class="form-group" id="fail-action-wrap" style="display:none;">
+              <label class="form-label">Recommended Action (FAIL)</label>
+              <select class="form-control" id="fail-action">
+                <option value="maintenance">Maintenance referral — signal fault</option>
+                <option value="recheck">Re-inspection required — 72hr</option>
+                <option value="suspend">Suspend approach procedure</option>
+                <option value="notam">Issue NOTAM — advise pilots</option>
+                <option value="other">Other — see observations</option>
+              </select>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:20px;">
+              <button type="button" class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
+              <button type="button" class="btn btn-primary" onclick="goToStep(4)">Review Report →</button>
+            </div>
+          </div>
+
+          <!-- ── STEP 4: Review & Submit ── -->
+          <div id="step-4" class="card mb-24 hidden">
+            <div class="card-header">
+              <span class="card-title">④ Review & Submit</span>
+              <span class="badge badge-active">Step 4 of 4</span>
+            </div>
+
+            <div id="review-content">
+              <!-- Dynamically populated by JS -->
+            </div>
+
+            <div class="alert alert-warn mt-16">
+              ⚠️ By submitting, you confirm this report is accurate. Reports cannot be amended after submission. MONITOR/FAIL results are immediately escalated to the Chief Inspector.
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; flex-wrap:wrap; gap:12px;">
+              <button type="button" class="btn btn-secondary" onclick="goToStep(3)">← Edit Report</button>
+              <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+                ✓ Submit Inspection Report
+              </button>
+            </div>
+          </div>
+
+        </form>
+      </div><!-- end report-form-wrap -->
+
+    </div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-logo">✈ GFIG</div>
+          <p class="footer-desc">Global Flight Inspection Group — Maintaining the highest standards of virtual aviation through systematic flight inspection operations worldwide.</p>
+        </div>
+        <div>
+          <div class="footer-col-title">Navigation</div>
+          <a href="index.html"     class="footer-link">Home</a>
+          <a href="dashboard.html" class="footer-link">Dashboard</a>
+          <a href="missions.html"  class="footer-link">Mission Board</a>
+          <a href="training.html"  class="footer-link">Training Centre</a>
+          <a href="profile.html"   class="footer-link">Pilot Profile</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Help</div>
+          <a href="#" class="footer-link">Reporting Guide</a>
+          <a href="#" class="footer-link">Tolerance Standards</a>
+          <a href="#" class="footer-link">Result Definitions</a>
+          <a href="#" class="footer-link">SOPs</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Community</div>
+          <a href="#" class="footer-link">Discord Server</a>
+          <a href="#" class="footer-link">Rules & SOPs</a>
+          <a href="#" class="footer-link">Support</a>
+          <a href="#" class="footer-link">About GFIG</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Global Flight Inspection Group</span>
+        <span>Not affiliated with any real-world aviation authority.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script src="js/report.js"></script>
+</body>
+</html>
