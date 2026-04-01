@@ -20,12 +20,12 @@
    ================================================================ */
 
 const FIREBASE_CONFIG = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID"
+  apiKey:            "AIzaSyDw8uMXQaLL0kT5x8inK50J8CRcDLyRo9c",
+  authDomain:        "gfig-virtual.firebaseapp.com",
+  projectId:         "gfig-virtual",
+  storageBucket:     "gfig-virtual.firebasestorage.app",
+  messagingSenderId: "218747230547",
+  appId:             "1:218747230547:web:a67cadc4693dad22b669a6"
 };
 
 /* ── Bootstrap admin accounts ─────────────────────────────────
