@@ -369,8 +369,8 @@
     }
 
     /* ── Load Roster ── */
-    document.addEventListener('gfig:authready', async function() {
-      if (!window.GFIG_FIREBASE_READY) {
+    async function loadRoster() {
+      if (!window.db) {
         document.getElementById('roster-tbody').innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:32px;">Unable to connect to database.</td></tr>';
         return;
       }
@@ -384,7 +384,22 @@
         console.error('Roster load error:', err);
         document.getElementById('roster-tbody').innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:32px;">Error loading roster data.</td></tr>';
       }
-    });
+    }
+
+    /* Wait for Firebase to be ready, then load */
+    function waitForFirebase() {
+      if (window.GFIG_FIREBASE_READY && window.db) { loadRoster(); return; }
+      var attempts = 0;
+      var check = setInterval(function() {
+        attempts++;
+        if (window.GFIG_FIREBASE_READY && window.db) { clearInterval(check); loadRoster(); }
+        else if (attempts > 50) {
+          clearInterval(check);
+          document.getElementById('roster-tbody').innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:32px;">Unable to connect to database.</td></tr>';
+        }
+      }, 100);
+    }
+    waitForFirebase();
   </script>
 </body>
 </html>

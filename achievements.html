@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Achievements — GFIG</title>
+  <meta name="description" content="GFIG Achievement & Badge System — Track your milestones and unlock awards.">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <style>
+    .ach-progress { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+    .ach-prog-card { flex: 1; min-width: 160px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; text-align: center; }
+    .ach-prog-val { font-family: var(--font-head); font-size: 1.5rem; font-weight: 700; letter-spacing: 0.06em; }
+    .ach-prog-lbl { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+    .ach-prog-bar { width: 100%; height: 6px; background: var(--bg-secondary); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+    .ach-prog-fill { height: 100%; background: linear-gradient(90deg, var(--blue), #00e676); border-radius: 3px; transition: width 0.6s ease; }
+    .ach-section-title { font-family: var(--font-head); font-size: 0.85rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin: 28px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .ach-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px; text-align: center; position: relative; transition: all var(--t); }
+    .ach-card:hover { border-color: var(--blue); transform: translateY(-2px); }
+    .ach-card.locked { opacity: 0.45; filter: grayscale(0.8); }
+    .ach-card.earned { border-color: rgba(0,230,118,0.3); }
+    .ach-icon { font-size: 2.2rem; margin-bottom: 8px; }
+    .ach-name { font-weight: 700; font-size: 0.88rem; margin-bottom: 4px; }
+    .ach-desc { font-size: 0.75rem; color: var(--text-sub); line-height: 1.5; }
+    .ach-date { font-size: 0.68rem; color: var(--pass); margin-top: 6px; }
+    .ach-locked-label { position: absolute; top: 10px; right: 10px; font-size: 0.62rem; color: var(--text-muted); background: var(--bg-secondary); padding: 2px 6px; border-radius: var(--r-sm); }
+    .ach-earned-check { position: absolute; top: 10px; right: 10px; background: var(--pass-bg); color: var(--pass); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; }
+    .ach-rarity { font-size: 0.62rem; margin-top: 4px; padding: 1px 6px; border-radius: var(--r-sm); display: inline-block; }
+    .ach-rarity-common { background: var(--bg-secondary); color: var(--text-muted); }
+    .ach-rarity-rare { background: rgba(64,170,255,0.12); color: #40aaff; }
+    .ach-rarity-epic { background: rgba(160,100,255,0.12); color: #a064ff; }
+    .ach-rarity-legendary { background: rgba(255,214,0,0.12); color: #ffd700; }
+    @media (max-width: 640px) { .ach-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name">Member</div><div class="nav-pilot-rank"></div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;" title="Admin Panel">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;" title="Sign Out">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>🏆 ACHIEVEMENTS</h1>
+          <p>Track your GFIG milestones, unlock badges, and earn recognition for your flying career</p>
+        </div>
+      </div>
+
+      <!-- Progress Overview -->
+      <div class="ach-progress">
+        <div class="ach-prog-card">
+          <div class="ach-prog-val" id="ach-unlocked">0 / 0</div>
+          <div class="ach-prog-lbl">Achievements Unlocked</div>
+          <div class="ach-prog-bar"><div class="ach-prog-fill" id="ach-bar" style="width:0%"></div></div>
+        </div>
+        <div class="ach-prog-card">
+          <div class="ach-prog-val" id="ach-missions">0</div>
+          <div class="ach-prog-lbl">Total Missions</div>
+        </div>
+        <div class="ach-prog-card">
+          <div class="ach-prog-val" id="ach-hours">0</div>
+          <div class="ach-prog-lbl">Flight Hours</div>
+        </div>
+        <div class="ach-prog-card">
+          <div class="ach-prog-val" id="ach-rank">—</div>
+          <div class="ach-prog-lbl">Current Rank</div>
+        </div>
+      </div>
+
+      <div id="ach-content"><div style="text-align:center;color:var(--text-muted);padding:40px;">Loading achievements…</div></div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    // Full achievement definitions
+    var ACHIEVEMENTS = [
+      // MISSION MILESTONES
+      { id:'first-mission', name:'First Mission Complete', icon:'🥇', desc:'Complete your first inspection mission.', category:'Missions', rarity:'common', check:function(d){return d.missions>=1;} },
+      { id:'missions-10', name:'10 Missions', icon:'🎖', desc:'Complete 10 inspection missions.', category:'Missions', rarity:'common', check:function(d){return d.missions>=10;} },
+      { id:'missions-25', name:'25 Missions', icon:'🪙', desc:'Complete 25 inspection missions.', category:'Missions', rarity:'rare', check:function(d){return d.missions>=25;} },
+      { id:'missions-50', name:'Half Century', icon:'🏵', desc:'Complete 50 inspection missions.', category:'Missions', rarity:'rare', check:function(d){return d.missions>=50;} },
+      { id:'centurion', name:'Centurion', icon:'🏅', desc:'Complete 100 inspection missions.', category:'Missions', rarity:'epic', check:function(d){return d.missions>=100;} },
+      { id:'missions-250', name:'Veteran Pilot', icon:'⭐', desc:'Complete 250 missions — a true veteran.', category:'Missions', rarity:'legendary', check:function(d){return d.missions>=250;} },
+      // EXPLORATION
+      { id:'globetrotter', name:'Globetrotter', icon:'🌍', desc:'Report from 5 different regions.', category:'Exploration', rarity:'rare', check:function(d){return d.regions>=5;} },
+      { id:'explorer-10', name:'World Explorer', icon:'🗺', desc:'Visit 10 unique airports in your logbook.', category:'Exploration', rarity:'rare', check:function(d){return d.airports>=10;} },
+      { id:'explorer-25', name:'Jetsetter', icon:'🧭', desc:'Visit 25 unique airports.', category:'Exploration', rarity:'epic', check:function(d){return d.airports>=25;} },
+      { id:'explorer-50', name:'Global Navigator', icon:'🌐', desc:'Visit 50 unique airports.', category:'Exploration', rarity:'legendary', check:function(d){return d.airports>=50;} },
+      // FLIGHT TIME
+      { id:'hours-10', name:'10 Hours', icon:'⏱', desc:'Log 10 hours of flight time.', category:'Flight Time', rarity:'common', check:function(d){return d.hours>=10;} },
+      { id:'hours-50', name:'50 Hours', icon:'🕐', desc:'Log 50 hours of flight time.', category:'Flight Time', rarity:'rare', check:function(d){return d.hours>=50;} },
+      { id:'hours-100', name:'100 Hours', icon:'💯', desc:'Log 100 hours of flight time.', category:'Flight Time', rarity:'epic', check:function(d){return d.hours>=100;} },
+      { id:'hours-500', name:'500 Hours', icon:'✈', desc:'Log 500 hours — airline captain territory.', category:'Flight Time', rarity:'legendary', check:function(d){return d.hours>=500;} },
+      // TRAINING
+      { id:'first-checkride', name:'First Checkride', icon:'📋', desc:'Pass your first checkride.', category:'Training', rarity:'common', check:function(d){return d.checkrides>=1;} },
+      { id:'all-courses', name:'Scholar', icon:'🎓', desc:'Complete all available training courses.', category:'Training', rarity:'epic', check:function(d){return d.coursesComplete;} },
+      // COMMUNITY
+      { id:'first-pirep', name:'Weather Watcher', icon:'📡', desc:'Submit your first PIREP.', category:'Community', rarity:'common', check:function(d){return d.pireps>=1;} },
+      { id:'pireps-10', name:'Storm Chaser', icon:'⛈', desc:'Submit 10 PIREPs.', category:'Community', rarity:'rare', check:function(d){return d.pireps>=10;} },
+      { id:'first-event', name:'Event Participant', icon:'🎪', desc:'Participate in your first GFIG event.', category:'Community', rarity:'common', check:function(d){return d.events>=1;} },
+      // SPECIAL
+      { id:'night-owl', name:'Night Owl', icon:'🦉', desc:'Log a flight between 00:00–05:00 UTC.', category:'Special', rarity:'rare', check:function(d){return d.nightFlights>=1;} },
+      { id:'vatsim-online', name:'Online Pilot', icon:'🔗', desc:'Log your first VATSIM network flight.', category:'Special', rarity:'common', check:function(d){return d.vatsimFlights>=1;} }
+    ];
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    function renderAchievements(earnedMap) {
+      var cats = {};
+      ACHIEVEMENTS.forEach(function(a) {
+        if (!cats[a.category]) cats[a.category] = [];
+        cats[a.category].push(a);
+      });
+      var totalCount = ACHIEVEMENTS.length;
+      var earnedCount = Object.keys(earnedMap).length;
+      var pct = totalCount > 0 ? Math.round(earnedCount / totalCount * 100) : 0;
+      document.getElementById('ach-unlocked').textContent = earnedCount + ' / ' + totalCount;
+      document.getElementById('ach-bar').style.width = pct + '%';
+
+      var html = '';
+      var catOrder = ['Missions', 'Exploration', 'Flight Time', 'Training', 'Community', 'Special'];
+      catOrder.forEach(function(cat) {
+        var items = cats[cat];
+        if (!items) return;
+        html += '<div class="ach-section-title">' + esc(cat) + '</div><div class="ach-grid">';
+        items.forEach(function(a) {
+          var earned = earnedMap[a.id];
+          html += '<div class="ach-card ' + (earned ? 'earned' : 'locked') + '">'
+            + (earned ? '<div class="ach-earned-check">✓</div>' : '<div class="ach-locked-label">🔒 Locked</div>')
+            + '<div class="ach-icon">' + a.icon + '</div>'
+            + '<div class="ach-name">' + esc(a.name) + '</div>'
+            + '<div class="ach-desc">' + esc(a.desc) + '</div>'
+            + '<div class="ach-rarity ach-rarity-' + a.rarity + '">' + a.rarity + '</div>'
+            + (earned && earned.earnedDate ? '<div class="ach-date">Earned ' + esc(earned.earnedDate) + '</div>' : '')
+            + '</div>';
+        });
+        html += '</div>';
+      });
+      document.getElementById('ach-content').innerHTML = html;
+    }
+
+    async function loadAchievements(user) {
+      // Get earned awards from user doc
+      var earned = {};
+      if (user.awards && Array.isArray(user.awards)) {
+        user.awards.forEach(function(a) {
+          if (typeof a === 'string') earned[a] = { id: a };
+          else earned[a.id] = a;
+        });
+      }
+
+      // Set stats
+      document.getElementById('ach-missions').textContent = user.totalMissions || 0;
+      document.getElementById('ach-hours').textContent = Math.round(user.totalHours || 0);
+      document.getElementById('ach-rank').textContent = user.rank || 'New Hire';
+
+      // Also check eligibility for new achievements
+      try {
+        var stats = {
+          missions: user.totalMissions || 0,
+          hours: user.totalHours || 0,
+          regions: 0, airports: 0, pireps: 0, events: 0,
+          checkrides: 0, coursesComplete: false,
+          nightFlights: 0, vatsimFlights: 0
+        };
+
+        // Gather additional stats from subcollections
+        if (window.db) {
+          var [reportsSnap, logSnap, pirepSnap] = await Promise.all([
+            window.db.collection('reports').where('submittedBy', '==', user.uid).get(),
+            window.db.collection('logbook').where('pilotUid', '==', user.uid).get(),
+            window.db.collection('pireps').where('pilotUid', '==', user.uid).get()
+          ]);
+
+          var regionSet = new Set();
+          reportsSnap.docs.forEach(function(d) { var r = d.data().region; if (r) regionSet.add(r); });
+          stats.regions = regionSet.size;
+
+          var airportSet = new Set();
+          logSnap.docs.forEach(function(d) {
+            var e = d.data();
+            if (e.departure) airportSet.add(e.departure);
+            if (e.arrival) airportSet.add(e.arrival);
+            // Check night flights (block off hour 0–5 UTC)
+            if (e.blockOff) {
+              var hr = parseInt((e.blockOff || '').split(':')[0]);
+              if (hr >= 0 && hr < 5) stats.nightFlights++;
+            }
+            // Check VATSIM flights
+            if (e.network === 'VATSIM') stats.vatsimFlights++;
+          });
+          stats.airports = airportSet.size;
+          stats.hours = logSnap.docs.reduce(function(sum,d) { return sum + (parseFloat(d.data().blockTime)||0); }, 0);
+          stats.pireps = pirepSnap.size;
+        }
+
+        // Check which achievements are now eligible and auto-unlock
+        var newUnlocks = false;
+        ACHIEVEMENTS.forEach(function(a) {
+          if (!earned[a.id] && a.check(stats)) {
+            var today = new Date().toISOString().split('T')[0];
+            earned[a.id] = { id: a.id, name: a.name, icon: a.icon, earnedDate: today };
+            newUnlocks = true;
+          }
+        });
+
+        // Save newly unlocked achievements
+        if (newUnlocks && window.db) {
+          var arr = Object.values(earned);
+          await window.db.collection('users').doc(user.uid).set({ awards: arr }, { merge: true });
+          if (typeof showToast === 'function') showToast('New achievements unlocked! 🎉', 'success');
+        }
+
+        document.getElementById('ach-hours').textContent = Math.round(stats.hours);
+      } catch(e) { console.error('Achievement stats error:', e); }
+
+      renderAchievements(earned);
+    }
+
+    document.addEventListener('gfig:authready', function(e) { loadAchievements(e.detail); });
+  </script>
+</body>
+</html>

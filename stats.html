@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statistics — GFIG</title>
+  <meta name="description" content="GFIG Virtual Airline Statistics — Operations data, growth metrics, and performance KPIs.">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <style>
+    .stats-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stats-hero-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 22px 16px; text-align: center; position: relative; overflow: hidden; }
+    .stats-hero-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--blue), #00e676); }
+    .stats-hero-icon { font-size: 1.5rem; margin-bottom: 6px; }
+    .stats-hero-val { font-family: var(--font-head); font-size: 1.8rem; font-weight: 700; letter-spacing: 0.06em; }
+    .stats-hero-lbl { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+    .stats-section { margin-bottom: 28px; }
+    .stats-section-title { font-family: var(--font-head); font-size: 0.82rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .stats-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px; }
+    .stats-card-title { font-family: var(--font-head); font-size: 0.75rem; letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 14px; }
+    .stats-bar-chart { display: flex; flex-direction: column; gap: 8px; }
+    .stats-bar-row { display: flex; align-items: center; gap: 10px; }
+    .stats-bar-label { width: 80px; flex-shrink: 0; font-size: 0.75rem; color: var(--text-sub); text-align: right; }
+    .stats-bar-track { flex: 1; height: 22px; background: var(--bg-secondary); border-radius: var(--r-sm); overflow: hidden; position: relative; }
+    .stats-bar-fill { height: 100%; background: linear-gradient(90deg, var(--blue), #00e676); border-radius: var(--r-sm); transition: width 0.8s ease; display: flex; align-items: center; padding-left: 8px; font-size: 0.68rem; font-weight: 700; min-width: fit-content; }
+    .stats-leaderboard { list-style: none; padding: 0; margin: 0; }
+    .stats-leaderboard li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.82rem; }
+    .stats-leaderboard li:last-child { border-bottom: none; }
+    .stats-lb-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
+    .stats-lb-rank.gold { background: rgba(255,214,0,0.15); color: #ffd700; }
+    .stats-lb-rank.silver { background: rgba(192,192,192,0.12); color: #c0c0c0; }
+    .stats-lb-rank.bronze { background: rgba(205,127,50,0.12); color: #cd7f32; }
+    .stats-lb-name { flex: 1; }
+    .stats-lb-val { font-family: var(--font-head); font-weight: 700; letter-spacing: 0.06em; font-size: 0.82rem; }
+    .stats-timeline { display: flex; gap: 0; align-items: flex-end; height: 120px; padding-top: 10px; }
+    .stats-tl-bar { flex: 1; background: var(--blue); border-radius: 3px 3px 0 0; min-height: 4px; transition: height 0.6s ease; position: relative; }
+    .stats-tl-bar:hover { opacity: 0.8; }
+    .stats-tl-bar::after { content: attr(data-label); position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; color: var(--text-muted); white-space: nowrap; }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+      </div>
+      <div class="nav-actions">
+        <a href="login.html" class="nav-link" style="padding:5px 14px;border:1px solid var(--border);border-radius:6px;font-size:0.82rem;">Login</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>📊 GFIG STATISTICS</h1>
+          <p>Operational metrics and performance data for the Government Flight Inspection Group</p>
+        </div>
+      </div>
+
+      <!-- Hero Stats -->
+      <div class="stats-hero">
+        <div class="stats-hero-card"><div class="stats-hero-icon">👥</div><div class="stats-hero-val" id="s-members">—</div><div class="stats-hero-lbl">Total Pilots</div></div>
+        <div class="stats-hero-card"><div class="stats-hero-icon">✈</div><div class="stats-hero-val" id="s-missions">—</div><div class="stats-hero-lbl">Missions Completed</div></div>
+        <div class="stats-hero-card"><div class="stats-hero-icon">🕐</div><div class="stats-hero-val" id="s-hours">—</div><div class="stats-hero-lbl">Flight Hours</div></div>
+        <div class="stats-hero-card"><div class="stats-hero-icon">📡</div><div class="stats-hero-val" id="s-pireps">—</div><div class="stats-hero-lbl">PIREPs Filed</div></div>
+        <div class="stats-hero-card"><div class="stats-hero-icon">🏆</div><div class="stats-hero-val" id="s-awards">—</div><div class="stats-hero-lbl">Awards Earned</div></div>
+        <div class="stats-hero-card"><div class="stats-hero-icon">🌍</div><div class="stats-hero-val" id="s-airports">—</div><div class="stats-hero-lbl">Airports Visited</div></div>
+      </div>
+
+      <div class="stats-grid">
+        <!-- Leaderboard -->
+        <div class="stats-card">
+          <div class="stats-card-title">🏅 TOP PILOTS (BY MISSIONS)</div>
+          <ul class="stats-leaderboard" id="s-leaderboard">
+            <li style="color:var(--text-muted);justify-content:center;">Loading…</li>
+          </ul>
+        </div>
+
+        <!-- Rank Distribution -->
+        <div class="stats-card">
+          <div class="stats-card-title">📊 RANK DISTRIBUTION</div>
+          <div class="stats-bar-chart" id="s-ranks"></div>
+        </div>
+
+        <!-- Region Activity -->
+        <div class="stats-card">
+          <div class="stats-card-title">🌍 MISSIONS BY REGION</div>
+          <div class="stats-bar-chart" id="s-regions"></div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="stats-card">
+          <div class="stats-card-title">📋 RECENT ACTIVITY</div>
+          <ul class="stats-leaderboard" id="s-activity">
+            <li style="color:var(--text-muted);justify-content:center;">Loading…</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    function esc(s) { var d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+
+    function waitForFirebase() {
+      var attempts = 0;
+      var timer = setInterval(function() {
+        attempts++;
+        if (window.GFIG_FIREBASE_READY && window.db) { clearInterval(timer); loadStats(); }
+        else if (attempts > 50) { clearInterval(timer); document.getElementById('s-members').textContent = '—'; }
+      }, 100);
+    }
+
+    async function loadStats() {
+      try {
+        var [usersSnap, reportsSnap, pirepSnap, logSnap] = await Promise.all([
+          window.db.collection('users').get(),
+          window.db.collection('reports').get(),
+          window.db.collection('pireps').get(),
+          window.db.collection('logbook').get()
+        ]);
+
+        var users = usersSnap.docs.map(function(d) { var data = d.data(); data._id = d.id; return data; });
+        var reports = reportsSnap.docs.map(function(d) { return d.data(); });
+        var pireps = pirepSnap.docs.map(function(d) { return d.data(); });
+        var logEntries = logSnap.docs.map(function(d) { return d.data(); });
+
+        // Hero stats
+        document.getElementById('s-members').textContent = users.length;
+        document.getElementById('s-missions').textContent = reports.length;
+        document.getElementById('s-pireps').textContent = pireps.length;
+
+        var totalHours = 0;
+        logEntries.forEach(function(e) { totalHours += parseFloat(e.blockTime) || 0; });
+        users.forEach(function(u) { if (!logEntries.length) totalHours += (u.totalHours || 0); });
+        document.getElementById('s-hours').textContent = Math.round(totalHours);
+
+        var totalAwards = 0;
+        users.forEach(function(u) { totalAwards += (u.awards || []).length; });
+        document.getElementById('s-awards').textContent = totalAwards;
+
+        var airportSet = new Set();
+        logEntries.forEach(function(e) { if (e.departure) airportSet.add(e.departure); if (e.arrival) airportSet.add(e.arrival); });
+        reports.forEach(function(r) { if (r.airportIcao) airportSet.add(r.airportIcao); });
+        document.getElementById('s-airports').textContent = airportSet.size;
+
+        // Leaderboard
+        var pilotMissions = {};
+        users.forEach(function(u) { pilotMissions[u._id] = { name: u.name || u.displayName || 'Unknown', missions: u.totalMissions || 0, rank: u.rank || '' }; });
+        var sorted = Object.values(pilotMissions).sort(function(a,b) { return b.missions - a.missions; }).slice(0, 10);
+        var lbEl = document.getElementById('s-leaderboard');
+        if (sorted.length && sorted[0].missions > 0) {
+          lbEl.innerHTML = sorted.map(function(p, i) {
+            var cls = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+            return '<li><div class="stats-lb-rank ' + cls + '">' + (i+1) + '</div><div class="stats-lb-name">' + esc(p.name) + '<div style="font-size:0.68rem;color:var(--text-muted);">' + esc(p.rank) + '</div></div><div class="stats-lb-val">' + p.missions + '</div></li>';
+          }).join('');
+        } else { lbEl.innerHTML = '<li style="color:var(--text-muted);justify-content:center;">No mission data yet</li>'; }
+
+        // Rank distribution
+        var rankCounts = {};
+        users.forEach(function(u) { var r = u.rank || 'New Hire'; rankCounts[r] = (rankCounts[r]||0) + 1; });
+        var rankSorted = Object.entries(rankCounts).sort(function(a,b) { return b[1]-a[1]; });
+        var maxRank = Math.max.apply(null, rankSorted.map(function(r){return r[1];})) || 1;
+        document.getElementById('s-ranks').innerHTML = rankSorted.map(function(r) {
+          var pct = Math.round(r[1] / maxRank * 100);
+          return '<div class="stats-bar-row"><div class="stats-bar-label">' + esc(r[0]) + '</div><div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + pct + '%">' + r[1] + '</div></div></div>';
+        }).join('');
+
+        // Region activity
+        var regionCounts = {};
+        reports.forEach(function(r) { var g = r.region || 'Unknown'; regionCounts[g] = (regionCounts[g]||0) + 1; });
+        var regSorted = Object.entries(regionCounts).sort(function(a,b) { return b[1]-a[1]; }).slice(0,8);
+        var maxReg = Math.max.apply(null, regSorted.map(function(r){return r[1];})) || 1;
+        document.getElementById('s-regions').innerHTML = regSorted.length ? regSorted.map(function(r) {
+          var pct = Math.round(r[1] / maxReg * 100);
+          return '<div class="stats-bar-row"><div class="stats-bar-label">' + esc(r[0]) + '</div><div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + pct + '%">' + r[1] + '</div></div></div>';
+        }).join('') : '<div style="color:var(--text-muted);text-align:center;padding:20px;">No region data yet</div>';
+
+        // Recent activity
+        var activityEl = document.getElementById('s-activity');
+        var recentReports = reports.filter(function(r) { return r.submittedAt; })
+          .sort(function(a,b) { var at = a.submittedAt.toDate ? a.submittedAt.toDate() : new Date(a.submittedAt); var bt = b.submittedAt.toDate ? b.submittedAt.toDate() : new Date(b.submittedAt); return bt - at; })
+          .slice(0, 8);
+        if (recentReports.length) {
+          activityEl.innerHTML = recentReports.map(function(r) {
+            var d = r.submittedAt.toDate ? r.submittedAt.toDate() : new Date(r.submittedAt);
+            var ago = Math.floor((Date.now() - d.getTime()) / 3600000);
+            var agoStr = ago < 1 ? 'Just now' : ago < 24 ? ago + 'h ago' : Math.floor(ago/24) + 'd ago';
+            return '<li><div style="font-size:0.82rem;">✈ ' + esc(r.airportIcao || r.region || 'Mission') + '</div><div style="flex:1;font-size:0.72rem;color:var(--text-muted);">' + agoStr + '</div></li>';
+          }).join('');
+        } else { activityEl.innerHTML = '<li style="color:var(--text-muted);justify-content:center;">No activity yet</li>'; }
+      } catch(e) { console.error('Stats error:', e); }
+    }
+
+    waitForFirebase();
+  </script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documents — GFIG</title>
+  <meta name="description" content="GFIG Document Library — SOPs, manuals, guides, and official publications.">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <style>
+    .doc-filters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .doc-filter-btn { padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-md); color: var(--text-sub); font-size: 0.78rem; cursor: pointer; font-family: var(--font-body); transition: all var(--t); }
+    .doc-filter-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(64,170,255,0.08); }
+    .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .doc-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px; transition: border-color var(--t); cursor: pointer; }
+    .doc-card:hover { border-color: var(--blue); }
+    .doc-icon { font-size: 2rem; margin-bottom: 10px; }
+    .doc-title { font-weight: 700; font-size: 0.92rem; margin-bottom: 4px; }
+    .doc-desc { font-size: 0.78rem; color: var(--text-sub); line-height: 1.5; margin-bottom: 10px; }
+    .doc-meta { font-size: 0.7rem; color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap; }
+    .doc-badge { display: inline-block; padding: 2px 7px; border-radius: var(--r-sm); font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+    .doc-badge-sop { background: rgba(64,170,255,0.12); color: #40aaff; }
+    .doc-badge-manual { background: rgba(0,230,118,0.12); color: #00e676; }
+    .doc-badge-guide { background: rgba(255,214,0,0.12); color: #ffd700; }
+    .doc-badge-policy { background: rgba(160,100,255,0.12); color: #a064ff; }
+    .doc-badge-form { background: rgba(255,100,100,0.12); color: #ff6464; }
+    .doc-form { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px; margin-bottom: 24px; display: none; }
+    .doc-form.open { display: block; }
+    .doc-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .doc-form-group label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .doc-form-group input, .doc-form-group select, .doc-form-group textarea {
+      width: 100%; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: var(--r-md); color: var(--text); font-size: 0.85rem; font-family: var(--font-body);
+    }
+    @media (max-width: 640px) { .doc-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name">Member</div><div class="nav-pilot-rank"></div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;" title="Admin Panel">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;" title="Sign Out">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>📁 DOCUMENT LIBRARY</h1>
+          <p>Official GFIG publications, SOPs, training manuals, guides &amp; policy documents</p>
+        </div>
+        <button class="btn btn-primary" id="btn-add-doc" style="display:none;" onclick="toggleDocForm()">+ Upload Document</button>
+      </div>
+
+      <!-- Filters -->
+      <div class="doc-filters">
+        <button class="doc-filter-btn active" onclick="filterDocs(this,'all')">All</button>
+        <button class="doc-filter-btn" onclick="filterDocs(this,'sop')">SOPs</button>
+        <button class="doc-filter-btn" onclick="filterDocs(this,'manual')">Manuals</button>
+        <button class="doc-filter-btn" onclick="filterDocs(this,'guide')">Guides</button>
+        <button class="doc-filter-btn" onclick="filterDocs(this,'policy')">Policies</button>
+        <button class="doc-filter-btn" onclick="filterDocs(this,'form')">Forms</button>
+      </div>
+
+      <!-- Upload Form -->
+      <div class="doc-form" id="doc-form">
+        <h3 style="font-family:var(--font-head);letter-spacing:0.08em;margin-bottom:16px;">ADD DOCUMENT</h3>
+        <div class="doc-form-grid">
+          <div class="doc-form-group"><label>TITLE</label><input type="text" id="doc-title" placeholder="e.g. ILS Inspection SOP v2.1"></div>
+          <div class="doc-form-group"><label>CATEGORY</label>
+            <select id="doc-category">
+              <option value="sop">SOP</option>
+              <option value="manual">Manual</option>
+              <option value="guide">Guide</option>
+              <option value="policy">Policy</option>
+              <option value="form">Form</option>
+            </select>
+          </div>
+          <div class="doc-form-group"><label>VERSION</label><input type="text" id="doc-version" placeholder="e.g. 2.1"></div>
+          <div class="doc-form-group"><label>DOCUMENT URL</label><input type="url" id="doc-url" placeholder="https://..."></div>
+        </div>
+        <div class="doc-form-group" style="margin-bottom:16px;">
+          <label>DESCRIPTION</label>
+          <textarea id="doc-desc" rows="2" placeholder="Brief description of the document…" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;font-family:var(--font-body);resize:vertical;"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="addDocument()">Add Document</button>
+          <button class="btn btn-secondary" onclick="toggleDocForm()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Document Grid -->
+      <div class="doc-grid" id="doc-grid">
+        <div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:32px;">Loading documents…</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _docs = [];
+    var _currentUser = null;
+    var _filter = 'all';
+    var CAT_ICONS = { sop:'📋', manual:'📘', guide:'📗', policy:'📜', form:'📝' };
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+    function toggleDocForm() { document.getElementById('doc-form').classList.toggle('open'); }
+
+    async function addDocument() {
+      var title = (document.getElementById('doc-title').value||'').trim();
+      var url = (document.getElementById('doc-url').value||'').trim();
+      if (!title) { if (typeof showToast === 'function') showToast('Title required', 'error'); return; }
+      var data = {
+        title: title,
+        category: document.getElementById('doc-category').value,
+        version: (document.getElementById('doc-version').value||'').trim() || '1.0',
+        url: url,
+        description: (document.getElementById('doc-desc').value||'').trim()
+      };
+      try {
+        await dbAddDocument(data, _currentUser);
+        if (typeof showToast === 'function') showToast('Document added!', 'success');
+        toggleDocForm();
+        loadDocuments();
+      } catch(e) { if (typeof showToast === 'function') showToast('Error: ' + e.message, 'error'); }
+    }
+
+    function filterDocs(btn, cat) {
+      document.querySelectorAll('.doc-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      _filter = cat;
+      renderDocs();
+    }
+
+    function renderDocs() {
+      var filtered = _filter === 'all' ? _docs : _docs.filter(function(d) { return d.category === _filter; });
+      var grid = document.getElementById('doc-grid');
+      if (!filtered.length) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:32px;">'
+          + (_docs.length ? 'No documents in this category.' : 'No documents yet. Add documents to build the library!')
+          + '</div>';
+        return;
+      }
+      grid.innerHTML = filtered.map(function(d) {
+        var icon = CAT_ICONS[d.category] || '📄';
+        var badgeCls = 'doc-badge-' + (d.category || 'guide');
+        var date = '';
+        if (d.createdAt) {
+          var dt = d.createdAt.toDate ? d.createdAt.toDate() : new Date(d.createdAt);
+          date = dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        return '<div class="doc-card" onclick="' + (d.url ? 'window.open(\'' + esc(d.url) + '\',\'_blank\')' : '') + '">'
+          + '<div class="doc-icon">' + icon + '</div>'
+          + '<div style="margin-bottom:8px;"><span class="doc-badge ' + badgeCls + '">' + esc(d.category || 'document') + '</span></div>'
+          + '<div class="doc-title">' + esc(d.title) + '</div>'
+          + (d.description ? '<div class="doc-desc">' + esc(d.description) + '</div>' : '')
+          + '<div class="doc-meta">'
+          + (d.version ? '<span>v' + esc(d.version) + '</span>' : '')
+          + (date ? '<span>' + date + '</span>' : '')
+          + (d.uploaderName ? '<span>by ' + esc(d.uploaderName) + '</span>' : '')
+          + '</div></div>';
+      }).join('');
+    }
+
+    async function loadDocuments() {
+      if (!window.dbGetDocuments) return;
+      try {
+        _docs = await dbGetDocuments();
+        renderDocs();
+      } catch(e) { console.error('Doc load error:', e); }
+    }
+
+    document.addEventListener('gfig:authready', function(e) {
+      _currentUser = e.detail;
+      if (_currentUser && (_currentUser.isAdmin || _currentUser.rank === 'Director' || _currentUser.rank === 'Chief Pilot' || _currentUser.isInstructor)) {
+        document.getElementById('btn-add-doc').style.display = '';
+      }
+      loadDocuments();
+    });
+  </script>
+</body>
+</html>

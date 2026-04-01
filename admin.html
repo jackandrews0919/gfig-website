@@ -479,7 +479,7 @@
 </head>
 <body>
   <script src="js/auth.js"></script>
-  <script>gfigAuth.adminGuard();</script>
+  <script>gfigAuth.staffGuard();</script>
 
   <div class="admin-layout">
 
@@ -495,45 +495,45 @@
 
       <nav class="admin-nav">
         <span class="admin-nav-label">Operations</span>
-        <button class="admin-nav-item active" onclick="showSection('overview', this)">
+        <button class="admin-nav-item active" data-role="admin" onclick="showSection('overview', this)">
           <span class="admin-nav-icon">◈</span> Overview
         </button>
-        <button class="admin-nav-item" onclick="showSection('members', this)">
+        <button class="admin-nav-item" data-role="admin,hr" onclick="showSection('members', this)">
           <span class="admin-nav-icon">👥</span> Members
           <span class="admin-badge-count" id="members-badge">0</span>
         </button>
-        <button class="admin-nav-item" onclick="showSection('missions', this)">
+        <button class="admin-nav-item" data-role="admin" onclick="showSection('missions', this)">
           <span class="admin-nav-icon">✈</span> Missions
         </button>
-        <button class="admin-nav-item" onclick="showSection('reports', this)">
+        <button class="admin-nav-item" data-role="admin,examiner" onclick="showSection('reports', this)">
           <span class="admin-nav-icon">📋</span> Reports Queue
           <span class="admin-badge-count" id="reports-badge">0</span>
         </button>
-        <button class="admin-nav-item" onclick="showSection('applications', this)">
+        <button class="admin-nav-item" data-role="admin,hr" onclick="showSection('applications', this)">
           <span class="admin-nav-icon">📝</span> Applications
           <span class="admin-badge-count" id="applications-badge">0</span>
         </button>
-        <button class="admin-nav-item" onclick="showSection('training', this)">
+        <button class="admin-nav-item" data-role="admin,training" onclick="showSection('training', this)">
           <span class="admin-nav-icon">🎓</span> Training
           <span class="admin-badge-count" id="training-badge">0</span>
         </button>
-        <button class="admin-nav-item" onclick="showSection('events', this)">
+        <button class="admin-nav-item" data-role="admin,events" onclick="showSection('events', this)">
           <span class="admin-nav-icon">◗</span> Events
         </button>
 
         <span class="admin-nav-label">Content</span>
-        <button class="admin-nav-item" onclick="showSection('notams', this)">
+        <button class="admin-nav-item" data-role="admin,notams" onclick="showSection('notams', this)">
           <span class="admin-nav-icon">⚠</span> NOTAM Manager
         </button>
-        <button class="admin-nav-item" onclick="showSection('discord', this)">
+        <button class="admin-nav-item" data-role="admin" onclick="showSection('discord', this)">
           <span class="admin-nav-icon" style="color:#5865F2">⬡</span> Discord Bot
         </button>
-        <button class="admin-nav-item" onclick="showSection('discordmgmt', this)">
+        <button class="admin-nav-item" data-role="admin" onclick="showSection('discordmgmt', this)">
           <span class="admin-nav-icon" style="color:#5865F2">🖥</span> Discord Server
         </button>
 
         <span class="admin-nav-label">System</span>
-        <button class="admin-nav-item" onclick="showSection('settings', this)">
+        <button class="admin-nav-item" data-role="admin" onclick="showSection('settings', this)">
           <span class="admin-nav-icon">⚙</span> Settings
         </button>
       </nav>
@@ -3051,6 +3051,36 @@
 
     restoreSettings();
 
+    /* ── Role-based visibility for admin nav items ── */
+    function applyRoleVisibility() {
+      var navItems = document.querySelectorAll('.admin-nav-item[data-role]');
+      var isFullAdmin = gfigAuth.isAdmin();
+      var firstVisible = null;
+      navItems.forEach(function(item) {
+        var roles = (item.getAttribute('data-role') || '').split(',');
+        var canSee = roles.some(function(r) {
+          r = r.trim();
+          if (r === 'admin') return isFullAdmin;
+          return gfigAuth.hasRole(r);
+        });
+        item.style.display = canSee ? '' : 'none';
+        if (canSee && !firstVisible) firstVisible = item;
+      });
+      /* Auto-show the first visible section if overview is hidden */
+      if (!isFullAdmin && firstVisible) {
+        firstVisible.click();
+      }
+    }
+
+    /* ── Show admin link in nav for staff role holders ── */
+    function showAdminLinkForStaff() {
+      if (gfigAuth.hasAnyStaffRole()) {
+        document.querySelectorAll('.nav-admin-link').forEach(function(el) {
+          el.style.removeProperty('display');
+        });
+      }
+    }
+
     /* ── Auth ready — load live data from Firestore ── */
     document.addEventListener('gfig:authready', async function(e) {
       const user = e.detail;
@@ -3058,6 +3088,9 @@
       const nm = document.getElementById('admin-name');
       if (av && user) av.textContent = user.avatar || 'AD';
       if (nm && user) nm.textContent = user.name  || 'Admin';
+
+      applyRoleVisibility();
+
       if (!window.GFIG_FIREBASE_READY) return;
       await Promise.allSettled([
         loadOverviewAdmin(),

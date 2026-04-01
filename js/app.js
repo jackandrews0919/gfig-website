@@ -60,6 +60,58 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// ── Inject "Tools" dropdown into nav ────────────────────────────
+(function() {
+  var navLinks = document.getElementById('nav-links');
+  if (!navLinks) return;
+  var toolsPages = [
+    { href:'logbook.html',      label:'📒 Logbook' },
+    { href:'pireps.html',       label:'📡 PIREPs' },
+    { href:'dispatch.html',     label:'📋 Dispatch' },
+    { href:'weather.html',      label:'🌤 Weather' },
+    { href:'fleet.html',        label:'✈ Fleet' },
+    { href:'map.html',          label:'🗺 Route Map' },
+    { href:'achievements.html', label:'🏆 Achievements' },
+    { href:'documents.html',    label:'📁 Documents' },
+    { href:'stats.html',        label:'📊 Statistics' }
+  ];
+  // Build dropdown wrapper
+  var wrap = document.createElement('div');
+  wrap.className = 'nav-dropdown';
+  wrap.style.cssText = 'position:relative;display:inline-block;';
+  var toggle = document.createElement('a');
+  toggle.className = 'nav-link';
+  toggle.href = '#';
+  toggle.textContent = '⊞ Tools';
+  toggle.onclick = function(e) { e.preventDefault(); menu.classList.toggle('open'); };
+  var menu = document.createElement('div');
+  menu.className = 'nav-dropdown-menu';
+  menu.style.cssText = 'display:none;position:absolute;top:100%;left:0;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:6px 0;min-width:180px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.4);';
+  var currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  toolsPages.forEach(function(p) {
+    var a = document.createElement('a');
+    a.href = p.href;
+    a.textContent = p.label;
+    a.style.cssText = 'display:block;padding:8px 16px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;transition:background 0.15s;';
+    if (p.href === currentPage) { a.style.color = 'var(--blue)'; a.classList.add('active'); toggle.style.color = 'var(--blue)'; }
+    a.onmouseenter = function() { this.style.background = 'var(--bg-secondary)'; };
+    a.onmouseleave = function() { this.style.background = 'none'; };
+    menu.appendChild(a);
+  });
+  // Toggle open class
+  var style = document.createElement('style');
+  style.textContent = '.nav-dropdown-menu.open{display:block!important;}';
+  document.head.appendChild(style);
+  wrap.appendChild(toggle);
+  wrap.appendChild(menu);
+  // Insert before Profile link or at end
+  var profileLink = navLinks.querySelector('a[href="profile.html"]');
+  if (profileLink) navLinks.insertBefore(wrap, profileLink);
+  else navLinks.appendChild(wrap);
+  // Close on outside click
+  document.addEventListener('click', function(e) { if (!wrap.contains(e.target)) menu.classList.remove('open'); });
+})();
+
 // ── Live clock for navbar (optional) ────────────────────────────
 function updateClock() {
   const now = new Date();

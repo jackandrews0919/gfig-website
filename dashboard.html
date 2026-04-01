@@ -341,6 +341,54 @@
             </a>
           </div>
 
+          <!-- Pilot Tools -->
+          <div class="card" style="margin-top:24px;">
+            <div class="card-title mb-16">Pilot Tools</div>
+            <a href="logbook.html" class="quick-action">
+              <div class="quick-action-icon">📒</div>
+              <div><div class="quick-action-title">Logbook</div><div class="quick-action-desc">Track your flights</div></div>
+            </a>
+            <a href="dispatch.html" class="quick-action">
+              <div class="quick-action-icon">📋</div>
+              <div><div class="quick-action-title">Dispatch</div><div class="quick-action-desc">Generate flight plans</div></div>
+            </a>
+            <a href="weather.html" class="quick-action">
+              <div class="quick-action-icon">🌤</div>
+              <div><div class="quick-action-title">Weather</div><div class="quick-action-desc">METAR / TAF / ATIS</div></div>
+            </a>
+            <a href="pireps.html" class="quick-action">
+              <div class="quick-action-icon">📡</div>
+              <div><div class="quick-action-title">PIREPs</div><div class="quick-action-desc">Submit pilot reports</div></div>
+            </a>
+            <a href="map.html" class="quick-action">
+              <div class="quick-action-icon">🗺</div>
+              <div><div class="quick-action-title">Route Map</div><div class="quick-action-desc">View your flight routes</div></div>
+            </a>
+            <a href="achievements.html" class="quick-action">
+              <div class="quick-action-icon">🏆</div>
+              <div><div class="quick-action-title">Achievements</div><div class="quick-action-desc">Track milestones & badges</div></div>
+            </a>
+            <a href="fleet.html" class="quick-action">
+              <div class="quick-action-icon">✈</div>
+              <div><div class="quick-action-title">Fleet</div><div class="quick-action-desc">Aircraft registry</div></div>
+            </a>
+            <a href="documents.html" class="quick-action">
+              <div class="quick-action-icon">📁</div>
+              <div><div class="quick-action-title">Documents</div><div class="quick-action-desc">SOPs & manuals</div></div>
+            </a>
+          </div>
+
+          <!-- Notifications -->
+          <div class="card" style="margin-top:24px;">
+            <div class="card-header">
+              <span class="card-title">🔔 Notifications</span>
+              <button class="btn btn-sm btn-secondary" id="btn-mark-all-read" onclick="markAllRead()" style="display:none;">Mark All Read</button>
+            </div>
+            <div id="notif-list" style="padding:8px 0;">
+              <div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.82rem;">No notifications</div>
+            </div>
+          </div>
+
         </div><!-- end dash-side -->
       </div><!-- end dash-grid -->
 
@@ -459,5 +507,42 @@
         window.showToast && showToast('Error submitting form — please try again', 'error');
       }
     }
+  </script>
+  <script>
+    /* ── Notifications ── */
+    function escN(s) { var d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+    async function loadNotifications(uid) {
+      if (!window.dbGetNotifications) return;
+      try {
+        var notifs = await dbGetNotifications(uid, 20);
+        var el = document.getElementById('notif-list');
+        if (!notifs.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.82rem;">No notifications</div>'; return; }
+        var unread = notifs.filter(function(n) { return !n.read; }).length;
+        if (unread > 0) document.getElementById('btn-mark-all-read').style.display = '';
+        el.innerHTML = notifs.slice(0, 10).map(function(n) {
+          var ago = '';
+          if (n.createdAt) {
+            var d = n.createdAt.toDate ? n.createdAt.toDate() : new Date(n.createdAt);
+            var mins = Math.floor((Date.now() - d.getTime()) / 60000);
+            ago = mins < 60 ? mins + 'm ago' : mins < 1440 ? Math.floor(mins/60) + 'h ago' : Math.floor(mins/1440) + 'd ago';
+          }
+          var bg = n.read ? 'transparent' : 'rgba(64,170,255,0.04)';
+          var dot = n.read ? '' : '<div style="width:6px;height:6px;border-radius:50%;background:var(--blue);flex-shrink:0;"></div>';
+          return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 4px;background:' + bg + ';border-radius:6px;margin-bottom:2px;cursor:pointer;" onclick="' + (n.link ? 'window.location.href=\'' + escN(n.link) + '\'' : '') + '">'
+            + dot
+            + '<div style="flex:1;"><div style="font-size:0.82rem;font-weight:' + (n.read ? '400' : '600') + ';">' + escN(n.title) + '</div>'
+            + '<div style="font-size:0.72rem;color:var(--text-sub);margin-top:2px;">' + escN(n.message) + '</div></div>'
+            + '<div style="font-size:0.65rem;color:var(--text-muted);flex-shrink:0;">' + ago + '</div></div>';
+        }).join('');
+      } catch(e) { console.error('Notification load error:', e); }
+    }
+    async function markAllRead() {
+      var user = window.gfigAuth && gfigAuth.getUser ? gfigAuth.getUser() : null;
+      if (!user || !window.dbMarkAllRead) return;
+      await dbMarkAllRead(user.uid);
+      document.getElementById('btn-mark-all-read').style.display = 'none';
+      loadNotifications(user.uid);
+    }
+    document.addEventListener('gfig:authready', function(e) { if (e.detail) loadNotifications(e.detail.uid); });
   </script>
 </html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fleet Registry — GFIG</title>
+  <meta name="description" content="GFIG Fleet Registry — Aircraft inventory, specifications, and livery assignments.">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <style>
+    .fleet-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .fleet-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; text-align: center; }
+    .fleet-stat-val { font-family: var(--font-head); font-size: 1.4rem; letter-spacing: 0.06em; font-weight: 700; }
+    .fleet-stat-lbl { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+    .fleet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .fleet-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; transition: border-color var(--t); }
+    .fleet-card:hover { border-color: var(--blue); }
+    .fleet-card-img { width: 100%; height: 140px; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; }
+    .fleet-card-body { padding: 16px; }
+    .fleet-card-title { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+    .fleet-card-sub { font-size: 0.78rem; color: var(--text-sub); margin-bottom: 8px; }
+    .fleet-card-specs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 0.75rem; }
+    .fleet-card-specs dt { color: var(--text-muted); }
+    .fleet-card-specs dd { color: var(--text); font-weight: 600; text-align: right; margin: 0; }
+    .fleet-status { display: inline-block; padding: 2px 8px; border-radius: var(--r-sm); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+    .fleet-status-active { background: var(--pass-bg); color: var(--pass); }
+    .fleet-status-maintenance { background: rgba(255,214,0,0.12); color: #ffd700; }
+    .fleet-status-retired { background: var(--fail-bg); color: var(--fail); }
+    .fleet-form { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px; margin-bottom: 24px; display: none; }
+    .fleet-form.open { display: block; }
+    .fleet-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .fleet-form-group label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .fleet-form-group input, .fleet-form-group select, .fleet-form-group textarea {
+      width: 100%; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: var(--r-md); color: var(--text); font-size: 0.85rem; font-family: var(--font-body);
+    }
+    @media (max-width: 768px) { .fleet-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name">Member</div><div class="nav-pilot-rank"></div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;" title="Admin Panel">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;" title="Sign Out">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>✈ FLEET REGISTRY</h1>
+          <p>GFIG virtual aircraft inventory — specifications, assignments &amp; maintenance status</p>
+        </div>
+        <button class="btn btn-primary" id="btn-add-aircraft" style="display:none;" onclick="toggleFleetForm()">+ Add Aircraft</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="fleet-stats">
+        <div class="fleet-stat"><div class="fleet-stat-val" id="fs-total">0</div><div class="fleet-stat-lbl">Total Aircraft</div></div>
+        <div class="fleet-stat"><div class="fleet-stat-val" id="fs-active">0</div><div class="fleet-stat-lbl">Active</div></div>
+        <div class="fleet-stat"><div class="fleet-stat-val" id="fs-types">0</div><div class="fleet-stat-lbl">Aircraft Types</div></div>
+        <div class="fleet-stat"><div class="fleet-stat-val" id="fs-maint">0</div><div class="fleet-stat-lbl">In Maintenance</div></div>
+      </div>
+
+      <!-- Add Aircraft Form -->
+      <div class="fleet-form" id="fleet-form">
+        <h3 style="font-family:var(--font-head);letter-spacing:0.08em;margin-bottom:16px;">ADD AIRCRAFT</h3>
+        <div class="fleet-form-grid">
+          <div class="fleet-form-group"><label>AIRCRAFT TYPE</label><input type="text" id="ac-type" placeholder="e.g. Boeing 737-800"></div>
+          <div class="fleet-form-group"><label>ICAO TYPE CODE</label><input type="text" id="ac-icao" placeholder="e.g. B738" style="text-transform:uppercase;" maxlength="4"></div>
+          <div class="fleet-form-group"><label>REGISTRATION</label><input type="text" id="ac-reg" placeholder="e.g. G-FIGA" style="text-transform:uppercase;"></div>
+          <div class="fleet-form-group"><label>LIVERY / VARIANT</label><input type="text" id="ac-livery" placeholder="e.g. GFIG Main Livery"></div>
+          <div class="fleet-form-group"><label>BASE AIRPORT (ICAO)</label><input type="text" id="ac-base" placeholder="e.g. EGLL" style="text-transform:uppercase;" maxlength="4"></div>
+          <div class="fleet-form-group"><label>STATUS</label>
+            <select id="ac-status">
+              <option value="active">Active</option>
+              <option value="maintenance">In Maintenance</option>
+              <option value="retired">Retired</option>
+            </select>
+          </div>
+          <div class="fleet-form-group"><label>MAX PAX</label><input type="number" id="ac-pax" placeholder="e.g. 189"></div>
+          <div class="fleet-form-group"><label>RANGE (NM)</label><input type="number" id="ac-range" placeholder="e.g. 2935"></div>
+          <div class="fleet-form-group"><label>CRUISE SPEED (KTS)</label><input type="number" id="ac-speed" placeholder="e.g. 453"></div>
+          <div class="fleet-form-group"><label>MAX FUEL (LBS)</label><input type="number" id="ac-fuel" placeholder="e.g. 46063"></div>
+        </div>
+        <div class="fleet-form-group" style="margin-bottom:16px;">
+          <label>NOTES</label>
+          <textarea id="ac-notes" rows="2" placeholder="Additional details, maintenance history…" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;font-family:var(--font-body);resize:vertical;"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="addAircraft()">Add Aircraft</button>
+          <button class="btn btn-secondary" onclick="toggleFleetForm()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Fleet Grid -->
+      <div class="fleet-grid" id="fleet-grid">
+        <div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:32px;">Loading fleet…</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _fleet = [];
+    var _currentUser = null;
+    var AC_ICONS = { 'B738':'🛩', 'A320':'🛩', 'B77W':'✈', 'A388':'✈', 'C172':'🛩', 'default':'✈' };
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+    function toggleFleetForm() { document.getElementById('fleet-form').classList.toggle('open'); }
+
+    async function addAircraft() {
+      var type = (document.getElementById('ac-type').value||'').trim();
+      var icao = (document.getElementById('ac-icao').value||'').trim().toUpperCase();
+      var reg = (document.getElementById('ac-reg').value||'').trim().toUpperCase();
+      if (!type || !reg) { if (typeof showToast === 'function') showToast('Type and Registration required', 'error'); return; }
+      var data = {
+        type: type, icaoCode: icao, registration: reg,
+        livery: (document.getElementById('ac-livery').value||'').trim(),
+        baseAirport: (document.getElementById('ac-base').value||'').trim().toUpperCase(),
+        status: document.getElementById('ac-status').value,
+        maxPax: parseInt(document.getElementById('ac-pax').value) || 0,
+        range: parseInt(document.getElementById('ac-range').value) || 0,
+        cruiseSpeed: parseInt(document.getElementById('ac-speed').value) || 0,
+        maxFuel: parseInt(document.getElementById('ac-fuel').value) || 0,
+        notes: (document.getElementById('ac-notes').value||'').trim()
+      };
+      try {
+        await dbAddAircraft(data);
+        if (typeof showToast === 'function') showToast('Aircraft added!', 'success');
+        toggleFleetForm();
+        loadFleet();
+      } catch(e) { if (typeof showToast === 'function') showToast('Error: ' + e.message, 'error'); }
+    }
+
+    function renderFleet(list) {
+      var grid = document.getElementById('fleet-grid');
+      if (!list.length) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:32px;">No aircraft in fleet. Add aircraft to get started!</div>'; return; }
+      grid.innerHTML = list.map(function(a) {
+        var statusCls = 'fleet-status-' + (a.status || 'active');
+        var icon = AC_ICONS[a.icaoCode] || AC_ICONS['default'];
+        return '<div class="fleet-card">'
+          + '<div class="fleet-card-img">' + icon + '</div>'
+          + '<div class="fleet-card-body">'
+          + '<div class="fleet-card-title">' + esc(a.type) + '</div>'
+          + '<div class="fleet-card-sub">' + esc(a.registration) + (a.icaoCode ? ' · ' + esc(a.icaoCode) : '') + (a.livery ? ' · ' + esc(a.livery) : '') + '</div>'
+          + '<div style="margin-bottom:10px;"><span class="fleet-status ' + statusCls + '">' + esc(a.status || 'active') + '</span></div>'
+          + '<dl class="fleet-card-specs">'
+          + (a.baseAirport ? '<dt>Base</dt><dd>' + esc(a.baseAirport) + '</dd>' : '')
+          + (a.maxPax ? '<dt>Passengers</dt><dd>' + a.maxPax + '</dd>' : '')
+          + (a.range ? '<dt>Range</dt><dd>' + a.range.toLocaleString() + ' NM</dd>' : '')
+          + (a.cruiseSpeed ? '<dt>Cruise</dt><dd>' + a.cruiseSpeed + ' kts</dd>' : '')
+          + (a.maxFuel ? '<dt>Max Fuel</dt><dd>' + a.maxFuel.toLocaleString() + ' lbs</dd>' : '')
+          + '</dl>'
+          + '</div></div>';
+      }).join('');
+    }
+
+    function updateFleetStats(list) {
+      document.getElementById('fs-total').textContent = list.length;
+      document.getElementById('fs-active').textContent = list.filter(function(a){return a.status==='active';}).length;
+      var types = {}; list.forEach(function(a){ types[a.icaoCode||a.type]=1; });
+      document.getElementById('fs-types').textContent = Object.keys(types).length;
+      document.getElementById('fs-maint').textContent = list.filter(function(a){return a.status==='maintenance';}).length;
+    }
+
+    async function loadFleet() {
+      if (!window.dbGetFleet) return;
+      try {
+        _fleet = await dbGetFleet();
+        renderFleet(_fleet);
+        updateFleetStats(_fleet);
+      } catch(e) { console.error('Fleet load error:', e); }
+    }
+
+    document.addEventListener('gfig:authready', function(e) {
+      _currentUser = e.detail;
+      if (_currentUser && (_currentUser.isAdmin || _currentUser.rank === 'Director' || _currentUser.rank === 'Chief Pilot')) {
+        document.getElementById('btn-add-aircraft').style.display = '';
+      }
+      loadFleet();
+    });
+  </script>
+</body>
+</html>

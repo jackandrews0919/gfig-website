@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather — GFIG</title>
+  <meta name="description" content="GFIG ATIS/Weather — Live METAR, TAF, and decoded weather information for airports worldwide.">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <style>
+    .wx-search { display: flex; gap: 12px; margin-bottom: 24px; }
+    .wx-search input { flex: 1; max-width: 200px; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-md); color: var(--text); font-size: 0.95rem; font-family: var(--font-head); letter-spacing: 0.12em; text-transform: uppercase; }
+    .wx-favourites { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+    .wx-fav-btn { padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-md); color: var(--text-sub); font-size: 0.78rem; cursor: pointer; font-family: var(--font-body); transition: all var(--t); }
+    .wx-fav-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .wx-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .wx-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px; }
+    .wx-panel-title { font-family: var(--font-head); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+    .wx-raw { font-family: var(--font-mono, monospace); font-size: 0.85rem; background: var(--bg-secondary); border-radius: var(--r-md); padding: 14px; line-height: 1.7; color: var(--gold, #ffd700); word-break: break-word; }
+    .wx-decoded { font-size: 0.82rem; line-height: 1.8; color: var(--text-sub); }
+    .wx-decoded-row { display: flex; gap: 12px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .wx-decoded-label { width: 120px; flex-shrink: 0; font-weight: 700; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .wx-condition { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--r-md); font-weight: 700; font-size: 0.85rem; margin-bottom: 16px; }
+    .wx-vfr { background: var(--pass-bg); color: var(--pass); }
+    .wx-mvfr { background: rgba(64,170,255,0.12); color: #40aaff; }
+    .wx-ifr { background: var(--fail-bg); color: var(--fail); }
+    .wx-lifr { background: rgba(160,0,200,0.12); color: #c040ff; }
+    .wx-full { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px; margin-bottom: 24px; }
+    .wx-full-title { font-family: var(--font-head); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+    .wx-taf-raw { font-family: var(--font-mono, monospace); font-size: 0.82rem; background: var(--bg-secondary); border-radius: var(--r-md); padding: 14px; line-height: 1.8; color: var(--text-sub); white-space: pre-wrap; word-break: break-word; }
+    .wx-multi { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .wx-multi-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; }
+    .wx-multi-icao { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .wx-multi-metar { font-family: var(--font-mono, monospace); font-size: 0.78rem; color: var(--text-sub); line-height: 1.6; word-break: break-word; }
+    @media (max-width: 768px) { .wx-panels { grid-template-columns: 1fr; } .wx-multi { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name">Member</div><div class="nav-pilot-rank"></div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;" title="Admin Panel">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;" title="Sign Out">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>🌤 WEATHER / ATIS</h1>
+          <p>Live METAR &amp; TAF data from airports worldwide — powered by VATSIM METAR service</p>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="wx-search">
+        <input type="text" id="wx-icao" placeholder="EGLL" maxlength="4" onkeydown="if(event.key==='Enter')fetchWeather();">
+        <button class="btn btn-primary" onclick="fetchWeather()">Get Weather</button>
+        <button class="btn btn-secondary" onclick="fetchMulti()">Multi-Airport</button>
+      </div>
+
+      <!-- Quick Favourites -->
+      <div class="wx-favourites" id="wx-favs">
+        <span style="font-size:0.72rem;color:var(--text-muted);padding:6px 0;">Quick:</span>
+        <button class="wx-fav-btn" onclick="quickFetch('EGLL')">EGLL</button>
+        <button class="wx-fav-btn" onclick="quickFetch('KJFK')">KJFK</button>
+        <button class="wx-fav-btn" onclick="quickFetch('KLAX')">KLAX</button>
+        <button class="wx-fav-btn" onclick="quickFetch('EDDF')">EDDF</button>
+        <button class="wx-fav-btn" onclick="quickFetch('EHAM')">EHAM</button>
+        <button class="wx-fav-btn" onclick="quickFetch('LFPG')">LFPG</button>
+        <button class="wx-fav-btn" onclick="quickFetch('OMDB')">OMDB</button>
+        <button class="wx-fav-btn" onclick="quickFetch('RJTT')">RJTT</button>
+      </div>
+
+      <!-- Main weather display -->
+      <div id="wx-content" style="display:none;">
+        <div id="wx-flight-cat"></div>
+
+        <div class="wx-panels">
+          <!-- METAR Panel -->
+          <div class="wx-panel">
+            <div class="wx-panel-title"><span>📡 METAR</span><span id="wx-metar-age" style="font-family:var(--font-body);font-size:0.7rem;"></span></div>
+            <div class="wx-raw" id="wx-metar-raw">—</div>
+          </div>
+
+          <!-- Decoded Panel -->
+          <div class="wx-panel">
+            <div class="wx-panel-title">🔍 DECODED</div>
+            <div class="wx-decoded" id="wx-decoded">—</div>
+          </div>
+        </div>
+
+        <!-- TAF -->
+        <div class="wx-full">
+          <div class="wx-full-title">📋 TAF (TERMINAL AERODROME FORECAST)</div>
+          <div class="wx-taf-raw" id="wx-taf-raw">No TAF available</div>
+        </div>
+      </div>
+
+      <!-- Multi-airport view -->
+      <div id="wx-multi-content" style="display:none;">
+        <h3 style="font-family:var(--font-head);font-size:0.82rem;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:16px;">MULTI-AIRPORT WEATHER</h3>
+        <div class="wx-multi" id="wx-multi-grid"></div>
+      </div>
+
+      <div id="wx-empty" style="text-align:center;color:var(--text-muted);padding:60px 20px;">
+        <div style="font-size:2.5rem;margin-bottom:12px;">🌤</div>
+        <p>Enter an ICAO code above to fetch live weather data</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    function esc(s) { var d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+
+    async function getMETAR(icao) {
+      try {
+        var r = await fetch('https://metar.vatsim.net/metar.php?id=' + encodeURIComponent(icao));
+        if (r.ok) return (await r.text()).trim();
+      } catch(e) {}
+      return '';
+    }
+
+    async function getTAF(icao) {
+      try {
+        var r = await fetch('https://metar.vatsim.net/metar.php?id=' + encodeURIComponent(icao) + '&taf=true');
+        if (r.ok) return (await r.text()).trim();
+      } catch(e) {}
+      return '';
+    }
+
+    function decodeMETAR(raw) {
+      if (!raw) return '<div style="color:var(--text-muted);">No METAR available</div>';
+      var parts = raw.split(/\s+/);
+      var rows = [];
+
+      function row(label, val) { return '<div class="wx-decoded-row"><div class="wx-decoded-label">' + label + '</div><div>' + esc(val) + '</div></div>'; }
+
+      // Station
+      if (parts[0]) rows.push(row('Station', parts[0]));
+
+      // Time
+      var timeMatch = raw.match(/(\d{2})(\d{2})(\d{2})Z/);
+      if (timeMatch) rows.push(row('Observation', 'Day ' + timeMatch[1] + ' at ' + timeMatch[2] + ':' + timeMatch[3] + 'Z'));
+
+      // Wind
+      var windMatch = raw.match(/(\d{3}|VRB)(\d{2,3})(G(\d{2,3}))?KT/);
+      if (windMatch) {
+        var wStr = windMatch[1] === 'VRB' ? 'Variable' : windMatch[1] + '°';
+        wStr += ' at ' + parseInt(windMatch[2]) + ' kts';
+        if (windMatch[4]) wStr += ', gusting ' + parseInt(windMatch[4]) + ' kts';
+        rows.push(row('Wind', wStr));
+      }
+
+      // Visibility
+      var visMatch = raw.match(/\s(\d{4})\s/) || raw.match(/\s(\d+)SM/);
+      if (visMatch) {
+        var vis = parseInt(visMatch[1]);
+        if (raw.includes('SM')) rows.push(row('Visibility', vis + ' SM'));
+        else rows.push(row('Visibility', vis >= 9999 ? '10+ km (CAVOK)' : (vis/1000).toFixed(1) + ' km'));
+      }
+
+      // Temperature / Dewpoint
+      var tempMatch = raw.match(/(M?\d{2})\/(M?\d{2})/);
+      if (tempMatch) {
+        var t = tempMatch[1].replace('M','-'), dp = tempMatch[2].replace('M','-');
+        rows.push(row('Temperature', t + '°C'));
+        rows.push(row('Dewpoint', dp + '°C'));
+      }
+
+      // QNH
+      var qnhMatch = raw.match(/Q(\d{4})/) || raw.match(/A(\d{4})/);
+      if (qnhMatch) {
+        if (raw.includes('Q')) rows.push(row('QNH', qnhMatch[1] + ' hPa'));
+        else rows.push(row('Altimeter', (parseInt(qnhMatch[1])/100).toFixed(2) + ' inHg'));
+      }
+
+      // Clouds
+      var cloudPattern = /(FEW|SCT|BKN|OVC)(\d{3})(CB|TCU)?/g;
+      var clouds = [], m;
+      while ((m = cloudPattern.exec(raw)) !== null) {
+        clouds.push(m[1] + ' at ' + (parseInt(m[2])*100) + ' ft' + (m[3] ? ' (' + m[3] + ')' : ''));
+      }
+      if (clouds.length) rows.push(row('Clouds', clouds.join(', ')));
+      if (raw.includes('CAVOK')) rows.push(row('Clouds', 'CAVOK — Ceiling and visibility OK'));
+      if (raw.includes('SKC') || raw.includes('CLR')) rows.push(row('Clouds', 'Sky clear'));
+
+      // Weather phenomena
+      var wxCodes = { RA:'Rain', SN:'Snow', DZ:'Drizzle', GR:'Hail', TS:'Thunderstorm', FG:'Fog', BR:'Mist', HZ:'Haze', SH:'Showers', FZ:'Freezing' };
+      var wxMatch = raw.match(/(\+|-|VC)?(TS|SH|FZ|MI|BC|PR|DR|BL)?(RA|SN|DZ|GR|GS|IC|PL|SG|UP|FG|BR|HZ|FU|SA|DU|VA|SQ|FC)+/g);
+      if (wxMatch) {
+        var wxDescs = wxMatch.filter(function(w){return !w.match(/^\d/);}).map(function(w){
+          var desc = '';
+          if (w.startsWith('+')) { desc = 'Heavy '; w = w.substring(1); }
+          if (w.startsWith('-')) { desc = 'Light '; w = w.substring(1); }
+          for (var k in wxCodes) { if (w.includes(k)) desc += wxCodes[k] + ' '; }
+          return desc.trim() || w;
+        });
+        if (wxDescs.length) rows.push(row('Weather', wxDescs.join(', ')));
+      }
+
+      return rows.join('');
+    }
+
+    function getFlightCategory(raw) {
+      if (!raw) return { cat: 'Unknown', cls: '' };
+      // Simple flight category based on visibility and ceiling
+      var vis = 9999;
+      var visM = raw.match(/\s(\d{4})\s/);
+      if (visM) vis = parseInt(visM[1]);
+      var visSM = raw.match(/(\d+)SM/);
+      if (visSM) vis = parseInt(visSM[1]) * 1609; // convert to meters
+
+      var ceil = 99999;
+      var ceilMatch = raw.match(/(BKN|OVC)(\d{3})/);
+      if (ceilMatch) ceil = parseInt(ceilMatch[2]) * 100;
+
+      if (vis < 1600 || ceil < 500) return { cat: 'LIFR', cls: 'wx-lifr', label: 'Low IFR' };
+      if (vis < 5000 || ceil < 1000) return { cat: 'IFR', cls: 'wx-ifr', label: 'Instrument Flight Rules' };
+      if (vis < 8000 || ceil < 3000) return { cat: 'MVFR', cls: 'wx-mvfr', label: 'Marginal VFR' };
+      return { cat: 'VFR', cls: 'wx-vfr', label: 'Visual Flight Rules' };
+    }
+
+    function quickFetch(icao) {
+      document.getElementById('wx-icao').value = icao;
+      fetchWeather();
+    }
+
+    async function fetchWeather() {
+      var icao = (document.getElementById('wx-icao').value || '').trim().toUpperCase();
+      if (!icao || icao.length < 3) { if (typeof showToast === 'function') showToast('Enter a valid ICAO code', 'error'); return; }
+
+      document.getElementById('wx-empty').style.display = 'none';
+      document.getElementById('wx-multi-content').style.display = 'none';
+      document.getElementById('wx-content').style.display = 'block';
+      document.getElementById('wx-metar-raw').textContent = 'Fetching…';
+      document.getElementById('wx-decoded').innerHTML = 'Decoding…';
+      document.getElementById('wx-taf-raw').textContent = 'Fetching…';
+
+      var [metar, taf] = await Promise.all([getMETAR(icao), getTAF(icao)]);
+
+      document.getElementById('wx-metar-raw').textContent = metar || 'No METAR available for ' + icao;
+      document.getElementById('wx-decoded').innerHTML = decodeMETAR(metar);
+      document.getElementById('wx-taf-raw').textContent = taf || 'No TAF available for ' + icao;
+
+      var fc = getFlightCategory(metar);
+      document.getElementById('wx-flight-cat').innerHTML = metar ? '<div class="wx-condition ' + fc.cls + '">' + fc.cat + ' — ' + (fc.label || '') + '</div>' : '';
+
+      // Metar age
+      var timeMatch = (metar||'').match(/(\d{2})(\d{2})(\d{2})Z/);
+      if (timeMatch) {
+        var now = new Date();
+        var obsMin = parseInt(timeMatch[2]) * 60 + parseInt(timeMatch[3]);
+        var nowMin = now.getUTCHours() * 60 + now.getUTCMinutes();
+        var age = nowMin - obsMin;
+        if (age < 0) age += 1440;
+        document.getElementById('wx-metar-age').textContent = age + ' min ago';
+      }
+    }
+
+    async function fetchMulti() {
+      var input = prompt('Enter ICAO codes separated by spaces or commas:\n(e.g. EGLL KJFK EDDF EHAM)');
+      if (!input) return;
+      var codes = input.toUpperCase().split(/[\s,]+/).filter(function(c) { return c.length >= 3; });
+      if (!codes.length) return;
+
+      document.getElementById('wx-empty').style.display = 'none';
+      document.getElementById('wx-content').style.display = 'none';
+      document.getElementById('wx-multi-content').style.display = 'block';
+      document.getElementById('wx-multi-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);">Fetching ' + codes.length + ' stations…</div>';
+
+      var results = await Promise.all(codes.map(function(c) { return getMETAR(c).then(function(m) { return { icao: c, metar: m }; }); }));
+
+      document.getElementById('wx-multi-grid').innerHTML = results.map(function(r) {
+        var fc = getFlightCategory(r.metar);
+        return '<div class="wx-multi-card">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+          + '<div class="wx-multi-icao">' + esc(r.icao) + '</div>'
+          + (r.metar ? '<span class="wx-condition ' + fc.cls + '" style="margin:0;font-size:0.72rem;padding:3px 8px;">' + fc.cat + '</span>' : '')
+          + '</div>'
+          + '<div class="wx-multi-metar">' + esc(r.metar || 'No METAR available') + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    document.addEventListener('gfig:authready', function() {});
+  </script>
+</body>
+</html>

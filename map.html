@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Route Map — GFIG</title>
+  <meta name="description" content="GFIG Interactive Route Map — Visualize missions, inspections, and global operations.">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    .map-wrap { position: relative; width: 100%; height: calc(100vh - 200px); min-height: 420px; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--border); margin-bottom: 24px; }
+    #route-map { width: 100%; height: 100%; background: #0b1f3a; }
+    .map-legend { position: absolute; bottom: 20px; left: 20px; background: rgba(11,31,58,0.92); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px 16px; z-index: 1000; font-size: 0.75rem; backdrop-filter: blur(10px); }
+    .map-legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; color: var(--text-sub); }
+    .map-legend-item:last-child { margin-bottom: 0; }
+    .map-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .map-stats { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+    .map-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 20px; flex: 1; min-width: 140px; text-align: center; }
+    .map-stat-val { font-family: var(--font-head); font-size: 1.3rem; font-weight: 700; letter-spacing: 0.06em; }
+    .map-stat-lbl { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+    .map-filters { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .map-filter-btn { padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-md); color: var(--text-sub); font-size: 0.78rem; cursor: pointer; font-family: var(--font-body); transition: all var(--t); }
+    .map-filter-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(64,170,255,0.08); }
+    /* Leaflet popup overrides */
+    .leaflet-popup-content-wrapper { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); border-radius: var(--r-md) !important; }
+    .leaflet-popup-tip { background: var(--bg-card); }
+    .leaflet-popup-content { font-family: var(--font-body); font-size: 0.82rem; }
+  </style>
+</head>
+<body>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name">Member</div><div class="nav-pilot-rank"></div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;" title="Admin Panel">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;" title="Sign Out">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>🗺 ROUTE MAP</h1>
+          <p>Interactive map of GFIG operations — missions, logbook routes, and global coverage</p>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="map-stats">
+        <div class="map-stat"><div class="map-stat-val" id="ms-routes">0</div><div class="map-stat-lbl">Routes Flown</div></div>
+        <div class="map-stat"><div class="map-stat-val" id="ms-airports">0</div><div class="map-stat-lbl">Airports Visited</div></div>
+        <div class="map-stat"><div class="map-stat-val" id="ms-distance">0</div><div class="map-stat-lbl">Total NM</div></div>
+        <div class="map-stat"><div class="map-stat-val" id="ms-missions">0</div><div class="map-stat-lbl">Active Missions</div></div>
+      </div>
+
+      <!-- Filters -->
+      <div class="map-filters">
+        <button class="map-filter-btn active" onclick="toggleFilter(this,'all')">All</button>
+        <button class="map-filter-btn" onclick="toggleFilter(this,'logbook')">My Logbook</button>
+        <button class="map-filter-btn" onclick="toggleFilter(this,'missions')">Active Missions</button>
+        <button class="map-filter-btn" onclick="toggleFilter(this,'pireps')">PIREPs</button>
+      </div>
+
+      <!-- Map -->
+      <div class="map-wrap">
+        <div id="route-map"></div>
+        <div class="map-legend">
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#40aaff;"></div> My Routes</div>
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#00e676;"></div> Active Missions</div>
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#ff4444;"></div> PIREPs (Severe)</div>
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#ffd700;"></div> PIREPs (Moderate)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    // Common ICAO airport coordinates (subset — expand as needed)
+    var AIRPORTS = {
+      EGLL:[51.4775,-0.4614],EGKK:[51.1537,-0.1821],EGSS:[51.885,-0.235],EGLC:[51.5053,0.0553],
+      EGCC:[53.3537,-2.275],EGBB:[52.4539,-1.748],EGGD:[51.3827,-2.719],EGPH:[55.95,-3.3725],
+      EGPF:[55.8719,-4.4331],EIDW:[53.4213,-6.2701],EHAM:[52.3086,4.7639],LFPG:[49.0097,2.5479],
+      EDDF:[50.0333,8.5706],LEMD:[40.4936,-3.5668],LIRF:[41.8003,12.2389],LSZH:[47.4647,8.5492],
+      LOWW:[48.1103,16.5697],EKCH:[55.618,12.656],ESSA:[59.6519,17.9186],ENGM:[60.1939,11.1004],
+      EFHK:[60.3172,24.9633],LPPT:[38.7813,-9.1359],LGAV:[37.9364,23.9445],LTFM:[41.2751,28.7519],
+      KJFK:[40.6413,-73.7781],KLAX:[33.9425,-118.408],KORD:[41.9742,-87.9073],KATL:[33.6407,-84.4277],
+      KSFO:[37.6213,-122.379],KMIA:[25.7959,-80.2870],KDEN:[39.8561,-104.674],KDFW:[32.8998,-97.0403],
+      CYYZ:[43.6772,-79.6306],CYUL:[45.4706,-73.7408],RJTT:[35.5494,139.7798],VHHH:[22.309,113.915],
+      WSSS:[1.3502,103.994],YSSY:[-33.9461,151.177],OMDB:[25.2532,55.3657],FACT:[-33.9649,18.6017],
+      SBGR:[-23.4356,-46.4731],NZAA:[-37.0082,174.792],VIDP:[28.5665,77.1031],ZBAA:[40.0799,116.603],
+    };
+
+    var map, routeLayer, missionLayer, pirepLayer;
+    var _filter = 'all';
+    var _data = { logbook: [], missions: [], pireps: [] };
+
+    function initMap() {
+      map = L.map('route-map', { zoomControl: true, attributionControl: false }).setView([30, 0], 2);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 18, subdomains: 'abcd'
+      }).addTo(map);
+      routeLayer = L.layerGroup().addTo(map);
+      missionLayer = L.layerGroup().addTo(map);
+      pirepLayer = L.layerGroup().addTo(map);
+    }
+
+    function getCoords(icao) { return AIRPORTS[(icao||'').toUpperCase()] || null; }
+
+    function drawRoutes(entries) {
+      routeLayer.clearLayers();
+      if (_filter !== 'all' && _filter !== 'logbook') return;
+      var airports = new Set();
+      entries.forEach(function(e) {
+        var dep = getCoords(e.departure);
+        var arr = getCoords(e.arrival);
+        if (dep && arr) {
+          L.polyline([dep, arr], { color: '#40aaff', weight: 1.5, opacity: 0.5, dashArray: '4 4' }).addTo(routeLayer);
+          airports.add(e.departure);
+          airports.add(e.arrival);
+        }
+      });
+      airports.forEach(function(icao) {
+        var c = getCoords(icao);
+        if (c) {
+          L.circleMarker(c, { radius: 4, fillColor: '#40aaff', color: '#fff', weight: 1, fillOpacity: 0.9 })
+            .bindPopup('<strong>' + icao + '</strong>')
+            .addTo(routeLayer);
+        }
+      });
+    }
+
+    function drawMissions(missions) {
+      missionLayer.clearLayers();
+      if (_filter !== 'all' && _filter !== 'missions') return;
+      missions.forEach(function(m) {
+        var dep = getCoords(m.departure);
+        var arr = getCoords(m.arrival);
+        if (dep) {
+          L.circleMarker(dep, { radius: 6, fillColor: '#00e676', color: '#fff', weight: 1.5, fillOpacity: 0.9 })
+            .bindPopup('<strong>' + (m.title||m.departure) + '</strong><br>' + (m.status||'active'))
+            .addTo(missionLayer);
+        }
+        if (dep && arr) {
+          L.polyline([dep, arr], { color: '#00e676', weight: 2, opacity: 0.6 }).addTo(missionLayer);
+        }
+      });
+    }
+
+    function drawPireps(pireps) {
+      pirepLayer.clearLayers();
+      if (_filter !== 'all' && _filter !== 'pireps') return;
+      pireps.forEach(function(p) {
+        var lat = p.lat, lon = p.lon;
+        if (!lat && p.location) { var c = getCoords(p.location); if (c) { lat = c[0]; lon = c[1]; } }
+        if (lat != null && lon != null) {
+          var col = p.severity === 'severe' ? '#ff4444' : p.severity === 'moderate' ? '#ffd700' : '#00e676';
+          L.circleMarker([lat, lon], { radius: 6, fillColor: col, color: '#fff', weight: 1, fillOpacity: 0.85 })
+            .bindPopup('<strong>' + (p.type||'PIREP') + '</strong><br>' + (p.severity||'') + '<br>' + (p.location||'') + (p.altitude ? ' FL' + Math.round(p.altitude/100) : ''))
+            .addTo(pirepLayer);
+        }
+      });
+    }
+
+    function toggleFilter(btn, f) {
+      document.querySelectorAll('.map-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      _filter = f;
+      drawRoutes(_data.logbook);
+      drawMissions(_data.missions);
+      drawPireps(_data.pireps);
+    }
+
+    function updateMapStats() {
+      var airportSet = new Set();
+      _data.logbook.forEach(function(e) { if (e.departure) airportSet.add(e.departure); if (e.arrival) airportSet.add(e.arrival); });
+      document.getElementById('ms-routes').textContent = _data.logbook.length;
+      document.getElementById('ms-airports').textContent = airportSet.size;
+      document.getElementById('ms-missions').textContent = _data.missions.length;
+      // Rough distance estimate: each route ~500 NM average
+      document.getElementById('ms-distance').textContent = (_data.logbook.length * 500).toLocaleString();
+    }
+
+    async function loadMapData(user) {
+      if (!window.db) return;
+      try {
+        var [logSnap, missionSnap, pirepSnap] = await Promise.all([
+          window.db.collection('logbook').where('pilotUid', '==', user.uid).get(),
+          window.db.collection('missions').where('status', '==', 'active').get(),
+          window.db.collection('pireps').orderBy('createdAt', 'desc').limit(50).get()
+        ]);
+        _data.logbook = logSnap.docs.map(function(d) { return d.data(); });
+        _data.missions = missionSnap.docs.map(function(d) { return d.data(); });
+        _data.pireps = pirepSnap.docs.map(function(d) { return d.data(); });
+        drawRoutes(_data.logbook);
+        drawMissions(_data.missions);
+        drawPireps(_data.pireps);
+        updateMapStats();
+      } catch(e) { console.error('Map data error:', e); }
+    }
+
+    initMap();
+    document.addEventListener('gfig:authready', function(e) { loadMapData(e.detail); });
+  </script>
+</body>
+</html>

@@ -56,6 +56,28 @@ const gfigAuth = {
   isLoggedIn() { return !!this._currentUser; },
   isAdmin()    { return !!(this._currentUser && this._currentUser.isAdmin); },
 
+  /* Role-based access checks */
+  hasRole(role) {
+    var u = this._currentUser;
+    if (!u) return false;
+    if (u.isAdmin) return true; // Admins/Directors see everything
+    var r = (u.rank || '').toLowerCase();
+    if (r.indexOf('director') > -1 || r.indexOf('chief') > -1) return true;
+    switch(role) {
+      case 'training':  return !!u.isInstructor || !!u.isExaminer || r.indexOf('training') > -1;
+      case 'events':    return !!u.isEventsTeam || r.indexOf('training') > -1;
+      case 'hr':        return !!u.isHR || r === 'hr officer';
+      case 'notams':    return !!u.isNotamManager;
+      case 'examiner':  return !!u.isExaminer;
+      case 'instructor':return !!u.isInstructor;
+      default: return false;
+    }
+  },
+
+  hasAnyStaffRole() {
+    return this.isAdmin() || this.hasRole('training') || this.hasRole('events') || this.hasRole('hr') || this.hasRole('notams');
+  },
+
   /* ── Real email/password sign-in (Firebase) ─────────────── */
   async loginWithEmail(email, password) {
     if (!window.auth) throw new Error('Firebase is not configured.');
@@ -196,6 +218,17 @@ const gfigAuth = {
 
   adminGuard() { this.guard(true); },
 
+  /* Staff guard: allows admin OR any staff role holder */
+  staffGuard() {
+    const self = this;
+    this.guard(false);
+    document.addEventListener('gfig:authready', function() {
+      if (!self.hasAnyStaffRole()) {
+        window.location.href = 'dashboard.html';
+      }
+    });
+  },
+
   /* ── Apply nav elements from current user ────────────────── */
   applyNav() {
     const user = this._currentUser;
@@ -212,7 +245,7 @@ const gfigAuth = {
         (user.name || 'IN').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     });
 
-    if (user.isAdmin) {
+    if (user.isAdmin || this.hasAnyStaffRole()) {
       document.querySelectorAll('.nav-admin-link').forEach(el => {
         el.style.removeProperty('display');
       });

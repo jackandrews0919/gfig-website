@@ -949,3 +949,186 @@ window.dbCheckAndUnlockAwards = async function(uid) {
     return [];
   }
 };
+
+/* ══════════════════════════════════════════════════════════════
+   PILOT LOGBOOK
+   ══════════════════════════════════════════════════════════════ */
+
+/** Add a logbook entry */
+window.dbAddLogEntry = async function(uid, data) {
+  if (!window.db || !uid) return null;
+  const ref = await window.db.collection('logbook').add({
+    ...data, pilotUid: uid, createdAt: window.serverTimestamp()
+  });
+  return ref.id;
+};
+
+/** Get logbook entries for a pilot */
+window.dbGetLogEntries = async function(uid) {
+  if (!window.db || !uid) return [];
+  try {
+    const snap = await window.db.collection('logbook')
+      .where('pilotUid', '==', uid).orderBy('createdAt', 'desc').get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch { return []; }
+};
+
+/** Delete a logbook entry */
+window.dbDeleteLogEntry = async function(entryId) {
+  if (!window.db) return;
+  await window.db.collection('logbook').doc(entryId).delete();
+};
+
+/* ══════════════════════════════════════════════════════════════
+   PIREP SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+/** Submit a PIREP */
+window.dbSubmitPirep = async function(uid, data) {
+  if (!window.db || !uid) return null;
+  const ref = await window.db.collection('pireps').add({
+    ...data, pilotUid: uid, status: 'active',
+    createdAt: window.serverTimestamp()
+  });
+  return ref.id;
+};
+
+/** Get recent PIREPs (all pilots) */
+window.dbGetPireps = async function(limit) {
+  if (!window.db) return [];
+  try {
+    const snap = await window.db.collection('pireps')
+      .orderBy('createdAt', 'desc').limit(limit || 50).get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch { return []; }
+};
+
+/* ══════════════════════════════════════════════════════════════
+   FLEET / AIRCRAFT REGISTRY
+   ══════════════════════════════════════════════════════════════ */
+
+/** Add aircraft to fleet */
+window.dbAddAircraft = async function(data) {
+  if (!window.db) return null;
+  const ref = await window.db.collection('fleet').add({
+    ...data, createdAt: window.serverTimestamp()
+  });
+  return ref.id;
+};
+
+/** Get fleet */
+window.dbGetFleet = async function() {
+  if (!window.db) return [];
+  try {
+    const snap = await window.db.collection('fleet').orderBy('type').get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch { return []; }
+};
+
+/** Update aircraft */
+window.dbUpdateAircraft = async function(id, data) {
+  if (!window.db) return;
+  await window.db.collection('fleet').doc(id).set(data, { merge: true });
+};
+
+/** Delete aircraft */
+window.dbDeleteAircraft = async function(id) {
+  if (!window.db) return;
+  await window.db.collection('fleet').doc(id).delete();
+};
+
+/* ══════════════════════════════════════════════════════════════
+   DOCUMENTS LIBRARY
+   ══════════════════════════════════════════════════════════════ */
+
+/** Add a document */
+window.dbAddDocument = async function(data, user) {
+  if (!window.db) return null;
+  const ref = await window.db.collection('documents').add({
+    ...data, uploadedBy: user ? user.uid : null,
+    uploaderName: user ? user.name : 'System',
+    createdAt: window.serverTimestamp(), version: data.version || 1
+  });
+  return ref.id;
+};
+
+/** Get all documents */
+window.dbGetDocuments = async function() {
+  if (!window.db) return [];
+  try {
+    const snap = await window.db.collection('documents')
+      .orderBy('createdAt', 'desc').get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch { return []; }
+};
+
+/** Delete a document */
+window.dbDeleteDocument = async function(id) {
+  if (!window.db) return;
+  await window.db.collection('documents').doc(id).delete();
+};
+
+/* ══════════════════════════════════════════════════════════════
+   NOTIFICATIONS
+   ══════════════════════════════════════════════════════════════ */
+
+/** Send a notification to a specific user (stored in Firestore). */
+window.dbSendNotification = async function(targetUid, data) {
+  if (!window.db || !targetUid) return;
+  return window.db.collection('notifications').add({
+    targetUid, type: data.type || 'info',
+    title: data.title || '', message: data.message || '',
+    link: data.link || '', read: false,
+    createdAt: window.serverTimestamp()
+  });
+};
+
+/** Send a notification to all users. */
+window.dbBroadcastNotification = async function(data) {
+  if (!window.db) return;
+  return window.db.collection('notifications').add({
+    targetUid: '__all__', type: data.type || 'info',
+    title: data.title || '', message: data.message || '',
+    link: data.link || '', read: false,
+    createdAt: window.serverTimestamp()
+  });
+};
+
+/** Get notifications for a user (includes broadcasts). */
+window.dbGetNotifications = async function(uid, limit) {
+  if (!window.db || !uid) return [];
+  limit = limit || 30;
+  try {
+    const [personal, broadcasts] = await Promise.all([
+      window.db.collection('notifications').where('targetUid', '==', uid)
+        .orderBy('createdAt', 'desc').limit(limit).get(),
+      window.db.collection('notifications').where('targetUid', '==', '__all__')
+        .orderBy('createdAt', 'desc').limit(limit).get()
+    ]);
+    var all = [];
+    personal.docs.forEach(function(d) { all.push({ id: d.id, ...d.data() }); });
+    broadcasts.docs.forEach(function(d) { all.push({ id: d.id, ...d.data() }); });
+    all.sort(function(a,b) {
+      var at = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate() : new Date(0);
+      var bt = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate() : new Date(0);
+      return bt - at;
+    });
+    return all.slice(0, limit);
+  } catch { return []; }
+};
+
+/** Mark a notification as read. */
+window.dbMarkNotificationRead = async function(notifId) {
+  if (!window.db || !notifId) return;
+  await window.db.collection('notifications').doc(notifId).update({ read: true });
+};
+
+/** Mark all notifications as read for a user. */
+window.dbMarkAllRead = async function(uid) {
+  if (!window.db || !uid) return;
+  const snap = await window.db.collection('notifications')
+    .where('targetUid', '==', uid).where('read', '==', false).get();
+  const batch = window.db.batch();
+  snap.docs.forEach(function(d) { batch.update(d.ref, { read: true }); });
+  await batch.commit();
+};

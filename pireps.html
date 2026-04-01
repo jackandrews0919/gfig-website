@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIREPs — GFIG</title>
+  <meta name="description" content="GFIG Pilot Reports — Submit and view PIREPs for turbulence, icing, weather deviations.">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <style>
+    .pirep-map { width: 100%; height: 340px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: 24px; position: relative; overflow: hidden; }
+    .pirep-map-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.85rem; }
+    .pirep-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .pirep-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px; transition: border-color var(--t); }
+    .pirep-card:hover { border-color: var(--blue); }
+    .pirep-sev { display: inline-block; padding: 2px 8px; border-radius: var(--r-sm); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-right: 6px; }
+    .pirep-sev-severe { background: var(--fail-bg); color: var(--fail); }
+    .pirep-sev-moderate { background: rgba(255,214,0,0.12); color: #ffd700; }
+    .pirep-sev-light { background: var(--pass-bg); color: var(--pass); }
+    .pirep-sev-nil { background: var(--active-bg); color: var(--active); }
+    .pirep-title { font-weight: 700; font-size: 0.95rem; margin: 8px 0 6px; }
+    .pirep-meta { font-size: 0.8rem; color: var(--text-sub); line-height: 1.6; }
+    .pirep-form { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px; margin-bottom: 24px; display: none; }
+    .pirep-form.open { display: block; }
+    .pirep-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .pirep-form-group label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .pirep-form-group input, .pirep-form-group select, .pirep-form-group textarea {
+      width: 100%; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: var(--r-md); color: var(--text); font-size: 0.85rem; font-family: var(--font-body);
+    }
+    @media (max-width: 768px) { .pirep-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name">Member</div><div class="nav-pilot-rank"></div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;" title="Admin Panel">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;" title="Sign Out">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>📡 PILOT REPORTS (PIREPs)</h1>
+          <p>Submit and view pilot reports for turbulence, icing, weather deviations &amp; unusual conditions</p>
+        </div>
+        <button class="btn btn-primary" onclick="togglePirepForm()">+ Submit PIREP</button>
+      </div>
+
+      <!-- Map placeholder -->
+      <div class="pirep-map" id="pirep-map">
+        <div class="pirep-map-overlay" id="pirep-map-overlay">PIREP locations shown here · <span id="pirep-map-count">0</span> active reports</div>
+        <canvas id="pirep-canvas" style="width:100%;height:100%;"></canvas>
+      </div>
+
+      <!-- Submit Form -->
+      <div class="pirep-form" id="pirep-form">
+        <h3 style="font-family:var(--font-head);letter-spacing:0.08em;margin-bottom:16px;">SUBMIT PILOT REPORT</h3>
+        <div class="pirep-form-grid">
+          <div class="pirep-form-group"><label>LOCATION (ICAO/FIX)</label><input type="text" id="pirep-location" placeholder="e.g. EGLL or OCKHAM" style="text-transform:uppercase;"></div>
+          <div class="pirep-form-group"><label>ALTITUDE (ft)</label><input type="number" id="pirep-alt" placeholder="e.g. 35000"></div>
+          <div class="pirep-form-group"><label>REPORT TYPE</label>
+            <select id="pirep-type">
+              <option value="turbulence">Turbulence</option>
+              <option value="icing">Icing</option>
+              <option value="windshear">Windshear</option>
+              <option value="visibility">Low Visibility</option>
+              <option value="thunderstorm">Thunderstorm</option>
+              <option value="volcanic-ash">Volcanic Ash</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="pirep-form-group"><label>SEVERITY</label>
+            <select id="pirep-severity">
+              <option value="nil">NIL</option>
+              <option value="light">Light</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="severe">Severe</option>
+            </select>
+          </div>
+          <div class="pirep-form-group"><label>LATITUDE</label><input type="number" id="pirep-lat" placeholder="e.g. 51.47" step="0.01"></div>
+          <div class="pirep-form-group"><label>LONGITUDE</label><input type="number" id="pirep-lon" placeholder="e.g. -0.46" step="0.01"></div>
+        </div>
+        <div class="pirep-form-group" style="margin-bottom:16px;">
+          <label>DESCRIPTION</label>
+          <textarea id="pirep-desc" rows="2" placeholder="Details — intensity, duration, aircraft type affected…" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;font-family:var(--font-body);resize:vertical;"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="submitPirep()">Submit PIREP</button>
+          <button class="btn btn-secondary" onclick="togglePirepForm()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+        <select class="form-control" id="pirep-filter-type" onchange="filterPireps()" style="width:auto;">
+          <option value="">All Types</option>
+          <option value="turbulence">Turbulence</option>
+          <option value="icing">Icing</option>
+          <option value="windshear">Windshear</option>
+          <option value="visibility">Low Visibility</option>
+          <option value="thunderstorm">Thunderstorm</option>
+        </select>
+        <select class="form-control" id="pirep-filter-sev" onchange="filterPireps()" style="width:auto;">
+          <option value="">All Severities</option>
+          <option value="severe">Severe</option>
+          <option value="moderate">Moderate</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- PIREP Cards -->
+      <div class="pirep-grid" id="pirep-grid">
+        <div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:32px;">Loading PIREPs…</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _pireps = [];
+    var _currentUser = null;
+    var TYPE_ICONS = { turbulence:'💨', icing:'🧊', windshear:'🌪', visibility:'🌫', thunderstorm:'⛈', 'volcanic-ash':'🌋', other:'📋' };
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+    function togglePirepForm() { document.getElementById('pirep-form').classList.toggle('open'); }
+
+    async function submitPirep() {
+      if (!_currentUser) return;
+      var loc = (document.getElementById('pirep-location').value || '').trim().toUpperCase();
+      var type = document.getElementById('pirep-type').value;
+      var sev = document.getElementById('pirep-severity').value;
+      if (!loc) { if (typeof showToast === 'function') showToast('Location is required', 'error'); return; }
+
+      var data = {
+        location: loc,
+        altitude: parseInt(document.getElementById('pirep-alt').value) || 0,
+        type: type, severity: sev,
+        lat: parseFloat(document.getElementById('pirep-lat').value) || null,
+        lon: parseFloat(document.getElementById('pirep-lon').value) || null,
+        description: (document.getElementById('pirep-desc').value || '').trim(),
+        pilotName: _currentUser.name || '', pilotCallsign: _currentUser.callsign || ''
+      };
+      try {
+        await dbSubmitPirep(_currentUser.uid, data);
+        if (typeof showToast === 'function') showToast('PIREP submitted!', 'success');
+        togglePirepForm();
+        loadPireps();
+      } catch(e) { if (typeof showToast === 'function') showToast('Error: ' + e.message, 'error'); }
+    }
+
+    function renderPireps(list) {
+      var grid = document.getElementById('pirep-grid');
+      if (!list.length) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:32px;">No PIREPs filed yet. Be the first to submit a report!</div>'; return; }
+      grid.innerHTML = list.map(function(p) {
+        var sevClass = 'pirep-sev-' + (p.severity || 'nil');
+        var icon = TYPE_ICONS[p.type] || '📋';
+        var ago = '';
+        if (p.createdAt) {
+          var d = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
+          var mins = Math.floor((Date.now() - d.getTime()) / 60000);
+          ago = mins < 60 ? mins + 'm ago' : mins < 1440 ? Math.floor(mins/60) + 'h ago' : Math.floor(mins/1440) + 'd ago';
+        }
+        return '<div class="pirep-card">'
+          + '<span class="pirep-sev ' + sevClass + '">' + esc(p.severity || 'nil') + '</span>'
+          + '<span style="font-size:0.78rem;color:var(--text-muted);">' + ago + '</span>'
+          + '<div class="pirep-title">' + icon + ' ' + esc(p.type || 'Report') + ' — ' + esc(p.location) + '</div>'
+          + '<div class="pirep-meta">'
+          + (p.altitude ? 'FL' + Math.round(p.altitude/100) + ' · ' : '')
+          + (p.pilotCallsign ? esc(p.pilotCallsign) + ' · ' : '')
+          + (p.pilotName ? esc(p.pilotName) : '')
+          + '</div>'
+          + (p.description ? '<div style="margin-top:8px;font-size:0.82rem;color:var(--text-sub);line-height:1.5;">' + esc(p.description) + '</div>' : '')
+          + '</div>';
+      }).join('');
+    }
+
+    function drawMapDots() {
+      var canvas = document.getElementById('pirep-canvas');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+      canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      var sevColors = { severe:'#ff4444', moderate:'#ffd700', light:'#00e676', nil:'#40aaff' };
+      _pireps.forEach(function(p) {
+        if (p.lat != null && p.lon != null) {
+          var x = ((p.lon + 180) / 360) * canvas.width;
+          var y = ((90 - p.lat) / 180) * canvas.height;
+          ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI*2);
+          ctx.fillStyle = sevColors[p.severity] || '#40aaff'; ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.stroke();
+        }
+      });
+      document.getElementById('pirep-map-count').textContent = _pireps.length;
+    }
+
+    function filterPireps() {
+      var type = document.getElementById('pirep-filter-type').value;
+      var sev = document.getElementById('pirep-filter-sev').value;
+      var filtered = _pireps.filter(function(p) {
+        if (type && p.type !== type) return false;
+        if (sev && p.severity !== sev) return false;
+        return true;
+      });
+      renderPireps(filtered);
+    }
+
+    async function loadPireps() {
+      if (!window.dbGetPireps) return;
+      try {
+        _pireps = await dbGetPireps(100);
+        renderPireps(_pireps);
+        drawMapDots();
+      } catch(e) { console.error('PIREP load error:', e); }
+    }
+
+    document.addEventListener('gfig:authready', function(e) { _currentUser = e.detail; loadPireps(); });
+  </script>
+</body>
+</html>

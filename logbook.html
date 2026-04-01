@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pilot Logbook — GFIG</title>
+  <meta name="description" content="GFIG Pilot Logbook — Track your flights, block times, fuel burn and currency.">
+  <meta property="og:title" content="GFIG — Pilot Logbook">
+  <meta property="og:image" content="https://jackandrews0919.github.io/gfig-website/logo.png">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <style>
+    .log-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 28px; }
+    .log-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px 18px; text-align: center; }
+    .log-stat-num { font-family: var(--font-head); font-size: 1.6rem; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+    .log-stat-label { font-size: 0.72rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.1em; }
+
+    .log-form { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px; margin-bottom: 24px; display: none; }
+    .log-form.open { display: block; }
+    .log-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .log-form-group label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .log-form-group input, .log-form-group select, .log-form-group textarea {
+      width: 100%; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: var(--r-md); color: var(--text); font-size: 0.85rem; font-family: var(--font-body);
+    }
+
+    .log-table-wrap { overflow-x: auto; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--bg-card); }
+    .log-table { width: 100%; border-collapse: collapse; }
+    .log-table thead th { padding: 11px 14px; text-align: left; font-size: 0.68rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; background: var(--bg-secondary); }
+    .log-table tbody td { padding: 11px 14px; font-size: 0.84rem; color: var(--text); border-bottom: 1px solid var(--border); }
+    .log-table tbody tr:last-child td { border-bottom: none; }
+    .log-table tbody tr:hover { background: var(--bg-hover); }
+    .log-currency { display: inline-block; padding: 2px 8px; border-radius: var(--r-sm); font-size: 0.7rem; font-weight: 700; }
+    .currency-current { background: var(--pass-bg); color: var(--pass); }
+    .currency-expiring { background: rgba(255,214,0,0.12); color: #ffd700; }
+    .currency-expired { background: var(--fail-bg); color: var(--fail); }
+
+    @media (max-width: 768px) { .log-stats { grid-template-columns: repeat(2, 1fr); } }
+  </style>
+</head>
+<body>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name">Member</div><div class="nav-pilot-rank"></div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;" title="Admin Panel">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;" title="Sign Out">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>✈ PILOT LOGBOOK</h1>
+          <p>Personal flight log — track departures, arrivals, block times, fuel burn &amp; currency</p>
+        </div>
+        <button class="btn btn-primary" onclick="toggleLogForm()">+ New Entry</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="log-stats">
+        <div class="log-stat"><div class="log-stat-num" style="color:var(--blue-light)" id="log-total">0</div><div class="log-stat-label">Total Flights</div></div>
+        <div class="log-stat"><div class="log-stat-num" style="color:var(--orange)" id="log-hours">0</div><div class="log-stat-label">Total Hours</div></div>
+        <div class="log-stat"><div class="log-stat-num" style="color:var(--pass)" id="log-fuel">0</div><div class="log-stat-label">Total Fuel (lbs)</div></div>
+        <div class="log-stat"><div class="log-stat-num" style="color:#9c59ff" id="log-airports">0</div><div class="log-stat-label">Airports Visited</div></div>
+        <div class="log-stat"><div class="log-stat-num" id="log-currency" style="color:var(--pass)">Current</div><div class="log-stat-label">Currency Status</div></div>
+      </div>
+
+      <!-- New Entry Form -->
+      <div class="log-form" id="log-form">
+        <h3 style="font-family:var(--font-head);letter-spacing:0.08em;margin-bottom:16px;">NEW LOGBOOK ENTRY</h3>
+        <div class="log-form-grid">
+          <div class="log-form-group"><label>DATE</label><input type="date" id="log-date"></div>
+          <div class="log-form-group"><label>AIRCRAFT TYPE</label><input type="text" id="log-aircraft" placeholder="e.g. B737-800"></div>
+          <div class="log-form-group"><label>REGISTRATION / TAIL</label><input type="text" id="log-reg" placeholder="e.g. G-GFIG"></div>
+          <div class="log-form-group"><label>DEPARTURE ICAO</label><input type="text" id="log-dep" placeholder="e.g. EGLL" maxlength="4" style="text-transform:uppercase;"></div>
+          <div class="log-form-group"><label>ARRIVAL ICAO</label><input type="text" id="log-arr" placeholder="e.g. KJFK" maxlength="4" style="text-transform:uppercase;"></div>
+          <div class="log-form-group"><label>BLOCK OFF (UTC)</label><input type="time" id="log-off"></div>
+          <div class="log-form-group"><label>BLOCK ON (UTC)</label><input type="time" id="log-on"></div>
+          <div class="log-form-group"><label>BLOCK TIME (hrs)</label><input type="number" id="log-block" step="0.1" min="0" placeholder="Auto or manual"></div>
+          <div class="log-form-group"><label>FUEL BURN (lbs)</label><input type="number" id="log-fuel-in" min="0" placeholder="e.g. 15000"></div>
+          <div class="log-form-group"><label>FLIGHT TYPE</label>
+            <select id="log-type">
+              <option value="inspection">Inspection</option>
+              <option value="training">Training</option>
+              <option value="checkride">Checkride</option>
+              <option value="ferry">Ferry/Reposition</option>
+              <option value="event">Event/Fly-In</option>
+              <option value="personal">Personal</option>
+            </select>
+          </div>
+          <div class="log-form-group"><label>NETWORK</label>
+            <select id="log-network">
+              <option value="vatsim">VATSIM</option>
+              <option value="ivao">IVAO</option>
+              <option value="offline">Offline</option>
+            </select>
+          </div>
+          <div class="log-form-group"><label>APPROACH TYPE</label>
+            <select id="log-approach">
+              <option value="">— None —</option>
+              <option value="ILS CAT I">ILS CAT I</option>
+              <option value="ILS CAT II">ILS CAT II</option>
+              <option value="ILS CAT III">ILS CAT III</option>
+              <option value="RNAV/GPS">RNAV/GPS</option>
+              <option value="VOR">VOR</option>
+              <option value="NDB">NDB</option>
+              <option value="Visual">Visual</option>
+            </select>
+          </div>
+        </div>
+        <div class="log-form-group" style="margin-bottom:16px;">
+          <label>REMARKS / NOTES</label>
+          <textarea id="log-remarks" rows="2" placeholder="Optional notes — weather conditions, findings, debrief…" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;font-family:var(--font-body);resize:vertical;"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="saveLogEntry()">Save Entry</button>
+          <button class="btn btn-secondary" onclick="toggleLogForm()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Logbook Table -->
+      <div class="log-table-wrap">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Aircraft</th>
+              <th>From</th>
+              <th>To</th>
+              <th>Block Time</th>
+              <th>Fuel</th>
+              <th>Approach</th>
+              <th>Network</th>
+              <th>Remarks</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="log-tbody">
+            <tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:32px;">Loading logbook…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _logEntries = [];
+    var _currentUser = null;
+
+    function toggleLogForm() {
+      document.getElementById('log-form').classList.toggle('open');
+    }
+
+    function calcBlockTime() {
+      var off = document.getElementById('log-off').value;
+      var on = document.getElementById('log-on').value;
+      if (off && on) {
+        var a = off.split(':').map(Number), b = on.split(':').map(Number);
+        var mins = (b[0]*60+b[1]) - (a[0]*60+a[1]);
+        if (mins < 0) mins += 1440;
+        document.getElementById('log-block').value = (mins / 60).toFixed(1);
+      }
+    }
+    document.getElementById('log-on').addEventListener('change', calcBlockTime);
+
+    async function saveLogEntry() {
+      if (!_currentUser) return;
+      var date = document.getElementById('log-date').value;
+      var dep = (document.getElementById('log-dep').value || '').trim().toUpperCase();
+      var arr = (document.getElementById('log-arr').value || '').trim().toUpperCase();
+      if (!date || !dep || !arr) { if (typeof showToast === 'function') showToast('Date, departure and arrival are required', 'error'); return; }
+
+      var entry = {
+        date: date,
+        aircraft: (document.getElementById('log-aircraft').value || '').trim(),
+        registration: (document.getElementById('log-reg').value || '').trim().toUpperCase(),
+        departure: dep,
+        arrival: arr,
+        blockOff: document.getElementById('log-off').value || '',
+        blockOn: document.getElementById('log-on').value || '',
+        blockTime: parseFloat(document.getElementById('log-block').value) || 0,
+        fuelBurn: parseInt(document.getElementById('log-fuel-in').value) || 0,
+        flightType: document.getElementById('log-type').value,
+        network: document.getElementById('log-network').value,
+        approach: document.getElementById('log-approach').value,
+        remarks: (document.getElementById('log-remarks').value || '').trim(),
+        pilotName: _currentUser.name || ''
+      };
+
+      try {
+        await dbAddLogEntry(_currentUser.uid, entry);
+        if (typeof showToast === 'function') showToast('Logbook entry saved!', 'success');
+        toggleLogForm();
+        ['log-date','log-aircraft','log-reg','log-dep','log-arr','log-off','log-on','log-block','log-fuel-in','log-remarks'].forEach(function(id) { document.getElementById(id).value = ''; });
+        loadLogbook();
+      } catch(e) { if (typeof showToast === 'function') showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function deleteLogEntry(id) {
+      if (!confirm('Delete this logbook entry?')) return;
+      try { await dbDeleteLogEntry(id); loadLogbook(); } catch(e) { console.error(e); }
+    }
+
+    function updateStats() {
+      var total = _logEntries.length;
+      var hours = _logEntries.reduce(function(s,e) { return s + (e.blockTime || 0); }, 0);
+      var fuel = _logEntries.reduce(function(s,e) { return s + (e.fuelBurn || 0); }, 0);
+      var airports = {};
+      _logEntries.forEach(function(e) { if(e.departure) airports[e.departure]=1; if(e.arrival) airports[e.arrival]=1; });
+      document.getElementById('log-total').textContent = total;
+      document.getElementById('log-hours').textContent = hours.toFixed(1);
+      document.getElementById('log-fuel').textContent = fuel.toLocaleString();
+      document.getElementById('log-airports').textContent = Object.keys(airports).length;
+
+      // Currency: must have a flight in last 90 days
+      var now = new Date();
+      var recent = _logEntries.filter(function(e) {
+        if (!e.date) return false;
+        var d = new Date(e.date + 'T00:00:00Z');
+        return (now - d) < 90 * 86400000;
+      });
+      var el = document.getElementById('log-currency');
+      if (recent.length >= 3) { el.textContent = 'Current'; el.style.color = 'var(--pass)'; }
+      else if (recent.length >= 1) { el.textContent = 'Expiring'; el.style.color = '#ffd700'; }
+      else { el.textContent = 'Expired'; el.style.color = 'var(--fail)'; }
+    }
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    function renderLogbook() {
+      var tbody = document.getElementById('log-tbody');
+      if (!_logEntries.length) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:32px;">No logbook entries yet. Click + New Entry to start logging flights.</td></tr>';
+        return;
+      }
+      var typeColors = { inspection:'var(--blue)', training:'#00c9a7', checkride:'var(--orange)', ferry:'#9c59ff', event:'#ffd700', personal:'var(--text-sub)' };
+      tbody.innerHTML = _logEntries.map(function(e) {
+        var tc = typeColors[e.flightType] || 'var(--text-sub)';
+        return '<tr>'
+          + '<td style="font-family:var(--font-mono);white-space:nowrap;">' + esc(e.date) + '</td>'
+          + '<td><span style="color:' + tc + ';font-weight:600;font-size:0.78rem;text-transform:uppercase;">' + esc(e.flightType) + '</span></td>'
+          + '<td>' + esc(e.aircraft) + (e.registration ? ' <span style="color:var(--text-muted);font-size:0.75rem;">' + esc(e.registration) + '</span>' : '') + '</td>'
+          + '<td style="font-family:var(--font-mono);color:var(--blue-light);">' + esc(e.departure) + '</td>'
+          + '<td style="font-family:var(--font-mono);color:var(--orange);">' + esc(e.arrival) + '</td>'
+          + '<td style="font-family:var(--font-mono);">' + (e.blockTime ? e.blockTime.toFixed(1) + 'h' : '—') + '</td>'
+          + '<td>' + (e.fuelBurn ? e.fuelBurn.toLocaleString() + ' lbs' : '—') + '</td>'
+          + '<td>' + (e.approach ? esc(e.approach) : '—') + '</td>'
+          + '<td style="text-transform:uppercase;font-size:0.78rem;">' + esc(e.network) + '</td>'
+          + '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-sub);" title="' + esc(e.remarks) + '">' + (e.remarks ? esc(e.remarks) : '') + '</td>'
+          + '<td><button onclick="deleteLogEntry(\'' + e.id + '\')" style="background:none;border:none;color:var(--fail);cursor:pointer;font-size:0.9rem;" title="Delete">✕</button></td>'
+          + '</tr>';
+      }).join('');
+    }
+
+    async function loadLogbook() {
+      if (!_currentUser || !window.dbGetLogEntries) return;
+      try {
+        _logEntries = await dbGetLogEntries(_currentUser.uid);
+        updateStats();
+        renderLogbook();
+      } catch(e) { console.error('Logbook load error:', e); }
+    }
+
+    document.addEventListener('gfig:authready', function(e) {
+      _currentUser = e.detail;
+      document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
+      loadLogbook();
+    });
+  </script>
+</body>
+</html>
