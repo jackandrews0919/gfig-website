@@ -370,8 +370,8 @@ client.on('error', e => console.error('Discord error:', e.message));
 /* ── Start ──────────────────────────────────────────────────── */
 
 async function start() {
-  app.listen(PORT, () => {
-    console.log(`🚀 GFIG Bot API listening on port ${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 GFIG Bot API listening on 0.0.0.0:${PORT}`);
     console.log(`   Health: http://localhost:${PORT}/health`);
   });
   try {
