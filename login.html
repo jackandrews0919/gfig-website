@@ -151,25 +151,37 @@
       <div class="login-title">OPERATIONS ACCESS</div>
       <div class="login-sub">Sign in with your GFIG account to access missions, NOTAMs, and flight reports.</div>
 
-      <!-- ── Real Email/Password Login ── -->
+      <!-- ── Mode toggle ── -->
+      <div style="display:flex; margin-bottom:20px; border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden;">
+        <button id="tab-signin" onclick="toggleAuthMode('signin')" style="flex:1; padding:10px; background:var(--blue); color:#fff; border:none; font-family:var(--font-head); font-size:0.7rem; letter-spacing:0.1em; cursor:pointer; transition:background 0.2s;">SIGN IN</button>
+        <button id="tab-register" onclick="toggleAuthMode('register')" style="flex:1; padding:10px; background:transparent; color:var(--text-sub); border:none; font-family:var(--font-head); font-size:0.7rem; letter-spacing:0.1em; cursor:pointer; transition:background 0.2s;">CREATE ACCOUNT</button>
+      </div>
+
+      <!-- ── Email/Password Form ── -->
       <div id="login-form-wrap">
+        <div id="register-name-field" class="form-group" style="text-align:left; margin-bottom:14px; display:none;">
+          <label style="display:block; font-family:var(--font-head); font-size:0.65rem; letter-spacing:0.12em; color:var(--text-sub); margin-bottom:6px;">FULL NAME</label>
+          <input type="text" id="register-name" autocomplete="name"
+            style="width:100%; padding:11px 14px; background:rgba(11,31,58,0.9); border:1px solid var(--border); border-radius:var(--r-md); color:var(--text); font-size:0.88rem; font-family:var(--font-body); box-sizing:border-box; transition:border-color 0.2s;"
+            placeholder="Jack Andrews" onkeydown="if(event.key==='Enter')doAuth()">
+        </div>
         <div class="form-group" style="text-align:left; margin-bottom:14px;">
           <label style="display:block; font-family:var(--font-head); font-size:0.65rem; letter-spacing:0.12em; color:var(--text-sub); margin-bottom:6px;">EMAIL ADDRESS</label>
           <input type="email" id="login-email" autocomplete="email"
             style="width:100%; padding:11px 14px; background:rgba(11,31,58,0.9); border:1px solid var(--border); border-radius:var(--r-md); color:var(--text); font-size:0.88rem; font-family:var(--font-body); box-sizing:border-box; transition:border-color 0.2s;"
-            placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+            placeholder="your@email.com" onkeydown="if(event.key==='Enter')doAuth()">
         </div>
         <div class="form-group" style="text-align:left; margin-bottom:20px;">
           <label style="display:block; font-family:var(--font-head); font-size:0.65rem; letter-spacing:0.12em; color:var(--text-sub); margin-bottom:6px;">PASSWORD</label>
           <input type="password" id="login-password" autocomplete="current-password"
             style="width:100%; padding:11px 14px; background:rgba(11,31,58,0.9); border:1px solid var(--border); border-radius:var(--r-md); color:var(--text); font-size:0.88rem; font-family:var(--font-body); box-sizing:border-box; transition:border-color 0.2s;"
-            placeholder="••••••••••" onkeydown="if(event.key==='Enter')doLogin()">
-          <div style="text-align:right; margin-top:6px;">
+            placeholder="••••••••••" onkeydown="if(event.key==='Enter')doAuth()">
+          <div id="forgot-link" style="text-align:right; margin-top:6px;">
             <a href="#" onclick="doResetPassword(); return false;" style="font-size:0.75rem; color:var(--text-muted); text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color='var(--text-muted)'">Forgot password?</a>
           </div>
         </div>
         <div id="login-error" style="display:none; background:var(--fail-bg); border:1px solid var(--fail-border); color:var(--fail); border-radius:var(--r-md); padding:10px 14px; font-size:0.82rem; margin-bottom:14px; text-align:left;"></div>
-        <button id="login-btn" onclick="doLogin()" class="btn-discord" style="margin-bottom:10px;">
+        <button id="login-btn" onclick="doAuth()" class="btn-discord" style="margin-bottom:10px;">
           Sign In to GFIG Portal
         </button>
       </div>
@@ -245,6 +257,99 @@
         errEl.style.color = '';
         errEl.textContent = msg;
         errEl.style.display = 'block';
+      }
+    }
+
+    let authMode = 'signin';
+
+    function toggleAuthMode(mode) {
+      authMode = mode;
+      const nameField = document.getElementById('register-name-field');
+      const forgotLink = document.getElementById('forgot-link');
+      const btn = document.getElementById('login-btn');
+      const tabSignin = document.getElementById('tab-signin');
+      const tabRegister = document.getElementById('tab-register');
+      const errEl = document.getElementById('login-error');
+      errEl.style.display = 'none';
+
+      if (mode === 'register') {
+        nameField.style.display = 'block';
+        forgotLink.style.display = 'none';
+        btn.textContent = 'Create Account';
+        tabRegister.style.background = 'var(--blue)';
+        tabRegister.style.color = '#fff';
+        tabSignin.style.background = 'transparent';
+        tabSignin.style.color = 'var(--text-sub)';
+      } else {
+        nameField.style.display = 'none';
+        forgotLink.style.display = 'block';
+        btn.textContent = 'Sign In to GFIG Portal';
+        tabSignin.style.background = 'var(--blue)';
+        tabSignin.style.color = '#fff';
+        tabRegister.style.background = 'transparent';
+        tabRegister.style.color = 'var(--text-sub)';
+      }
+    }
+
+    function doAuth() {
+      if (authMode === 'register') return doRegister();
+      return doLogin();
+    }
+
+    async function doRegister() {
+      const nameEl  = document.getElementById('register-name');
+      const emailEl = document.getElementById('login-email');
+      const passEl  = document.getElementById('login-password');
+      const errEl   = document.getElementById('login-error');
+      const btn     = document.getElementById('login-btn');
+      const fullName = (nameEl.value || '').trim();
+      const email    = (emailEl.value || '').trim();
+      const password =  passEl.value || '';
+
+      errEl.style.display = 'none';
+      if (!fullName) {
+        errEl.textContent = 'Please enter your full name.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!email || !password) {
+        errEl.textContent = 'Please enter your email and password.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (password.length < 6) {
+        errEl.textContent = 'Password must be at least 6 characters.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!window.GFIG_FIREBASE_READY) {
+        errEl.textContent = 'Service is not available. Please try again later.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      btn.textContent = 'Creating account…';
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.7';
+
+      try {
+        const cred = await window.auth.createUserWithEmailAndPassword(email, password);
+        await cred.user.updateProfile({ displayName: fullName });
+        const params = new URLSearchParams(location.search);
+        const dest = params.get('redirect');
+        window.location.href = (dest && /^[\w-]+\.html$/.test(dest)) ? dest : 'dashboard.html';
+      } catch (e) {
+        const msg = {
+          'auth/email-already-in-use': 'An account with that email already exists. Try signing in.',
+          'auth/invalid-email':        'Please enter a valid email address.',
+          'auth/weak-password':        'Password must be at least 6 characters.',
+          'auth/too-many-requests':    'Too many attempts. Please wait and try again.'
+        }[e.code] || 'Account creation failed. Please try again.';
+        errEl.textContent = msg;
+        errEl.style.display = 'block';
+        btn.textContent = 'Create Account';
+        btn.style.pointerEvents = '';
+        btn.style.opacity = '';
       }
     }
 

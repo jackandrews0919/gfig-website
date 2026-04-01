@@ -534,7 +534,7 @@
       <div class="admin-sidebar-user">
         <div class="admin-user-avatar" id="admin-avatar">DW</div>
         <div>
-          <div class="admin-user-name" id="admin-name">DIR Williams</div>
+          <div class="admin-user-name" id="admin-name">Admin</div>
           <div class="admin-user-rank">Director</div>
         </div>
         <button class="admin-logout-btn" onclick="gfigAuth.logout()" title="Logout">↩</button>
@@ -552,33 +552,33 @@
         <div class="admin-metrics">
           <div class="metric-card">
             <div class="metric-label">TOTAL MEMBERS</div>
-            <div class="metric-value blue" id="ov-members">184</div>
-            <div class="metric-sub">↑ 7 this week</div>
+            <div class="metric-value blue" id="ov-members">0</div>
+            <div class="metric-sub">&nbsp;</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">ACTIVE MISSIONS</div>
-            <div class="metric-value orange" id="ov-missions">12</div>
-            <div class="metric-sub">3 claimed today</div>
+            <div class="metric-value orange" id="ov-missions">0</div>
+            <div class="metric-sub">&nbsp;</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">REPORTS PENDING</div>
-            <div class="metric-value yellow" id="ov-reports-pending">3</div>
-            <div class="metric-sub">Awaiting review</div>
+            <div class="metric-value yellow" id="ov-reports-pending">0</div>
+            <div class="metric-sub">&nbsp;</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">FLIGHTS THIS MONTH</div>
-            <div class="metric-value green" id="ov-flights">247</div>
-            <div class="metric-sub">↑ 14% vs last month</div>
+            <div class="metric-value green" id="ov-flights">0</div>
+            <div class="metric-sub">&nbsp;</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">ACTIVE NOTAMS</div>
-            <div class="metric-value orange" id="ov-notams">5</div>
-            <div class="metric-sub">1 expires today</div>
+            <div class="metric-value orange" id="ov-notams">0</div>
+            <div class="metric-sub">&nbsp;</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">PASS RATE</div>
-            <div class="metric-value green" id="ov-passrate">96%</div>
-            <div class="metric-sub">30-day average</div>
+            <div class="metric-value green" id="ov-passrate">—</div>
+            <div class="metric-sub">&nbsp;</div>
           </div>
         </div>
 
@@ -592,12 +592,7 @@
         <div class="admin-grid-2">
           <div class="activity-feed" id="overview-activity-feed">
             <div class="activity-feed-head">RECENT ACTIVITY</div>
-            <div class="activity-item"><div class="activity-dot" style="background:var(--pass)"></div><div><div>CPT Harrison submitted ILS report — EGLL RWY 27R</div><div class="activity-time">14 min ago</div></div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:var(--blue)"></div><div><div>New member joined: FO Chen — Europe Region</div><div class="activity-time">1 hr ago</div></div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:var(--orange)"></div><div><div>NOTAM GF-2025-047 created — CYYZ maintenance</div><div class="activity-time">3 hr ago</div></div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:var(--pass)"></div><div><div>Mission GF-2025-0088 completed — KEWR VOR-A</div><div class="activity-time">5 hr ago</div></div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:var(--monitor)"></div><div><div>ILS G/S deviation noted — KORD RWY 10C review needed</div><div class="activity-time">8 hr ago</div></div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:var(--blue)"></div><div><div>Training module completed: CPT Rivera — Advanced RNAV</div><div class="activity-time">12 hr ago</div></div></div>
+            <div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.85rem;">No recent activity</div>
           </div>
 
           <div class="admin-table-wrap">
@@ -605,11 +600,7 @@
             <table class="admin-table">
               <thead><tr><th>#</th><th>INSPECTOR</th><th>FLIGHTS</th><th>PTS</th></tr></thead>
               <tbody id="overview-leaderboard-tbody">
-                <tr><td style="color:var(--orange);font-weight:700">1</td><td>CPT Harrison</td><td>18</td><td style="font-family:var(--font-mono);color:var(--pass)">2,940</td></tr>
-                <tr><td>2</td><td>FO Martinez</td><td>14</td><td style="font-family:var(--font-mono)">1,820</td></tr>
-                <tr><td>3</td><td>CPT Okonkwo</td><td>12</td><td style="font-family:var(--font-mono)">1,560</td></tr>
-                <tr><td>4</td><td>FO Tanaka</td><td>11</td><td style="font-family:var(--font-mono)">1,430</td></tr>
-                <tr><td>5</td><td>INS Rivera</td><td>9</td><td style="font-family:var(--font-mono)">1,170</td></tr>
+                <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px">No data yet</td></tr>
               </tbody>
             </table>
           </div>
@@ -623,20 +614,13 @@
 
         <div class="admin-table-wrap">
           <div class="admin-table-head">
-            <div class="admin-table-title">ALL MEMBERS <span style="color:var(--text-muted);font-weight:400;font-family:var(--font-body)">(184)</span></div>
+            <div class="admin-table-title">ALL MEMBERS <span style="color:var(--text-muted);font-weight:400;font-family:var(--font-body)" id="member-count-label"></span></div>
             <input type="text" class="admin-search" placeholder="Search callsign or name…" oninput="filterTable(this, 'members-tbody')">
           </div>
           <table class="admin-table">
             <thead><tr><th>CALLSIGN</th><th>NAME</th><th>RANK</th><th>REGION</th><th>FLIGHTS</th><th>JOINED</th><th>STATUS</th><th></th></tr></thead>
             <tbody id="members-tbody">
-              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GFIG-DIR-0001</td><td>DIR Williams</td><td><span class="rank-badge rank-director">Director</span></td><td>North America</td><td>312</td><td>Jan 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GFIG-INS-0042</td><td>CPT Harrison</td><td><span class="rank-badge rank-senior">Senior Insp.</span></td><td>Europe</td><td>187</td><td>Mar 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0067</td><td>FO Martinez</td><td><span class="rank-badge rank-inspector">Inspector</span></td><td>North America</td><td>94</td><td>Apr 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0091</td><td>CPT Okonkwo</td><td><span class="rank-badge rank-senior">Senior Insp.</span></td><td>Africa</td><td>143</td><td>May 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono)">GFIG-JR-0108</td><td>FO Chen</td><td><span class="rank-badge rank-junior">Junior Insp.</span></td><td>Asia-Pacific</td><td>12</td><td>Jun 2025</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0053</td><td>FO Tanaka</td><td><span class="rank-badge rank-inspector">Inspector</span></td><td>Asia-Pacific</td><td>76</td><td>Mar 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0039</td><td>INS Rivera</td><td><span class="rank-badge rank-junior">Junior Insp.</span></td><td>Latin America</td><td>41</td><td>Feb 2024</td><td><span class="status-badge badge-reserve">Reserve</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
-              <tr><td style="font-family:var(--font-mono)">GFIG-INS-0077</td><td>CPT Al-Farsi</td><td><span class="rank-badge rank-senior">Senior Insp.</span></td><td>Middle East</td><td>118</td><td>Apr 2024</td><td><span class="status-badge badge-active">Active</span></td><td><button class="tbl-action-btn">Edit</button></td></tr>
+              <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">Loading members…</td></tr>
             </tbody>
           </table>
         </div>
@@ -853,11 +837,7 @@
           <table class="admin-table">
             <thead><tr><th>ID</th><th>LOCATION</th><th>TYPE</th><th>REGION</th><th>CLAIMED BY</th><th>STATUS</th><th></th></tr></thead>
             <tbody id="missions-admin-tbody">
-              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0092</td><td>EGLL RWY 27L</td><td>ILS Calibration</td><td>Europe</td><td>—</td><td><span class="status-badge badge-active">Available</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0091</td><td>KJFK RWY 13R</td><td>RNAV/RNP</td><td>North America</td><td>CPT Harrison</td><td><span class="status-badge badge-pending">Claimed</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0090</td><td>CYVR VOR YVR</td><td>VOR Check</td><td>North America</td><td>—</td><td><span class="status-badge badge-active">Available</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0089</td><td>EGCC RWY 05R</td><td>ILS Calibration</td><td>Europe</td><td>FO Martinez</td><td><span class="status-badge badge-pending">Claimed</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0088</td><td>KEWR VOR-A</td><td>VOR Check</td><td>North America</td><td>CPT Okonkwo</td><td><span class="status-badge" style="background:rgba(0,230,118,0.06);color:var(--pass);border:1px solid rgba(0,230,118,0.15)">Completed</span></td><td><button class="tbl-action-btn success">Review</button></td></tr>
+              <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">Loading missions…</td></tr>
             </tbody>
           </table>
         </div>
@@ -869,46 +849,11 @@
         <div class="admin-page-sub">Flight inspection reports waiting for staff review and sign-off.</div>
 
         <div class="admin-table-wrap">
-          <div class="admin-table-head"><div class="admin-table-title">PENDING REVIEW (3)</div></div>
+          <div class="admin-table-head"><div class="admin-table-title" id="reports-table-title">PENDING REVIEW</div></div>
           <table class="admin-table">
             <thead><tr><th>REF</th><th>SUBMITTED BY</th><th>LOCATION</th><th>TYPE</th><th>VERDICT</th><th>SUBMITTED</th><th></th></tr></thead>
             <tbody id="reports-admin-tbody">
-              <tr>
-                <td style="font-family:var(--font-mono);color:var(--text-muted)">RPT-2025-0311</td>
-                <td>CPT Harrison</td>
-                <td>EGLL RWY 27R — ILS LOC</td>
-                <td>ILS Calibration</td>
-                <td><span class="status-badge badge-active">PASS</span></td>
-                <td style="color:var(--text-muted);font-size:0.78rem">12 min ago</td>
-                <td>
-                  <button class="tbl-action-btn success" onclick="toast('Report approved')">✓ Approve</button>
-                  <button class="tbl-action-btn danger" onclick="toast('Report flagged for re-inspection')">⚑ Flag</button>
-                </td>
-              </tr>
-              <tr>
-                <td style="font-family:var(--font-mono);color:var(--text-muted)">RPT-2025-0310</td>
-                <td>FO Tanaka</td>
-                <td>CYYZ RWY 06L — ILS G/S</td>
-                <td>ILS Calibration</td>
-                <td><span class="status-badge badge-reserve">MONITOR</span></td>
-                <td style="color:var(--text-muted);font-size:0.78rem">3 hr ago</td>
-                <td>
-                  <button class="tbl-action-btn success" onclick="toast('Report approved')">✓ Approve</button>
-                  <button class="tbl-action-btn danger" onclick="toast('Report flagged for re-inspection')">⚑ Flag</button>
-                </td>
-              </tr>
-              <tr>
-                <td style="font-family:var(--font-mono);color:var(--text-muted)">RPT-2025-0309</td>
-                <td>CPT Okonkwo</td>
-                <td>KEWR VOR-A 112.5 MHz</td>
-                <td>VOR Check</td>
-                <td><span class="status-badge badge-active">PASS</span></td>
-                <td style="color:var(--text-muted);font-size:0.78rem">8 hr ago</td>
-                <td>
-                  <button class="tbl-action-btn success" onclick="toast('Report approved')">✓ Approve</button>
-                  <button class="tbl-action-btn danger" onclick="toast('Report flagged for re-inspection')">⚑ Flag</button>
-                </td>
-              </tr>
+              <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">Loading reports…</td></tr>
             </tbody>
           </table>
         </div>

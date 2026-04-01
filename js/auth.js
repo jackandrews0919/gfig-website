@@ -17,34 +17,34 @@ const gfigAuth = {
   /* ── Demo account data ─────────────────────────────────────── */
   DEMO_USER: {
     uid:           'demo-inspector',
-    name:          'CPT Harrison',
-    callsign:      'GFIG-INS-0042',
-    rank:          'Senior Inspector',
-    rank_class:    'rank-senior',
-    points:        4820,
+    name:          'Demo Inspector',
+    callsign:      'GFIG-0000',
+    rank:          'Inspector',
+    rank_class:    'rank-inspector',
+    points:        0,
     isAdmin:       false,
-    avatar:        'JH',
-    division:      'UK',
+    avatar:        'DI',
+    division:      '',
     _isDemo:       true,
-    totalMissions: 142,
-    passRate:      96,
-    flightHours:   1246
+    totalMissions: 0,
+    passRate:      null,
+    flightHours:   0
   },
 
   DEMO_ADMIN: {
     uid:           'demo-admin',
-    name:          'DIR Williams',
-    callsign:      'GFIG-DIR-0001',
+    name:          'Demo Admin',
+    callsign:      'GFIG-ADM-0000',
     rank:          'Director',
     rank_class:    'rank-director',
-    points:        15200,
+    points:        0,
     isAdmin:       true,
-    avatar:        'DW',
-    division:      'US',
+    avatar:        'DA',
+    division:      '',
     _isDemo:       true,
-    totalMissions: 312,
-    passRate:      98,
-    flightHours:   4820
+    totalMissions: 0,
+    passRate:      null,
+    flightHours:   0
   },
 
   /* ── Session helpers ─────────────────────────────────────── */
@@ -60,6 +60,14 @@ const gfigAuth = {
   async loginWithEmail(email, password) {
     if (!window.auth) throw new Error('Firebase is not configured.');
     return window.auth.signInWithEmailAndPassword(email, password);
+  },
+
+  /* ── Account registration (Firebase) ────────────────────── */
+  async registerWithEmail(email, password, displayName) {
+    if (!window.auth) throw new Error('Firebase is not configured.');
+    const cred = await window.auth.createUserWithEmailAndPassword(email, password);
+    if (displayName) await cred.user.updateProfile({ displayName });
+    return cred;
   },
 
   /* ── Demo logins (keep for testing without Firebase) ─────── */
