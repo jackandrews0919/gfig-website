@@ -73,7 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
     { href:'pireps.html',       label:'📡 PIREPs' },
     { href:'dispatch.html',     label:'📋 Dispatch' },
     { href:'weather.html',      label:'🌤 Weather' },
-    { href:'atis.html',         label:'📡 ATIS / Tools' },
     { href:'fleet.html',        label:'✈ Fleet' },
     { href:'map.html',          label:'🗺 Route Map' },
     { href:'achievements.html', label:'🏆 Achievements' },
