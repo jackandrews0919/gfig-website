@@ -51,6 +51,9 @@ function validateStep(n) {
       const el = document.getElementById(id);
       if (!el || !el.value) { showToast('Please fill in all flight data fields', 'warn'); el?.focus(); return false; }
     }
+    const vLink = (document.getElementById('volanta-link')?.value || '').trim();
+    if (!vLink) { showToast('Volanta flight link is required', 'warn'); document.getElementById('volanta-link')?.focus(); return false; }
+    if (!vLink.startsWith('http')) { showToast('Please enter a valid Volanta URL', 'warn'); document.getElementById('volanta-link')?.focus(); return false; }
   }
   if (n === 3) {
     const result = document.querySelector('input[name="result"]:checked');
@@ -127,6 +130,7 @@ function buildReview() {
   const spd = document.getElementById('airspeed')?.value || '';
   const network = document.getElementById('network')?.value || '';
   const atc = document.getElementById('atc-contact')?.value || '';
+  const volanta = document.getElementById('volanta-link')?.value || '';
 
   const resultBadge = result === 'pass' ? '<span class="badge badge-pass" style="font-size:0.9rem; padding:5px 14px;">✓ PASS</span>'
     : result === 'monitor' ? '<span class="badge badge-monitor" style="font-size:0.9rem; padding:5px 14px;">◉ MONITOR</span>'
@@ -152,6 +156,10 @@ function buildReview() {
         <div><div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px;">Cruise Alt</div><div style="font-size:0.85rem; font-family:var(--font-mono);">${Number(alt).toLocaleString()} ft</div></div>
         <div><div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px;">IAS</div><div style="font-size:0.85rem; font-family:var(--font-mono);">${spd} kts</div></div>
         <div><div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px;">ATC Contact</div><div style="font-size:0.85rem;">${atc}</div></div>
+      </div>
+      <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
+        <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">Volanta Flight Record</div>
+        <a href="${volanta}" target="_blank" rel="noopener" style="font-size:0.82rem; color:var(--blue-light); word-break:break-all;">${volanta}</a>
       </div>
       <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
         <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">Technical Observations</div>
@@ -192,7 +200,8 @@ async function submitReport(e) {
     result,
     observations:  document.getElementById('observations')?.value || '',
     narrative:     document.getElementById('narrative')?.value    || '',
-    failAction:    document.getElementById('fail-action')?.value  || ''
+    failAction:    document.getElementById('fail-action')?.value  || '',
+    volantaLink:   document.getElementById('volanta-link')?.value || ''
   };
 
   try {

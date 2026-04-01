@@ -171,6 +171,78 @@
             </div>
           </div>
 
+          <!-- Member Forms -->
+          <div class="card mt-24" style="margin-top:24px;">
+            <div class="card-header">
+              <span class="card-title">Member Forms</span>
+              <span class="text-xs text-sub">Leave · Resignation · Calibration</span>
+            </div>
+
+            <!-- Form Tabs -->
+            <div id="mform-tabs" style="display:flex;gap:8px;padding:14px 20px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+              <button class="mform-tab active" onclick="openMForm('leave',this)">Leave of Absence</button>
+              <button class="mform-tab" onclick="openMForm('resign',this)">Resignation</button>
+              <button class="mform-tab" onclick="openMForm('calibration',this)">Calibration Request</button>
+            </div>
+
+            <!-- Leave of Absence -->
+            <div id="mform-leave" class="mform-body">
+              <p class="text-sm text-sub" style="margin-bottom:16px;">Request a temporary leave of absence. Your missions will be paused and your status set to Reserve.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">From Date</label>
+                  <input type="date" class="form-control" id="leave-from">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Return Date (estimated)</label>
+                  <input type="date" class="form-control" id="leave-to">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Reason</label>
+                <textarea class="form-control" id="leave-reason" rows="3" placeholder="Brief reason for leave…" style="resize:vertical;"></textarea>
+              </div>
+              <button class="btn btn-primary" onclick="submitMemberForm('leave')" style="margin-top:8px;">Submit Leave Request</button>
+            </div>
+
+            <!-- Resignation -->
+            <div id="mform-resign" class="mform-body hidden">
+              <div style="background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.2);border-radius:var(--r-md);padding:12px 16px;margin-bottom:16px;">
+                <span style="color:var(--danger);font-weight:600;font-size:0.82rem;">⚠ This action is final.</span>
+                <span class="text-sm text-sub"> Your account will be archived but your member number is retained should you wish to rejoin.</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Reason for Resignation</label>
+                <textarea class="form-control" id="resign-reason" rows="3" placeholder="Please let us know why you are leaving…" style="resize:vertical;"></textarea>
+              </div>
+              <div class="form-group" style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+                <input type="checkbox" id="resign-confirm" style="width:18px;height:18px;cursor:pointer;">
+                <label for="resign-confirm" class="text-sm" style="cursor:pointer;">I understand this will archive my account and I confirm I wish to resign from GFIG Virtual.</label>
+              </div>
+              <button class="btn" onclick="submitMemberForm('resignation')" style="margin-top:12px;background:rgba(255,82,82,0.15);border:1px solid var(--danger);color:var(--danger);">Submit Resignation</button>
+            </div>
+
+            <!-- Calibration Request -->
+            <div id="mform-calibration" class="mform-body hidden">
+              <p class="text-sm text-sub" style="margin-bottom:16px;">Request a calibration check flight with a senior inspector. Required every 6 months to maintain active status.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Aircraft Type</label>
+                  <input type="text" class="form-control" id="cal-aircraft" placeholder="e.g. King Air B200, Falcon 20">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Preferred Date</label>
+                  <input type="date" class="form-control" id="cal-date">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Additional Notes</label>
+                <textarea class="form-control" id="cal-notes" rows="2" placeholder="Any specific requirements or availability notes…" style="resize:vertical;"></textarea>
+              </div>
+              <button class="btn btn-primary" onclick="submitMemberForm('calibration')" style="margin-top:8px;">Submit Calibration Request</button>
+            </div>
+          </div>
+
         </div><!-- end dash-main -->
 
         <!-- ── RIGHT SIDEBAR ── -->
@@ -315,5 +387,55 @@
   <script src="js/app.js"></script>
   <script>gfigAuth.applyNav();</script>
   <script src="js/dashboard.js"></script>
-</body>
+  <script>
+    /* ── Member Forms ── */
+    function openMForm(name, btn) {
+      document.querySelectorAll('.mform-body').forEach(function(el) { el.classList.add('hidden'); });
+      document.querySelectorAll('.mform-tab').forEach(function(el) { el.classList.remove('active'); });
+      document.getElementById('mform-' + name).classList.remove('hidden');
+      btn.classList.add('active');
+    }
+
+    async function submitMemberForm(type) {
+      const user = window.gfigAuth && gfigAuth.getUser ? gfigAuth.getUser() : null;
+      let data = { submittedBy: user?.uid || '—', submittedByName: user?.name || '—' };
+
+      if (type === 'leave') {
+        const from   = document.getElementById('leave-from').value;
+        const to     = document.getElementById('leave-to').value;
+        const reason = document.getElementById('leave-reason').value.trim();
+        if (!from || !to) { window.showToast && showToast('Please select from and return dates', 'warn'); return; }
+        if (!reason)      { window.showToast && showToast('Please provide a reason', 'warn'); return; }
+        data = { ...data, fromDate: from, toDate: to, reason };
+
+      } else if (type === 'resignation') {
+        const reason  = document.getElementById('resign-reason').value.trim();
+        const confirm = document.getElementById('resign-confirm').checked;
+        if (!reason)   { window.showToast && showToast('Please provide a reason', 'warn'); return; }
+        if (!confirm)  { window.showToast && showToast('Please tick the confirmation box', 'warn'); return; }
+        data = { ...data, reason };
+
+      } else if (type === 'calibration') {
+        const aircraft = document.getElementById('cal-aircraft').value.trim();
+        const date     = document.getElementById('cal-date').value;
+        const notes    = document.getElementById('cal-notes').value.trim();
+        if (!aircraft) { window.showToast && showToast('Please enter your aircraft type', 'warn'); return; }
+        data = { ...data, aircraft, preferredDate: date, notes };
+      }
+
+      try {
+        if (window.dbSubmitMemberForm) {
+          await dbSubmitMemberForm(type, data);
+        }
+        window.showToast && showToast('✓ Form submitted — staff will review shortly', 'success');
+        // Clear inputs
+        document.querySelectorAll('#mform-' + (type === 'resignation' ? 'resign' : type) + ' input, #mform-' + (type === 'resignation' ? 'resign' : type) + ' textarea').forEach(function(el) {
+          if (el.type === 'checkbox') el.checked = false; else el.value = '';
+        });
+      } catch(e) {
+        console.error('Member form submit error:', e);
+        window.showToast && showToast('Error submitting form — please try again', 'error');
+      }
+    }
+  </script>
 </html>

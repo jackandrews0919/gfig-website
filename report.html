@@ -194,6 +194,16 @@
                 </select>
               </div>
             </div>
+            <div class="form-group" style="margin-top:4px;">
+              <label class="form-label" for="volanta-link">
+                Volanta Flight Record
+                <span style="color:var(--danger);margin-left:3px;">*</span>
+                <span style="color:var(--text-muted);font-weight:400;font-size:0.75rem;margin-left:6px;">Mandatory — used to verify the inspection flight</span>
+              </label>
+              <input type="url" class="form-control" id="volanta-link"
+                placeholder="https://my.volanta.app/flights/…" required>
+              <div class="form-hint">Paste the full Volanta flight URL. The flight must match the mission date and route.</div>
+            </div>
             <div style="display:flex; justify-content:space-between; margin-top:20px;">
               <button type="button" class="btn btn-secondary" onclick="goToStep(1)">← Back</button>
               <button type="button" class="btn btn-primary" onclick="goToStep(3)">Next: Results →</button>

@@ -384,6 +384,34 @@ window.dbUpdateUser = async function(uid, data) {
   await window.db.collection('users').doc(uid).set(data, { merge: true });
 };
 
+/** Auto-assign next available member number (never reuses retired numbers) */
+window.dbGetNextMemberNumber = async function() {
+  if (!window.db) return 'GFIG-0001';
+  try {
+    const snap = await window.db.collection('users').get();
+    let maxNum = 0;
+    snap.docs.forEach(d => {
+      const mn = d.data().memberNumber || '';
+      const m = mn.match(/GFIG-(\d+)/);
+      if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10));
+    });
+    return 'GFIG-' + String(maxNum + 1).padStart(4, '0');
+  } catch { return 'GFIG-0001'; }
+};
+
+/** Submit a member form (leave, resignation, calibration request) */
+window.dbSubmitMemberForm = async function(type, data) {
+  if (!window.db) throw new Error('Not connected');
+  const ref = await window.db.collection('member_forms').add({
+    type,
+    ...data,
+    status:    'pending',
+    createdAt: window.serverTimestamp()
+  });
+  await dbLogActivity('form', '<strong>' + (data.submittedByName || 'A member') + '</strong> submitted a ' + type + ' request');
+  return ref.id;
+};
+
 /** Create a new member account in Firestore (called after Firebase Auth signup) */
 window.dbCreateMember = async function(uid, profileData) {
   if (!window.db) return;

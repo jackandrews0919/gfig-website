@@ -1039,8 +1039,8 @@
           <input id="mem-edit-name" class="admin-input" type="text" placeholder="Full name">
         </div>
         <div class="admin-form-group">
-          <label class="admin-form-label">CALLSIGN</label>
-          <input id="mem-edit-callsign" class="admin-input" type="text" placeholder="e.g. GFIG-INS-0001">
+          <label class="admin-form-label">MEMBER NUMBER <span style="color:var(--text-muted);font-size:0.7rem;font-family:var(--font-body);letter-spacing:0">(auto-assigned)</span></label>
+          <input id="mem-edit-memberNumber" class="admin-input" type="text" placeholder="Auto-assigned" readonly style="opacity:0.55;cursor:not-allowed;">
         </div>
         <div class="admin-form-group">
           <label class="admin-form-label">RANK</label>
@@ -1330,9 +1330,9 @@
       const m = _membersCache.find(function(x) { return x.id === uid; });
       if (!m) { toast('Member data not found'); return; }
       _editMemberUid = uid;
-      document.getElementById('mem-edit-name').value     = m.name     || '';
-      document.getElementById('mem-edit-callsign').value = m.callsign || '';
-      document.getElementById('mem-edit-rank').value     = m.rank     || 'Trainee Inspector';
+      document.getElementById('mem-edit-name').value         = m.name         || '';
+      document.getElementById('mem-edit-memberNumber').value = m.memberNumber  || '(pending)';
+      document.getElementById('mem-edit-rank').value         = m.rank          || 'Trainee Inspector';
       document.getElementById('mem-edit-region').value   = m.region   || 'Global';
       document.getElementById('mem-edit-status').value   = m.status   || 'active';
       document.getElementById('mem-edit-admin').value    = m.isAdmin  ? 'true' : 'false';
@@ -1347,8 +1347,7 @@
     async function saveMemberEdit() {
       if (!_editMemberUid) return;
       const data = {
-        name:     (document.getElementById('mem-edit-name').value     || '').trim(),
-        callsign: (document.getElementById('mem-edit-callsign').value || '').trim(),
+        name:     (document.getElementById('mem-edit-name').value || '').trim(),
         rank:     document.getElementById('mem-edit-rank').value,
         region:   document.getElementById('mem-edit-region').value,
         status:   document.getElementById('mem-edit-status').value,

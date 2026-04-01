@@ -126,11 +126,16 @@ const gfigAuth = {
             /* First login — create profile document */
             const initials = (firebaseUser.displayName || firebaseUser.email || 'IN')
               .split(/[\s@]+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+            /* Auto-assign a unique member number (never reused) */
+            const memberNumber = window.dbGetNextMemberNumber
+              ? await window.dbGetNextMemberNumber().catch(() => null)
+              : null;
             const newProfile = {
               name:          firebaseUser.displayName || firebaseUser.email,
               email:         firebaseUser.email,
               avatar:        initials,
               isAdmin:       isBootstrapAdmin,
+              memberNumber:  memberNumber || null,
               points:        0,
               totalMissions: 0,
               passRate:      null,
