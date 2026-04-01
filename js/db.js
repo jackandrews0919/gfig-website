@@ -359,6 +359,8 @@ window.dbSubmitReport = async function(reportData) {
       totalMissions: window.increment(1),
       points:        window.increment(pts[reportData.result] || 120)
     }).catch(() => {});
+    /* Check and unlock milestone awards */
+    try { await window.dbCheckAndUnlockAwards(user.uid); } catch(e) {}
   }
 
   /* Activity log */
@@ -697,4 +699,47 @@ window.dbSendAnnouncement = async function(title, body) {
     timestamp:   new Date().toISOString()
   }]);
   return true;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   AWARDS
+   ══════════════════════════════════════════════════════════════ */
+
+/** Check milestones and unlock awards for a user. Called after report submission. */
+window.dbCheckAndUnlockAwards = async function(uid) {
+  if (!window.db || !uid) return [];
+  try {
+    const [userSnap, reportsSnap] = await Promise.all([
+      window.db.collection('users').doc(uid).get(),
+      window.db.collection('reports').where('submittedBy', '==', uid).get()
+    ]);
+    if (!userSnap.exists) return [];
+    const userData = userSnap.data();
+    const total = userData.totalMissions || 0;
+    const reports = reportsSnap.docs.map(d => d.data());
+    const regions = new Set(reports.map(r => r.region).filter(Boolean));
+    const existing = (userData.awards || []).map(a => typeof a === 'string' ? a : a.id);
+    const newAwards = [...(userData.awards || [])];
+    let changed = false;
+
+    function maybeUnlock(id, name, icon) {
+      if (existing.includes(id)) return;
+      const today = new Date().toISOString().split('T')[0];
+      newAwards.push({ id, name, icon, earnedDate: today });
+      changed = true;
+    }
+
+    if (total >= 1)   maybeUnlock('first-mission', 'First Mission Complete', '🥇');
+    if (total >= 25)  maybeUnlock('missions-25',   '25 Missions',            '🪙');
+    if (total >= 100) maybeUnlock('centurion',      'Centurion',              '🏅');
+    if (regions.size >= 5) maybeUnlock('globetrotter', 'Globetrotter',       '🌍');
+
+    if (changed) {
+      await window.db.collection('users').doc(uid).set({ awards: newAwards }, { merge: true });
+    }
+    return newAwards;
+  } catch(e) {
+    console.warn('dbCheckAndUnlockAwards:', e.message);
+    return [];
+  }
 };

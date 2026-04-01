@@ -164,6 +164,9 @@
           <input type="password" id="login-password" autocomplete="current-password"
             style="width:100%; padding:11px 14px; background:rgba(11,31,58,0.9); border:1px solid var(--border); border-radius:var(--r-md); color:var(--text); font-size:0.88rem; font-family:var(--font-body); box-sizing:border-box; transition:border-color 0.2s;"
             placeholder="••••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+          <div style="text-align:right; margin-top:6px;">
+            <a href="#" onclick="doResetPassword(); return false;" style="font-size:0.75rem; color:var(--text-muted); text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color='var(--text-muted)'">Forgot password?</a>
+          </div>
         </div>
         <div id="login-error" style="display:none; background:var(--fail-bg); border:1px solid var(--fail-border); color:var(--fail); border-radius:var(--r-md); padding:10px 14px; font-size:0.82rem; margin-bottom:14px; text-align:left;"></div>
         <button id="login-btn" onclick="doLogin()" class="btn-discord" style="margin-bottom:10px;">
@@ -210,6 +213,40 @@
         }
       }
     })();
+
+    async function doResetPassword() {
+      const email = (document.getElementById('login-email').value || '').trim();
+      const errEl = document.getElementById('login-error');
+      errEl.style.display = 'none';
+      if (!email) {
+        errEl.textContent = 'Enter your email address above, then click Forgot password.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!window.GFIG_FIREBASE_READY) {
+        errEl.textContent = 'Service unavailable. Please try again later.';
+        errEl.style.display = 'block';
+        return;
+      }
+      try {
+        await window.auth.sendPasswordResetEmail(email);
+        errEl.style.background = 'rgba(0,230,118,0.08)';
+        errEl.style.borderColor = 'rgba(0,230,118,0.3)';
+        errEl.style.color = 'var(--pass)';
+        errEl.textContent = 'Password reset email sent! Check your inbox (and spam folder).';
+        errEl.style.display = 'block';
+      } catch(e) {
+        const msg = {
+          'auth/user-not-found': 'No account found with that email.',
+          'auth/invalid-email':  'Please enter a valid email address.'
+        }[e.code] || 'Could not send reset email. Please try again.';
+        errEl.style.background = '';
+        errEl.style.borderColor = '';
+        errEl.style.color = '';
+        errEl.textContent = msg;
+        errEl.style.display = 'block';
+      }
+    }
 
     async function doLogin() {
       const emailEl = document.getElementById('login-email');

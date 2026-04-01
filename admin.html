@@ -473,6 +473,10 @@
           <span class="admin-nav-icon">📋</span> Reports Queue
           <span class="admin-badge-count">3</span>
         </button>
+        <button class="admin-nav-item" onclick="showSection('applications', this)">
+          <span class="admin-nav-icon">📝</span> Applications
+          <span class="admin-badge-count" id="applications-badge">0</span>
+        </button>
 
         <span class="admin-nav-label">Content</span>
         <button class="admin-nav-item" onclick="showSection('notams', this)">
@@ -866,6 +870,24 @@
                   <button class="tbl-action-btn danger" onclick="toast('Report flagged for re-inspection')">⚑ Flag</button>
                 </td>
               </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ─── APPLICATIONS ───────────────────────────────── -->
+      <section class="admin-section" id="sec-applications">
+        <div class="admin-page-title">Member Applications</div>
+        <div class="admin-page-sub">Review pending inspector applications submitted via the Join page.</div>
+
+        <div class="admin-table-wrap">
+          <div class="admin-table-head">
+            <div class="admin-table-title" id="apps-table-title">PENDING APPLICATIONS</div>
+          </div>
+          <table class="admin-table">
+            <thead><tr><th>REF</th><th>NAME</th><th>DISCORD</th><th>SIMULATOR</th><th>HOURS</th><th>REGION</th><th>SUBMITTED</th><th></th></tr></thead>
+            <tbody id="applications-tbody">
+              <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">Loading applications…</td></tr>
             </tbody>
           </table>
         </div>
@@ -1557,6 +1579,49 @@
       } catch(e) { console.warn('Missions admin load error:', e); }
     }
 
+    /* ── Load: Applications ── */
+    async function loadApplicationsAdmin() {
+      if (!window.dbGetApplications) return;
+      try {
+        const apps = await dbGetApplications();
+        const pending = (apps || []).filter(function(a) { return !a.status || a.status === 'pending'; });
+        const titleEl = document.getElementById('apps-table-title');
+        if (titleEl) titleEl.textContent = 'PENDING APPLICATIONS (' + pending.length + ')';
+        const badge = document.getElementById('applications-badge');
+        if (badge) badge.textContent = pending.length;
+        const tbody = document.getElementById('applications-tbody');
+        if (!tbody) return;
+        if (!pending.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">No pending applications</td></tr>';
+          return;
+        }
+        tbody.innerHTML = pending.map(function(a) {
+          return '<tr>'
+            + '<td style="font-family:var(--font-mono);color:var(--orange)">' + (a.ref || a.id || '—') + '</td>'
+            + '<td><strong>' + (a.name || a.firstName && (a.firstName + ' ' + (a.lastName||'')) || '—') + '</strong></td>'
+            + '<td style="color:var(--blue-light)">' + (a.discord || '—') + '</td>'
+            + '<td>' + (a.simulator || '—') + '</td>'
+            + '<td style="font-family:var(--font-mono)">' + (a.hours || '—') + 'h</td>'
+            + '<td>' + (a.region || '—') + '</td>'
+            + '<td style="font-size:0.78rem;color:var(--text-muted)">' + _relTime(a.submittedAt) + '</td>'
+            + '<td>'
+            + '<button class="tbl-action-btn success" onclick="reviewApplication(\'' + a.id + '\',\'approved\')">✓ Approve</button>'
+            + '<button class="tbl-action-btn danger"  onclick="reviewApplication(\'' + a.id + '\',\'declined\')">✗ Decline</button>'
+            + '</td></tr>';
+        }).join('');
+      } catch(e) { console.warn('Applications load error:', e); }
+    }
+
+    /* ── Review Application ── */
+    async function reviewApplication(appId, action) {
+      if (!window.dbUpdateApplicationStatus) { toast('Demo mode'); return; }
+      try {
+        await dbUpdateApplicationStatus(appId, action);
+        toast(action === 'approved' ? '✓ Application approved — welcome to GFIG!' : '✗ Application declined');
+        loadApplicationsAdmin();
+      } catch(e) { toast('Error: ' + e.message); }
+    }
+
     /* ── Load: Reports ── */
     async function loadReportsAdmin() {
       if (!window.dbGetReports) return;
@@ -1783,7 +1848,8 @@
         loadMembersAdmin(),
         loadMissionsAdmin(),
         loadReportsAdmin(),
-        loadNotamsAdmin()
+        loadNotamsAdmin(),
+        loadApplicationsAdmin()
       ]);
     });
   </script>

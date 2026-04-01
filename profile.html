@@ -326,179 +326,23 @@
         <div class="grid-2 mb-24">
           <div class="card">
             <div class="card-title mb-16">Mission Breakdown</div>
-            <div style="display:flex; flex-direction:column; gap:12px;">
-              <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                  <span class="text-sm">ILS Calibration</span>
-                  <span class="text-sm text-sub font-mono">62 missions</span>
-                </div>
-                <div class="prog-wrap"><div class="prog-bar" style="width:44%;"></div></div>
-              </div>
-              <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                  <span class="text-sm">VOR / DME Check</span>
-                  <span class="text-sm text-sub font-mono">34 missions</span>
-                </div>
-                <div class="prog-wrap"><div class="prog-bar" style="width:24%;"></div></div>
-              </div>
-              <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                  <span class="text-sm">Approach Validation</span>
-                  <span class="text-sm text-sub font-mono">28 missions</span>
-                </div>
-                <div class="prog-wrap"><div class="prog-bar" style="width:20%;"></div></div>
-              </div>
-              <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                  <span class="text-sm">SID/STAR Validation</span>
-                  <span class="text-sm text-sub font-mono">12 missions</span>
-                </div>
-                <div class="prog-wrap"><div class="prog-bar" style="width:9%;"></div></div>
-              </div>
-              <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                  <span class="text-sm">Airport Survey</span>
-                  <span class="text-sm text-sub font-mono">6 missions</span>
-                </div>
-                <div class="prog-wrap"><div class="prog-bar" style="width:4%;"></div></div>
-              </div>
-            </div>
+            <div id="stat-type-breakdown"><div class="text-sm text-muted" style="text-align:center;padding:20px;">Loading…</div></div>
           </div>
           <div class="card">
             <div class="card-title mb-16">Result Distribution</div>
-            <div style="display:flex; flex-direction:column; gap:16px;">
-              <div style="display:flex; align-items:center; justify-content:space-between;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <div style="width:12px; height:12px; border-radius:50%; background:var(--pass);"></div>
-                  <span class="text-sm">PASS</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span class="text-sm font-mono">136 missions</span>
-                  <span class="badge badge-pass" style="min-width:48px; justify-content:center;">95.8%</span>
-                </div>
-              </div>
-              <div style="display:flex; align-items:center; justify-content:space-between;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <div style="width:12px; height:12px; border-radius:50%; background:var(--monitor);"></div>
-                  <span class="text-sm">MONITOR</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span class="text-sm font-mono">4 missions</span>
-                  <span class="badge badge-monitor" style="min-width:48px; justify-content:center;">2.8%</span>
-                </div>
-              </div>
-              <div style="display:flex; align-items:center; justify-content:space-between;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <div style="width:12px; height:12px; border-radius:50%; background:var(--fail);"></div>
-                  <span class="text-sm">FAIL</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span class="text-sm font-mono">2 missions</span>
-                  <span class="badge badge-fail" style="min-width:48px; justify-content:center;">1.4%</span>
-                </div>
-              </div>
-            </div>
-            <hr class="divider">
-            <div class="grid-2" style="gap:12px; text-align:center;">
-              <div>
-                <div style="font-family:var(--font-head); font-size:1.4rem; font-weight:700; color:var(--orange);">8.8h</div>
-                <div class="text-xs text-muted mt-4">Avg Mission Time</div>
-              </div>
-              <div>
-                <div style="font-family:var(--font-head); font-size:1.4rem; font-weight:700; color:var(--blue-light);">#4</div>
-                <div class="text-xs text-muted mt-4">Global Rank</div>
-              </div>
-            </div>
+            <div id="stat-result-content"><div class="text-sm text-muted" style="text-align:center;padding:20px;">Loading…</div></div>
           </div>
         </div>
         <div class="card">
           <div class="card-title mb-16">Regional Coverage</div>
-          <div class="grid-3" style="gap:12px;">
-            <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--r-md); padding:14px;">
-              <div style="font-weight:700; margin-bottom:4px;">Europe</div>
-              <div class="text-sm text-sub">94 missions · 66%</div>
-              <div class="prog-wrap mt-8"><div class="prog-bar" style="width:66%;"></div></div>
-            </div>
-            <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--r-md); padding:14px;">
-              <div style="font-weight:700; margin-bottom:4px;">North America</div>
-              <div class="text-sm text-sub">22 missions · 15%</div>
-              <div class="prog-wrap mt-8"><div class="prog-bar" style="width:15%;"></div></div>
-            </div>
-            <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--r-md); padding:14px;">
-              <div style="font-weight:700; margin-bottom:4px;">Asia-Pacific</div>
-              <div class="text-sm text-sub">14 missions · 10%</div>
-              <div class="prog-wrap mt-8"><div class="prog-bar" style="width:10%;"></div></div>
-            </div>
-            <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--r-md); padding:14px;">
-              <div style="font-weight:700; margin-bottom:4px;">Middle East</div>
-              <div class="text-sm text-sub">8 missions · 6%</div>
-              <div class="prog-wrap mt-8"><div class="prog-bar" style="width:6%;"></div></div>
-            </div>
-            <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--r-md); padding:14px;">
-              <div style="font-weight:700; margin-bottom:4px;">Africa</div>
-              <div class="text-sm text-sub">4 missions · 3%</div>
-              <div class="prog-wrap mt-8"><div class="prog-bar" style="width:3%;"></div></div>
-            </div>
-            <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--r-md); padding:14px;">
-              <div style="font-weight:700; margin-bottom:4px;">Latin America</div>
-              <div class="text-sm text-sub">0 missions · 0%</div>
-              <div class="prog-wrap mt-8"><div class="prog-bar" style="width:0%;"></div></div>
-            </div>
-          </div>
+          <div class="grid-3" id="stat-region-grid"><div class="text-sm text-muted" style="text-align:center;padding:20px;grid-column:1/-1;">Loading…</div></div>
         </div>
       </div>
 
       <!-- ── Tab: Awards ── -->
       <div id="tab-awards" class="hidden">
-        <div class="grid-3">
-          <div class="cert-card earned">
-            <div class="cert-icon" style="background: rgba(255,215,0,0.12); border-color: rgba(255,215,0,0.3);">🥇</div>
-            <div>
-              <div class="cert-name" style="color:#ffd700;">First Mission Complete</div>
-              <div class="cert-desc">Completed your inaugural GFIG inspection mission</div>
-              <div class="text-xs text-muted mt-8 font-mono">Earned: 18 Mar 2024</div>
-            </div>
-          </div>
-          <div class="cert-card earned">
-            <div class="cert-icon" style="background: rgba(255,215,0,0.12); border-color: rgba(255,215,0,0.3);">🏅</div>
-            <div>
-              <div class="cert-name" style="color:#ffd700;">Centurion</div>
-              <div class="cert-desc">Completed 100 inspection missions</div>
-              <div class="text-xs text-muted mt-8 font-mono">Earned: 14 Dec 2025</div>
-            </div>
-          </div>
-          <div class="cert-card earned">
-            <div class="cert-icon" style="background: rgba(0,230,118,0.12); border-color: rgba(0,230,118,0.3);">🎯</div>
-            <div>
-              <div class="cert-name" style="color:var(--pass);">Perfect Month</div>
-              <div class="cert-desc">100% pass rate across 10+ missions in a calendar month</div>
-              <div class="text-xs text-muted mt-8 font-mono">Earned: Feb 2026</div>
-            </div>
-          </div>
-          <div class="cert-card earned">
-            <div class="cert-icon" style="background: rgba(64,170,255,0.12); border-color: rgba(64,170,255,0.3);">🌍</div>
-            <div>
-              <div class="cert-name" style="color:var(--blue-light);">Globetrotter</div>
-              <div class="cert-desc">Completed missions in 5 different ICAO regions</div>
-              <div class="text-xs text-muted mt-8 font-mono">Earned: Aug 2025</div>
-            </div>
-          </div>
-          <div class="cert-card earned">
-            <div class="cert-icon" style="background: rgba(255,107,53,0.12); border-color: rgba(255,107,53,0.3);">🔥</div>
-            <div>
-              <div class="cert-name" style="color:var(--orange);">30-Day Streak</div>
-              <div class="cert-desc">Flew at least one mission per day for 30 consecutive days</div>
-              <div class="text-xs text-muted mt-8 font-mono">Earned: Jan 2026</div>
-            </div>
-          </div>
-          <div class="cert-card">
-            <div class="cert-icon" style="opacity:0.4;">🏆</div>
-            <div style="opacity:0.5;">
-              <div class="cert-name">Top Inspector</div>
-              <div class="cert-desc">Ranked #1 globally for any calendar month</div>
-              <div class="text-xs text-muted mt-8">Not yet earned</div>
-            </div>
-          </div>
+        <div class="grid-3" id="awards-grid">
+          <div class="text-sm text-muted" style="text-align:center;padding:40px;grid-column:1/-1;">Loading awards…</div>
         </div>
       </div>
 
@@ -648,14 +492,19 @@
       if (navNmEl) navNmEl.textContent = user.name  || 'Inspector';
       if (navRkEl) navRkEl.textContent = info.rank  || 'Inspector';
 
-      /* Mission history from Firestore */
+      /* ── Mission history + Stats + Awards from Firestore ── */
+      const histTbody = document.getElementById('history-tbody');
+      if (histTbody) histTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-sub);">Loading flight history…</td></tr>';
+
       if (window.dbGetReports) {
         try {
           const reports = await dbGetReports({ submittedBy: user.uid });
-          if (reports && reports.length) {
-            const tbody = document.getElementById('history-tbody');
-            if (tbody) {
-              tbody.innerHTML = reports.map(function(r) {
+          const total = reports ? reports.length : 0;
+
+          /* ── History tab ── */
+          if (histTbody) {
+            if (total > 0) {
+              histTbody.innerHTML = reports.map(function(r) {
                 const ts = r.createdAt && r.createdAt.toDate ? r.createdAt.toDate() : new Date(r.createdAt || Date.now());
                 const dateStr = ts.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
                 const vc = r.verdict === 'PASS' ? 'badge-pass' : r.verdict === 'MONITOR' ? 'badge-monitor' : 'badge-fail';
@@ -671,9 +520,134 @@
                   + '<td class="' + ptsCls + '">+' + (r.pointsAwarded || r.points || 0) + '</td>'
                   + '</tr>';
               }).join('');
+            } else {
+              histTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-sub);">No flight history yet. Complete your first mission to get started!</td></tr>';
             }
           }
-        } catch(e) { console.warn('History load error:', e); }
+
+          /* ── Compute aggregates ── */
+          const typeCounts = {}, regionCounts = {};
+          let passCount = 0, monitorCount = 0, failCount = 0;
+          (reports || []).forEach(function(r) {
+            const t = r.type || r.missionType || 'Other';
+            typeCounts[t] = (typeCounts[t] || 0) + 1;
+            const reg = r.region || 'Unknown';
+            regionCounts[reg] = (regionCounts[reg] || 0) + 1;
+            if (r.verdict === 'PASS')         passCount++;
+            else if (r.verdict === 'MONITOR') monitorCount++;
+            else                              failCount++;
+          });
+
+          /* ── Stats tab: Mission Breakdown ── */
+          const tbDiv = document.getElementById('stat-type-breakdown');
+          if (tbDiv) {
+            if (!total) {
+              tbDiv.innerHTML = '<div class="text-sm text-muted" style="text-align:center;padding:20px;">No data yet.</div>';
+            } else {
+              const sortedTypes = Object.entries(typeCounts).sort(function(a,b){ return b[1]-a[1]; });
+              const maxT = sortedTypes[0][1];
+              tbDiv.innerHTML = sortedTypes.map(function(entry) {
+                const tName = entry[0], n = entry[1];
+                const pct = Math.round(n / maxT * 100);
+                return '<div style="margin-bottom:12px;">'
+                  + '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+                  + '<span class="text-sm">' + tName + '</span>'
+                  + '<span class="text-sm text-sub font-mono">' + n + ' mission' + (n !== 1 ? 's' : '') + '</span>'
+                  + '</div><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;"></div></div></div>';
+              }).join('');
+            }
+          }
+
+          /* ── Stats tab: Result Distribution ── */
+          const rdDiv = document.getElementById('stat-result-content');
+          if (rdDiv) {
+            if (!total) {
+              rdDiv.innerHTML = '<div class="text-sm text-muted" style="text-align:center;padding:20px;">No data yet.</div>';
+            } else {
+              const pPct = (passCount / total * 100).toFixed(1);
+              const mPct = (monitorCount / total * 100).toFixed(1);
+              const fPct = (failCount / total * 100).toFixed(1);
+              rdDiv.innerHTML = '<div style="display:flex;flex-direction:column;gap:16px;">'
+                + [['PASS','var(--pass)','badge-pass',passCount,pPct],
+                   ['MONITOR','var(--monitor)','badge-monitor',monitorCount,mPct],
+                   ['FAIL','var(--fail)','badge-fail',failCount,fPct]].map(function(row) {
+                  return '<div style="display:flex;align-items:center;justify-content:space-between;">'
+                    + '<div style="display:flex;align-items:center;gap:10px;">'
+                    + '<div style="width:12px;height:12px;border-radius:50%;background:' + row[1] + ';"></div>'
+                    + '<span class="text-sm">' + row[0] + '</span></div>'
+                    + '<div style="display:flex;align-items:center;gap:12px;">'
+                    + '<span class="text-sm font-mono">' + row[3] + ' mission' + (row[3] !== 1 ? 's' : '') + '</span>'
+                    + '<span class="badge ' + row[2] + '" style="min-width:48px;justify-content:center;">' + row[4] + '%</span>'
+                    + '</div></div>';
+                }).join('')
+                + '</div><hr class="divider">'
+                + '<div class="grid-2" style="gap:12px;text-align:center;">'
+                + '<div><div style="font-family:var(--font-head);font-size:1.4rem;font-weight:700;color:var(--orange);">'
+                + (user.flightHours != null ? user.flightHours.toFixed(1) + 'h' : total + '') + '</div>'
+                + '<div class="text-xs text-muted mt-4">' + (user.flightHours != null ? 'Total Flight Hours' : 'Total Missions') + '</div></div>'
+                + '<div><div style="font-family:var(--font-head);font-size:1.4rem;font-weight:700;color:var(--pass);">'
+                + (passCount ? pPct + '%' : '—') + '</div>'
+                + '<div class="text-xs text-muted mt-4">Pass Rate</div></div></div>';
+            }
+          }
+
+          /* ── Stats tab: Regional Coverage ── */
+          const rgDiv = document.getElementById('stat-region-grid');
+          if (rgDiv) {
+            const regions = Object.entries(regionCounts).sort(function(a,b){ return b[1]-a[1]; });
+            if (!regions.length) {
+              rgDiv.innerHTML = '<div class="text-sm text-muted" style="text-align:center;padding:20px;grid-column:1/-1;">No data yet.</div>';
+            } else {
+              rgDiv.innerHTML = regions.map(function(entry) {
+                const reg = entry[0], n = entry[1];
+                const pct = total ? Math.round(n / total * 100) : 0;
+                return '<div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;">'
+                  + '<div style="font-weight:700;margin-bottom:4px;">' + reg + '</div>'
+                  + '<div class="text-sm text-sub">' + n + ' mission' + (n !== 1 ? 's' : '') + ' · ' + pct + '%</div>'
+                  + '<div class="prog-wrap mt-8"><div class="prog-bar" style="width:' + pct + '%;"></div></div>'
+                  + '</div>';
+              }).join('');
+            }
+          }
+        } catch(e) { console.warn('Reports/stats load error:', e); }
+      }
+
+      /* ── Awards grid ── */
+      const AWARD_CATALOG = [
+        {id:'first-mission', icon:'🥇', name:'First Mission Complete', desc:'Completed your inaugural GFIG inspection mission',        color:'#ffd700',           bg:'rgba(255,215,0,0.12)',  border:'rgba(255,215,0,0.3)'},
+        {id:'missions-25',   icon:'🪙', name:'25 Missions',            desc:'Completed 25 inspection missions',                        color:'#ffd700',           bg:'rgba(255,215,0,0.12)',  border:'rgba(255,215,0,0.3)'},
+        {id:'centurion',     icon:'🏅', name:'Centurion',              desc:'Completed 100 inspection missions',                       color:'#ffd700',           bg:'rgba(255,215,0,0.12)',  border:'rgba(255,215,0,0.3)'},
+        {id:'perfect-month', icon:'🎯', name:'Perfect Month',          desc:'100% pass rate across 10+ missions in a calendar month',  color:'var(--pass)',        bg:'rgba(0,230,118,0.12)', border:'rgba(0,230,118,0.3)'},
+        {id:'globetrotter',  icon:'🌍', name:'Globetrotter',           desc:'Completed missions in 5 different ICAO regions',          color:'var(--blue-light)', bg:'rgba(64,170,255,0.12)',border:'rgba(64,170,255,0.3)'},
+        {id:'30-day-streak', icon:'🔥', name:'30-Day Streak',          desc:'Flew at least one mission per day for 30 consecutive days',color:'var(--orange)',     bg:'rgba(255,107,53,0.12)',border:'rgba(255,107,53,0.3)'},
+        {id:'top-inspector', icon:'🏆', name:'Top Inspector',          desc:'Ranked #1 globally for any calendar month',               color:'var(--text-sub)',   bg:'transparent',          border:'var(--border)'}
+      ];
+      const earnedMap = {};
+      (user.awards || []).forEach(function(a) {
+        const k = typeof a === 'string' ? a : a.id;
+        if (k) earnedMap[k] = a;
+      });
+      const agDiv = document.getElementById('awards-grid');
+      if (agDiv) {
+        agDiv.innerHTML = AWARD_CATALOG.map(function(a) {
+          const e = earnedMap[a.id];
+          if (e) {
+            const eDate = typeof e === 'object' && e.earnedDate ? e.earnedDate : '';
+            return '<div class="cert-card earned">'
+              + '<div class="cert-icon" style="background:' + a.bg + ';border-color:' + a.border + ';">' + a.icon + '</div>'
+              + '<div><div class="cert-name" style="color:' + a.color + ';">' + a.name + '</div>'
+              + '<div class="cert-desc">' + a.desc + '</div>'
+              + (eDate ? '<div class="text-xs text-muted mt-8 font-mono">Earned: ' + eDate + '</div>' : '<div class="text-xs text-muted mt-8 font-mono">Earned ✓</div>')
+              + '</div></div>';
+          } else {
+            return '<div class="cert-card">'
+              + '<div class="cert-icon" style="opacity:0.4;">' + a.icon + '</div>'
+              + '<div style="opacity:0.5;"><div class="cert-name">' + a.name + '</div>'
+              + '<div class="cert-desc">' + a.desc + '</div>'
+              + '<div class="text-xs text-muted mt-8">Not yet earned</div>'
+              + '</div></div>';
+          }
+        }).join('');
       }
     });
   </script>

@@ -13,6 +13,11 @@
   <meta name="theme-color" content="#0b1f3a">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
 </head>
 <body>
 
@@ -64,11 +69,11 @@
         </div>
         <div class="hero-stats">
           <div>
-            <div class="hero-stat-value">0</div>
+            <div class="hero-stat-value" id="hero-stat-missions">0</div>
             <div class="hero-stat-label">Missions Completed</div>
           </div>
           <div>
-            <div class="hero-stat-value">0</div>
+            <div class="hero-stat-value" id="hero-stat-inspectors">0</div>
             <div class="hero-stat-label">Active Inspectors</div>
           </div>
           <div>
@@ -76,7 +81,7 @@
             <div class="hero-stat-label">Continents Active</div>
           </div>
           <div>
-            <div class="hero-stat-value">0</div>
+            <div class="hero-stat-value" id="hero-stat-hours">0</div>
             <div class="hero-stat-label">Flight Hours Logged</div>
           </div>
         </div>
@@ -476,61 +481,8 @@
               <th>Completed</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td class="td-mono">GFI-2026-0284</td>
-              <td><strong>CPT Harrison</strong></td>
-              <td><span class="td-route">EGLL <span class="td-route-arrow">→</span> EGCC</span></td>
-              <td>ILS Calibration</td>
-              <td class="td-mono" style="font-size:0.8rem">BE200</td>
-              <td><span class="badge badge-pass">✓ Pass</span></td>
-              <td class="text-sub text-sm">2 hrs ago</td>
-            </tr>
-            <tr>
-              <td class="td-mono">GFI-2026-0283</td>
-              <td><strong>INS Lopez</strong></td>
-              <td><span class="td-route">KLAX <span class="td-route-arrow">→</span> KSFO</span></td>
-              <td>VOR Check</td>
-              <td class="td-mono" style="font-size:0.8rem">LJ60XR</td>
-              <td><span class="badge badge-monitor">◉ Monitor</span></td>
-              <td class="text-sub text-sm">4 hrs ago</td>
-            </tr>
-            <tr>
-              <td class="td-mono">GFI-2026-0282</td>
-              <td><strong>CPT Nakamura</strong></td>
-              <td><span class="td-route">RJTT <span class="td-route-arrow">→</span> RJAA</span></td>
-              <td>Approach Validation</td>
-              <td class="td-mono" style="font-size:0.8rem">BE350ER</td>
-              <td><span class="badge badge-pass">✓ Pass</span></td>
-              <td class="text-sub text-sm">6 hrs ago</td>
-            </tr>
-            <tr>
-              <td class="td-mono">GFI-2026-0281</td>
-              <td><strong>SR. INS Okonkwo</strong></td>
-              <td><span class="td-route">FAOR <span class="td-route-arrow">→</span> FACT</span></td>
-              <td>NDB Calibration</td>
-              <td class="td-mono" style="font-size:0.8rem">BE200</td>
-              <td><span class="badge badge-pass">✓ Pass</span></td>
-              <td class="text-sub text-sm">9 hrs ago</td>
-            </tr>
-            <tr>
-              <td class="td-mono">GFI-2026-0280</td>
-              <td><strong>INS Mercer</strong></td>
-              <td><span class="td-route">OMDB <span class="td-route-arrow">→</span> OMSJ</span></td>
-              <td>ILS Calibration</td>
-              <td class="td-mono" style="font-size:0.8rem">BE200</td>
-              <td><span class="badge badge-fail">✗ Fail</span></td>
-              <td class="text-sub text-sm">12 hrs ago</td>
-            </tr>
-            <tr>
-              <td class="td-mono">GFI-2026-0279</td>
-              <td><strong>DIR Chen</strong></td>
-              <td><span class="td-route">ZBAA <span class="td-route-arrow">→</span> ZGSZ</span></td>
-              <td>Airport Survey</td>
-              <td class="td-mono" style="font-size:0.8rem">CJ4</td>
-              <td><span class="badge badge-pass">✓ Pass</span></td>
-              <td class="text-sub text-sm">14 hrs ago</td>
-            </tr>
+          <tbody id="ops-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-sub);">Loading recent operations…</td></tr>
           </tbody>
         </table>
       </div>
@@ -601,5 +553,58 @@
   </footer>
 
   <script src="js/app.js"></script>
+  <script>
+    /* ── Public landing page stats from Firestore ── */
+    document.addEventListener('gfig:authready', async function() {
+      if (!window.GFIG_FIREBASE_READY) return;
+      try {
+        const [membersRes, reportsRes] = await Promise.allSettled([
+          window.dbGetMembers ? dbGetMembers() : Promise.resolve(null),
+          window.dbGetReports ? dbGetReports() : Promise.resolve(null)
+        ]);
+        const members = membersRes.value || [];
+        const reports = reportsRes.value || [];
+
+        /* Hero stats */
+        const mEl = document.getElementById('hero-stat-missions');
+        const iEl = document.getElementById('hero-stat-inspectors');
+        const hEl = document.getElementById('hero-stat-hours');
+        if (mEl) mEl.textContent = reports.length.toLocaleString();
+        if (iEl) iEl.textContent = members.filter(function(m){ return m.status !== 'inactive'; }).length.toLocaleString();
+        if (hEl) {
+          const hrs = members.reduce(function(s, m) { return s + (m.flightHours || 0); }, 0);
+          hEl.textContent = Math.round(hrs).toLocaleString() + 'h';
+        }
+
+        /* Recent Operations table — last 6 completed reports */
+        const tbody = document.getElementById('ops-tbody');
+        if (tbody) {
+          const recent = reports.slice(0, 6);
+          if (!recent.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-sub);">No completed operations yet — be the first!</td></tr>';
+          } else {
+            function relTime(ts) {
+              const d = ts && ts.toDate ? ts.toDate() : new Date(ts || Date.now());
+              const m = Math.round((Date.now() - d.getTime()) / 60000);
+              return m < 60 ? m + ' min ago' : m < 1440 ? Math.floor(m/60) + ' hr ago' : Math.floor(m/1440) + ' d ago';
+            }
+            tbody.innerHTML = recent.map(function(r) {
+              const vc = r.verdict === 'PASS' ? 'badge-pass' : r.verdict === 'MONITOR' ? 'badge-monitor' : 'badge-fail';
+              const vl = r.verdict === 'PASS' ? '✓ Pass' : r.verdict === 'MONITOR' ? '◉ Monitor' : '✗ Fail';
+              return '<tr>'
+                + '<td class="td-mono">' + (r.missionId || r.id || '—') + '</td>'
+                + '<td><strong>' + (r.submittedByName || 'Inspector') + '</strong></td>'
+                + '<td><span class="td-route">' + (r.departure || '—') + ' <span class="td-route-arrow">→</span> ' + (r.location || r.icao || '—') + '</span></td>'
+                + '<td>' + (r.type || r.missionType || '—') + '</td>'
+                + '<td class="td-mono" style="font-size:0.8rem">' + (r.aircraft || '—') + '</td>'
+                + '<td><span class="badge ' + vc + '">' + vl + '</span></td>'
+                + '<td class="text-sub text-sm">' + relTime(r.createdAt || r.submittedAt) + '</td>'
+                + '</tr>';
+            }).join('');
+          }
+        }
+      } catch(e) { console.warn('Landing page stats:', e); }
+    });
+  </script>
 </body>
 </html>
