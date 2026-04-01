@@ -1144,6 +1144,7 @@
             <button class="dc-tab active" onclick="dcShowTab('roles',     this)">👑 Roles</button>
             <button class="dc-tab"        onclick="dcShowTab('channels',  this)">📂 Channels</button>
             <button class="dc-tab"        onclick="dcShowTab('broadcast', this)">📢 Broadcast</button>
+            <button class="dc-tab"        onclick="dcShowTab('audit',     this)">📜 Audit Log</button>
             <button class="dc-tab"        onclick="dcShowTab('setup',     this)">⚡ Server Setup</button>
           </div>
 
@@ -1270,6 +1271,32 @@
             </div>
           </div>
 
+          <!-- ── AUDIT LOG ── -->
+          <div class="dc-tab-panel" id="dc-panel-audit">
+            <div class="admin-form">
+              <div class="admin-form-title">DISCORD AUDIT LOG</div>
+              <div style="font-size:0.82rem;color:var(--text-sub);margin-bottom:14px;line-height:1.6;">
+                Live audit trail — message edits, deletes, channel changes, and member events.
+                Events are auto-posted to <strong>#audit-log</strong> on Discord and viewable here.
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+                <select class="admin-select" id="dc-audit-filter" style="max-width:220px;" onchange="dcLoadAuditLog()">
+                  <option value="">All Events</option>
+                  <option value="message_delete">🗑️ Message Deletes</option>
+                  <option value="message_edit">✏️ Message Edits</option>
+                  <option value="channel_create">📂+ Channel Created</option>
+                  <option value="channel_delete">📂− Channel Deleted</option>
+                  <option value="member_join">📥 Member Join</option>
+                  <option value="member_leave">📤 Member Leave</option>
+                </select>
+                <button class="btn btn-secondary" onclick="dcLoadAuditLog()" style="font-size:0.82rem;">↻ Refresh</button>
+              </div>
+              <div id="dc-audit-list" style="max-height:500px;overflow-y:auto;">
+                <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.82rem;">Click Refresh to load audit log</div>
+              </div>
+            </div>
+          </div>
+
           <!-- ── SERVER SETUP ── -->
           <div class="dc-tab-panel" id="dc-panel-setup">
             <div class="admin-form">
@@ -1304,11 +1331,14 @@
                     <div style="color:var(--orange);margin-top:6px;">🔊 VOICE</div>
                     <div style="padding-left:12px;color:var(--text-sub);">🔊 Operations Briefing &middot; 🔊 General Voice &middot; 🔊 ATC Practice</div>
                     <div style="color:var(--orange);margin-top:6px;">🔒 STAFF</div>
-                    <div style="padding-left:12px;color:var(--text-sub);"># admin-chat &middot; # bot-commands</div>
+                    <div style="padding-left:12px;color:var(--text-sub);"># admin-chat &middot; # bot-commands &middot; # audit-log</div>
                   </div>
                 </div>
               </div>
-              <button class="btn btn-primary" onclick="dcRunFullSetup()" id="dc-setup-btn">⚡ Run Full GFIG Setup</button>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="dcRunFullSetup()" id="dc-setup-btn">⚡ Run Full GFIG Setup</button>
+                <button class="btn btn-secondary" style="border-color:var(--danger);color:var(--danger);" onclick="dcDeleteAllChannels()">🗑 Delete All Channels &amp; Rebuild</button>
+              </div>
               <div class="setup-log" id="dc-setup-log"></div>
             </div>
           </div>
@@ -1609,6 +1639,15 @@
         if (window.dbCreateMission) {
           await dbCreateMission(missionData);
           toast('✓ Mission created and posted to member portal');
+          // Auto-post mission embed to Discord
+          dcApi('POST', '/mission-embed', {
+            title: missionData.title,
+            type: missionData.type,
+            airport: missionData.icao,
+            region: missionData.region,
+            status: 'Active',
+            date: new Date().toLocaleDateString()
+          }).catch(function() {});
           document.getElementById('mission-icao').value   = '';
           document.getElementById('mission-runway').value = '';
           document.getElementById('mission-notes').value  = '';
@@ -1665,6 +1704,20 @@
       try {
         await dbReviewReport(reportId, action);
         toast(action === 'approve' ? '✓ Report approved' : '⚑ Report flagged for re-inspection');
+        // Auto-post completed report embed to Discord on approval
+        if (action === 'approve') {
+          try {
+            var rptRow = document.querySelector('[onclick*="' + reportId + '"]');
+            var cells = rptRow ? rptRow.closest('tr')?.querySelectorAll('td') : null;
+            dcApi('POST', '/report-embed', {
+              title: cells?.[1]?.textContent || reportId,
+              inspector: cells?.[0]?.textContent || 'Unknown',
+              airport: cells?.[1]?.textContent?.split(' ')[0] || '',
+              result: 'Pass',
+              date: new Date().toLocaleDateString()
+            }).catch(function() {});
+          } catch(e2) { /* silent — Discord post is best-effort */ }
+        }
         loadReportsAdmin();
       } catch (e) { toast('Error: ' + e.message); }
     }
@@ -2438,6 +2491,85 @@
         toast('Setup error: ' + e.message);
       } finally {
         if (btn) { btn.textContent = '⚡ Run Full GFIG Setup'; btn.disabled = false; }
+      }
+    }
+
+    /* ── Delete All Channels & Rebuild ── */
+
+    async function dcDeleteAllChannels() {
+      if (!confirm('⚠ WARNING: This will DELETE every channel and category on your Discord server.\n\nAre you absolutely sure?')) return;
+      if (!confirm('FINAL CONFIRMATION: Type "delete" mentally and click OK to proceed.\n\nThis CANNOT be undone.')) return;
+      var log = document.getElementById('dc-setup-log');
+      if (log) { log.innerHTML = ''; log.classList.add('visible'); }
+      function appendLog(text, cls) {
+        if (!log) return;
+        var line = document.createElement('div');
+        line.className = 'setup-log-line ' + (cls || '');
+        line.textContent = text;
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+      }
+      appendLog('Deleting all channels…', '');
+      try {
+        var result = await dcApi('DELETE', '/channels/all', {});
+        if (result && result.log) {
+          result.log.forEach(function(l) {
+            var parts = l.split(':');
+            appendLog(parts.slice(1).join(':').trim() || l, parts[0] === 'ok' ? 'ok' : 'err');
+          });
+        }
+        appendLog('✓ Deleted ' + (result.deleted || 0) + ' channels. Running GFIG setup…', 'ok');
+        // Now auto-run the full setup
+        var setupResult = await dcApi('POST', '/setup', {});
+        if (setupResult && setupResult.log) {
+          setupResult.log.forEach(function(l) {
+            var parts = l.split(':');
+            appendLog(parts.slice(1).join(':').trim() || l, parts[0] === 'ok' ? 'ok' : parts[0] === 'err' ? 'err' : 'skip');
+          });
+        }
+        appendLog('✓ Rebuild complete!', 'ok');
+        toast('✓ Server rebuilt');
+        await dcRefreshAll();
+      } catch(e) {
+        appendLog('✗ Error: ' + e.message, 'err');
+        toast('Error: ' + e.message);
+      }
+    }
+
+    /* ── Audit Log ── */
+
+    async function dcLoadAuditLog() {
+      var list = document.getElementById('dc-audit-list');
+      var filter = document.getElementById('dc-audit-filter')?.value || '';
+      if (!list) return;
+      list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.82rem;">Loading…</div>';
+      try {
+        var url = '/audit-log?limit=100';
+        if (filter) url += '&type=' + encodeURIComponent(filter);
+        var entries = await dcApi('GET', url);
+        if (!entries || !entries.length) {
+          list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.82rem;">No audit log entries' + (filter ? ' for this filter' : '') + '</div>';
+          return;
+        }
+        var icons = { message_delete: '🗑️', message_edit: '✏️', channel_create: '📂+', channel_delete: '📂−', member_join: '📥', member_leave: '📤', role_change: '👑' };
+        var colors = { message_delete: 'var(--danger)', message_edit: 'var(--orange)', channel_create: 'var(--pass)', channel_delete: 'var(--danger)', member_join: 'var(--pass)', member_leave: 'var(--danger)' };
+        list.innerHTML = entries.map(function(e) {
+          var ico = icons[e.type] || '📋';
+          var col = colors[e.type] || 'var(--text-sub)';
+          var time = e.timestamp ? new Date(e.timestamp).toLocaleString() : '';
+          var detailHtml = e.details ? '<div style="font-size:0.76rem;color:var(--text-muted);margin-top:4px;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--r-sm);white-space:pre-wrap;max-height:80px;overflow:hidden;">' + e.details.replace(/</g,'&lt;').replace(/\*\*/g,'') + '</div>' : '';
+          return '<div style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);">'
+            + '<div style="display:flex;align-items:center;gap:10px;">'
+            + '<span style="font-size:1.1rem;">' + ico + '</span>'
+            + '<div style="flex:1;">'
+            + '<div style="font-size:0.83rem;color:' + col + ';">' + (e.summary || '').replace(/\*\*/g,'').replace(/</g,'&lt;') + '</div>'
+            + '<div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">' + time + (e.user ? ' · ' + e.user : '') + (e.channel ? ' · ' + e.channel : '') + '</div>'
+            + '</div></div>'
+            + detailHtml
+            + '</div>';
+        }).join('');
+      } catch(e) {
+        list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger);font-size:0.82rem;">Error: ' + e.message + '</div>';
       }
     }
 

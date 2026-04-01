@@ -10,7 +10,7 @@
    Deployment: Railway, Render, or Replit (all have free tiers)
    ================================================================ */
 
-const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
+const { Client, GatewayIntentBits, ChannelType, AuditLogEvent, Events } = require('discord.js');
 const express = require('express');
 const cors    = require('cors');
 
@@ -28,8 +28,10 @@ if (!ADMIN_SECRET) { console.warn('WARN: ADMIN_SECRET not set — API is unprote
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,   // Privileged — enable in Developer Portal
-    GatewayIntentBits.GuildMessages
+    GatewayIntentBits.GuildMembers,       // Privileged — enable in Developer Portal
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,     // Privileged — enable in Developer Portal
+    GatewayIntentBits.GuildModeration
   ]
 });
 
@@ -254,7 +256,8 @@ const GFIG_CHANNELS = [
   { name: 'ATC Practice',          type: 'voice',        cat: '🔊 voice' },
   { name: '🔒 staff',              type: 'category' },
   { name: '📋 admin-chat',         type: 'text',         cat: '🔒 staff',        topic: 'Staff-only coordination.' },
-  { name: '🤖 bot-commands',       type: 'text',         cat: '🔒 staff',        topic: 'Bot command testing.' }
+  { name: '🤖 bot-commands',       type: 'text',         cat: '🔒 staff',        topic: 'Bot command testing.' },
+  { name: '📜 audit-log',          type: 'text',         cat: '🔒 staff',        topic: 'Auto-posted audit trail — message edits, deletes, member events.' }
 ];
 
 app.post('/setup', auth, async (req, res) => {
@@ -352,6 +355,130 @@ app.delete('/members/:memberId/roles/:roleId', auth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+/* ── Delete ALL channels (rebuild) ───────────────────────────── */
+
+app.delete('/channels/all', auth, async (req, res) => {
+  try {
+    const guild = getGuild(res); if (!guild) return;
+    await guild.channels.fetch();
+    const channels = [...guild.channels.cache.values()];
+    const log = [];
+    // Delete non-category channels first, then categories
+    const nonCats = channels.filter(c => c.type !== ChannelType.GuildCategory);
+    const cats    = channels.filter(c => c.type === ChannelType.GuildCategory);
+    for (const ch of [...nonCats, ...cats]) {
+      try {
+        await ch.delete('Purge via GFIG Admin Panel');
+        log.push('ok:Deleted: ' + ch.name);
+      } catch(e) { log.push('err:Failed to delete ' + ch.name + ': ' + e.message); }
+    }
+    res.json({ ok: true, deleted: log.filter(l => l.startsWith('ok:')).length, log });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── Mission Embed (auto-post from website) ─────────────────── */
+
+app.post('/mission-embed', auth, async (req, res) => {
+  try {
+    const guild = getGuild(res); if (!guild) return;
+    const { missionId, title, type, airport, region, date, assignedTo, status, channelName } = req.body;
+    if (!title) return res.status(400).json({ error: 'title is required' });
+
+    // Find the target channel (default: mission-briefings)
+    const target = channelName || 'mission-briefings';
+    await guild.channels.fetch();
+    const ch = guild.channels.cache.find(c =>
+      c.isTextBased() && c.name.toLowerCase().replace(/[^a-z0-9-]/g, '').includes(target.replace(/[^a-z0-9-]/g, ''))
+    );
+    if (!ch) return res.status(404).json({ error: 'Channel "' + target + '" not found' });
+
+    const statusColors = { active: 0x00E676, scheduled: 0x40AAFF, completed: 0xFF6A00, cancelled: 0xFF4444 };
+    const embed = {
+      title:       '✈️ ' + title,
+      color:       statusColors[(status || '').toLowerCase()] || 0x40AAFF,
+      fields:      [],
+      footer:      { text: 'GFIG Mission System' },
+      timestamp:   new Date().toISOString()
+    };
+    if (type)       embed.fields.push({ name: 'Type',       value: type,       inline: true });
+    if (airport)    embed.fields.push({ name: 'Airport',    value: airport,    inline: true });
+    if (region)     embed.fields.push({ name: 'Region',     value: region,     inline: true });
+    if (date)       embed.fields.push({ name: 'Date',       value: date,       inline: true });
+    if (assignedTo) embed.fields.push({ name: 'Assigned',   value: assignedTo, inline: true });
+    if (status)     embed.fields.push({ name: 'Status',     value: status,     inline: true });
+    if (missionId)  embed.fields.push({ name: 'Mission ID', value: '`' + missionId + '`', inline: false });
+
+    const msg = await ch.send({ embeds: [embed] });
+    res.json({ ok: true, messageId: msg.id, channelId: ch.id, channelName: ch.name });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── Report Completed Embed (auto-post) ─────────────────────── */
+
+app.post('/report-embed', auth, async (req, res) => {
+  try {
+    const guild = getGuild(res); if (!guild) return;
+    const { title, inspector, airport, result, points, date } = req.body;
+    if (!title) return res.status(400).json({ error: 'title is required' });
+
+    await guild.channels.fetch();
+    const ch = guild.channels.cache.find(c => c.isTextBased() && c.name.includes('completed'));
+    if (!ch) return res.status(404).json({ error: 'completed-ops channel not found' });
+
+    const resultColors = { pass: 0x00E676, 'minor findings': 0xFFD700, 'major findings': 0xFF6A00, fail: 0xFF4444 };
+    const embed = {
+      title:     '✅ Inspection Complete — ' + title,
+      color:     resultColors[(result || '').toLowerCase()] || 0x00E676,
+      fields:    [],
+      footer:    { text: 'GFIG Report System' },
+      timestamp: new Date().toISOString()
+    };
+    if (inspector) embed.fields.push({ name: 'Inspector', value: inspector, inline: true });
+    if (airport)   embed.fields.push({ name: 'Airport',   value: airport,   inline: true });
+    if (result)    embed.fields.push({ name: 'Result',    value: result,    inline: true });
+    if (points)    embed.fields.push({ name: 'Points',    value: String(points), inline: true });
+    if (date)      embed.fields.push({ name: 'Date',      value: date,      inline: true });
+
+    const msg = await ch.send({ embeds: [embed] });
+    res.json({ ok: true, messageId: msg.id });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── Audit Log System ───────────────────────────────────────── */
+
+const AUDIT_LOG = [];       // In-memory ring buffer (last 500 entries)
+const AUDIT_MAX = 500;
+
+function auditPush(entry) {
+  entry.timestamp = new Date().toISOString();
+  AUDIT_LOG.push(entry);
+  if (AUDIT_LOG.length > AUDIT_MAX) AUDIT_LOG.shift();
+  // Also post to #audit-log channel if it exists
+  try {
+    const guild = client.guilds.cache.get(GUILD_ID);
+    if (!guild) return;
+    const ch = guild.channels.cache.find(c => c.isTextBased() && c.name.includes('audit-log'));
+    if (!ch) return;
+    const icon = { 'message_delete': '🗑️', 'message_edit': '✏️', 'channel_create': '📂+', 'channel_delete': '📂−', 'member_join': '📥', 'member_leave': '📤', 'role_change': '👑' };
+    const emoji = icon[entry.type] || '📋';
+    ch.send({ embeds: [{
+      color: entry.type.includes('delete') || entry.type === 'member_leave' ? 0xFF4444 : entry.type.includes('edit') ? 0xFFD700 : 0x00E676,
+      description: `${emoji} **${entry.type.replace(/_/g,' ').toUpperCase()}**\n${entry.summary}`,
+      fields: entry.details ? [{ name: 'Details', value: entry.details.substring(0, 1024) }] : [],
+      footer: { text: entry.user || 'System' },
+      timestamp: entry.timestamp
+    }] }).catch(() => {});
+  } catch(e) { /* silent */ }
+}
+
+app.get('/audit-log', auth, (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit || '100', 10), AUDIT_MAX);
+  const type  = req.query.type || '';
+  let entries = [...AUDIT_LOG].reverse();
+  if (type) entries = entries.filter(e => e.type === type);
+  res.json(entries.slice(0, limit));
+});
+
 /* ── Bot Events ─────────────────────────────────────────────── */
 
 client.once('ready', () => {
@@ -363,6 +490,73 @@ client.once('ready', () => {
     console.warn(`   ⚠ Guild ${GUILD_ID} not found — ensure the bot is added to your server`);
   }
   client.user.setPresence({ status: 'online', activities: [{ name: 'GFIG Operations', type: 3 }] });
+});
+
+/* Audit: Message Deleted */
+client.on(Events.MessageDelete, (msg) => {
+  if (!msg.guild || msg.guild.id !== GUILD_ID) return;
+  if (msg.author?.bot) return;
+  auditPush({
+    type:    'message_delete',
+    user:    msg.author?.tag || 'Unknown',
+    channel: '#' + (msg.channel?.name || '?'),
+    summary: `Message by **${msg.author?.tag || 'Unknown'}** deleted in **#${msg.channel?.name || '?'}**`,
+    details: msg.content ? msg.content.substring(0, 500) : '(content unavailable — message not cached)'
+  });
+});
+
+/* Audit: Message Edited */
+client.on(Events.MessageUpdate, (oldMsg, newMsg) => {
+  if (!newMsg.guild || newMsg.guild.id !== GUILD_ID) return;
+  if (newMsg.author?.bot) return;
+  if (oldMsg.content === newMsg.content) return;
+  auditPush({
+    type:    'message_edit',
+    user:    newMsg.author?.tag || 'Unknown',
+    channel: '#' + (newMsg.channel?.name || '?'),
+    summary: `Message by **${newMsg.author?.tag || 'Unknown'}** edited in **#${newMsg.channel?.name || '?'}**`,
+    details: `**Before:**\n${(oldMsg.content || '(unavailable)').substring(0, 250)}\n\n**After:**\n${(newMsg.content || '').substring(0, 250)}`
+  });
+});
+
+/* Audit: Channel Created */
+client.on(Events.ChannelCreate, (ch) => {
+  if (!ch.guild || ch.guild.id !== GUILD_ID) return;
+  auditPush({
+    type:    'channel_create',
+    channel: '#' + ch.name,
+    summary: `Channel **#${ch.name}** created (${ch.type === ChannelType.GuildCategory ? 'category' : ch.type === ChannelType.GuildVoice ? 'voice' : 'text'})`
+  });
+});
+
+/* Audit: Channel Deleted */
+client.on(Events.ChannelDelete, (ch) => {
+  if (!ch.guild || ch.guild.id !== GUILD_ID) return;
+  auditPush({
+    type:    'channel_delete',
+    channel: '#' + ch.name,
+    summary: `Channel **#${ch.name}** deleted`
+  });
+});
+
+/* Audit: Member Join */
+client.on(Events.GuildMemberAdd, (member) => {
+  if (member.guild.id !== GUILD_ID) return;
+  auditPush({
+    type:    'member_join',
+    user:    member.user.tag,
+    summary: `**${member.user.tag}** joined the server`
+  });
+});
+
+/* Audit: Member Leave */
+client.on(Events.GuildMemberRemove, (member) => {
+  if (member.guild.id !== GUILD_ID) return;
+  auditPush({
+    type:    'member_leave',
+    user:    member.user.tag,
+    summary: `**${member.user.tag}** left the server`
+  });
 });
 
 client.on('error', e => console.error('Discord error:', e.message));
