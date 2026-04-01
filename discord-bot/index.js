@@ -374,7 +374,12 @@ async function start() {
     console.log(`🚀 GFIG Bot API listening on port ${PORT}`);
     console.log(`   Health: http://localhost:${PORT}/health`);
   });
-  await client.login(BOT_TOKEN);
+  try {
+    await client.login(BOT_TOKEN);
+  } catch(e) {
+    console.error('⚠ Discord login failed:', e.message);
+    console.error('  The API server is still running. Fix the issue and redeploy.');
+  }
 }
 
-start().catch(e => { console.error('Startup failure:', e); process.exit(1); });
+start();
