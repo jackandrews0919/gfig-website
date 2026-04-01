@@ -1356,7 +1356,7 @@
                 <input class="admin-input" type="text" id="cc-welcome-title" placeholder="Welcome to GFIG!" value="👋 Welcome to GFIG!">
               </div>
               <div class="admin-form-group" style="margin-bottom:10px;">
-                <label class="admin-form-label">MESSAGE <span style="color:var(--text-muted);font-weight:normal">(Discord markdown)</span></label>
+                <label class="admin-form-label" style="display:flex;align-items:center;gap:8px;">MESSAGE <span style="color:var(--text-muted);font-weight:normal">(Discord markdown)</span> <button class="btn btn-secondary" onclick="openMentionPicker('cc-welcome-body')" style="font-size:0.68rem;padding:2px 8px;margin-left:auto;">@ Tag Member</button></label>
                 <textarea class="admin-textarea" id="cc-welcome-body" rows="5" placeholder="Welcome text…">Welcome to the **Global Flight Inspection Group** Discord server!
 
 We're a virtual airline dedicated to realistic flight inspection operations worldwide.
@@ -1383,7 +1383,7 @@ Have questions? Ask in our community channels!</textarea>
                 <input class="admin-input" type="text" id="cc-rules-title" placeholder="Server Rules" value="📋 GFIG Server Rules">
               </div>
               <div class="admin-form-group" style="margin-bottom:10px;">
-                <label class="admin-form-label">MESSAGE</label>
+                <label class="admin-form-label" style="display:flex;align-items:center;gap:8px;">MESSAGE <button class="btn btn-secondary" onclick="openMentionPicker('cc-rules-body')" style="font-size:0.68rem;padding:2px 8px;margin-left:auto;">@ Tag Member</button></label>
                 <textarea class="admin-textarea" id="cc-rules-body" rows="8" placeholder="Rules text…">**1.** Be respectful to all members at all times.
 **2.** No spam, self-promotion, or NSFW content.
 **3.** Use channels for their intended purpose.
@@ -1411,7 +1411,7 @@ Have questions? Ask in our community channels!</textarea>
                 <input class="admin-input" type="text" id="cc-staff-title" placeholder="Staff Directory" value="🗂 GFIG Staff Directory">
               </div>
               <div class="admin-form-group" style="margin-bottom:10px;">
-                <label class="admin-form-label">MESSAGE</label>
+                <label class="admin-form-label" style="display:flex;align-items:center;gap:8px;">MESSAGE <button class="btn btn-secondary" onclick="openMentionPicker('cc-staff-body')" style="font-size:0.68rem;padding:2px 8px;margin-left:auto;">@ Tag Member</button></label>
                 <textarea class="admin-textarea" id="cc-staff-body" rows="6" placeholder="Staff directory text…">**Leadership**
 • Director — *TBD*
 • Deputy Director — *TBD*
@@ -1439,7 +1439,7 @@ Have questions? Ask in our community channels!</textarea>
                 <input class="admin-input" type="text" id="cc-announce-title" placeholder="Announcement title">
               </div>
               <div class="admin-form-group" style="margin-bottom:10px;">
-                <label class="admin-form-label">MESSAGE</label>
+                <label class="admin-form-label" style="display:flex;align-items:center;gap:8px;">MESSAGE <button class="btn btn-secondary" onclick="openMentionPicker('cc-announce-body')" style="font-size:0.68rem;padding:2px 8px;margin-left:auto;">@ Tag Member</button></label>
                 <textarea class="admin-textarea" id="cc-announce-body" rows="4" placeholder="Announcement body…"></textarea>
               </div>
               <div style="display:flex;gap:8px;align-items:center;">
@@ -1456,7 +1456,7 @@ Have questions? Ask in our community channels!</textarea>
                 <input class="admin-input" type="text" id="cc-notam-title" placeholder="NOTAM title">
               </div>
               <div class="admin-form-group" style="margin-bottom:10px;">
-                <label class="admin-form-label">MESSAGE</label>
+                <label class="admin-form-label" style="display:flex;align-items:center;gap:8px;">MESSAGE <button class="btn btn-secondary" onclick="openMentionPicker('cc-notam-body')" style="font-size:0.68rem;padding:2px 8px;margin-left:auto;">@ Tag Member</button></label>
                 <textarea class="admin-textarea" id="cc-notam-body" rows="4" placeholder="NOTAM content…"></textarea>
               </div>
               <div style="display:flex;gap:8px;align-items:center;">
@@ -1771,6 +1771,27 @@ Have questions? Ask in our community channels!</textarea>
       </div>
     </div>
   </div>
+
+  <!-- Mention Picker Modal -->
+  <div id="mention-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;">
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);width:400px;max-height:500px;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.5);">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-family:var(--ff-head);font-size:0.85rem;font-weight:700;color:var(--blue);">@ TAG MEMBER</span>
+        <button onclick="closeMentionPicker()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:0 4px;">&times;</button>
+      </div>
+      <div style="padding:10px 18px;">
+        <input type="text" id="mention-search" class="admin-input" placeholder="Search members…" style="width:100%;padding:8px 12px;font-size:0.82rem;">
+      </div>
+      <div id="mention-list" style="overflow-y:auto;max-height:340px;padding:4px 10px 14px;"></div>
+    </div>
+  </div>
+  <style>
+    .mention-item {
+      display:flex;align-items:center;gap:4px;width:100%;padding:8px 10px;background:none;border:none;
+      border-radius:var(--r-md);cursor:pointer;text-align:left;transition:background 0.15s;
+    }
+    .mention-item:hover { background:var(--bg-secondary); }
+  </style>
 
   <!-- Toast -->
   <div class="toast-msg" id="toast"></div>
@@ -3023,7 +3044,7 @@ Have questions? Ask in our community channels!</textarea>
     async function loadChannelContent() {
       if (_channelContentCache) return _channelContentCache;
       try {
-        var data = window.dbGetChannelContent ? await dbGetChannelContent() : {};
+        var data = window.dbGetChannelContent ? await window.dbGetChannelContent() : {};
         _channelContentCache = data;
         // Populate form fields from saved drafts
         ['welcome', 'rules', 'staff', 'announce', 'notam'].forEach(function(key) {
@@ -3054,7 +3075,7 @@ Have questions? Ask in our community channels!</textarea>
       var body = (document.getElementById('cc-' + formKey + '-body')?.value || '').trim();
       if (!title && !body) { toast('Enter a title or message first'); return; }
       try {
-        await dbSaveChannelContent(dbKey, { title: title, body: body });
+        await window.dbSaveChannelContent(dbKey, { title: title, body: body });
         _channelContentCache = null;
         var statusEl = document.getElementById('cc-' + formKey + '-status');
         if (statusEl) statusEl.textContent = '✓ Draft saved';
@@ -3077,11 +3098,11 @@ Have questions? Ask in our community channels!</textarea>
       try {
         // Save draft first
         var dbKey = key;
-        await dbSaveChannelContent(dbKey, { title: title, body: body });
+        await window.dbSaveChannelContent(dbKey, { title: title, body: body });
         _channelContentCache = null;
 
         // Get saved messageId for this channel (for editing)
-        var data = await dbGetChannelContent();
+        var data = await window.dbGetChannelContent();
         var savedMsgId = data[dbKey]?.messageId || null;
 
         // Post to Discord via bot
@@ -3095,7 +3116,7 @@ Have questions? Ask in our community channels!</textarea>
 
         if (result && result.messageId) {
           // Save the message ID for future edits
-          await dbSaveChannelContent(dbKey, { title: title, body: body, messageId: result.messageId });
+          await window.dbSaveChannelContent(dbKey, { title: title, body: body, messageId: result.messageId });
           _channelContentCache = null;
         }
 
@@ -3105,6 +3126,71 @@ Have questions? Ask in our community channels!</textarea>
         if (statusEl) statusEl.textContent = '✗ ' + e.message;
         toast('Publish error: ' + e.message);
       }
+    }
+
+    /* ── Mention Picker ── */
+    var _mentionCache = null;
+    var _mentionTarget = null;
+
+    async function openMentionPicker(textareaId) {
+      _mentionTarget = document.getElementById(textareaId);
+      if (!_mentionTarget) return;
+
+      var modal = document.getElementById('mention-modal');
+      var list = document.getElementById('mention-list');
+      var search = document.getElementById('mention-search');
+      modal.style.display = 'flex';
+      search.value = '';
+      list.innerHTML = '<div style="color:var(--text-muted);padding:12px;">Loading members…</div>';
+
+      if (!_mentionCache) {
+        try {
+          _mentionCache = await dcApi('GET', '/members');
+        } catch(e) {
+          list.innerHTML = '<div style="color:var(--orange);padding:12px;">Could not load members: ' + e.message + '</div>';
+          return;
+        }
+      }
+      renderMentionList(_mentionCache, '');
+      search.focus();
+      search.oninput = function() { renderMentionList(_mentionCache, search.value.toLowerCase()); };
+    }
+
+    function renderMentionList(members, filter) {
+      var list = document.getElementById('mention-list');
+      var filtered = members.filter(function(m) {
+        return !m.bot && (
+          m.displayName.toLowerCase().includes(filter) ||
+          m.username.toLowerCase().includes(filter)
+        );
+      }).sort(function(a, b) { return a.displayName.localeCompare(b.displayName); });
+
+      if (!filtered.length) {
+        list.innerHTML = '<div style="color:var(--text-muted);padding:12px;">No members found</div>';
+        return;
+      }
+      list.innerHTML = filtered.map(function(m) {
+        return '<button class="mention-item" onclick="insertMention(\'' + m.id + '\',\'' + m.displayName.replace(/'/g, "\\'") + '\')">'
+          + '<span style="font-weight:600;color:var(--text);">' + m.displayName + '</span>'
+          + '<span style="color:var(--text-muted);font-size:0.72rem;margin-left:6px;">@' + m.username + '</span>'
+          + '</button>';
+      }).join('');
+    }
+
+    function insertMention(userId, displayName) {
+      if (!_mentionTarget) return;
+      var mention = '<@' + userId + '>';
+      var start = _mentionTarget.selectionStart;
+      var end = _mentionTarget.selectionEnd;
+      var val = _mentionTarget.value;
+      _mentionTarget.value = val.substring(0, start) + mention + val.substring(end);
+      _mentionTarget.selectionStart = _mentionTarget.selectionEnd = start + mention.length;
+      _mentionTarget.focus();
+      closeMentionPicker();
+    }
+
+    function closeMentionPicker() {
+      document.getElementById('mention-modal').style.display = 'none';
     }
 
     /* ── Training Admin ── */
