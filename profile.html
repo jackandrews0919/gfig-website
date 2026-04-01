@@ -285,8 +285,8 @@
             <div class="card-title mb-16">📋 Profile Settings</div>
             <div style="display:flex;flex-direction:column;gap:14px;">
               <div>
-                <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">CALLSIGN</label>
-                <input type="text" id="set-callsign" class="admin-input" placeholder="e.g. GFIG-001" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;">
+                <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">MEMBER NUMBER</label>
+                <input type="text" id="set-callsign" class="admin-input" readonly style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text-muted);font-size:0.85rem;cursor:not-allowed;opacity:0.7;">
               </div>
               <div>
                 <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">HOME REGION</label>
@@ -419,10 +419,8 @@
     async function saveProfileSettings() {
       if (!_profileUser || !firebase.firestore) return;
       var data = {};
-      var callsign = (document.getElementById('set-callsign').value || '').trim();
       var region = document.getElementById('set-region').value;
       var tz = document.getElementById('set-tz').value;
-      if (callsign) data.callsign = callsign;
       if (region) data.region = region;
       if (tz) data.timezone = tz;
       try {
