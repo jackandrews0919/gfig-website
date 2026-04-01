@@ -93,7 +93,7 @@
           <div style="font-family:var(--font-head); font-size:0.65rem; color:var(--text-muted); letter-spacing:0.12em; margin-bottom:8px;">RANK PROGRESS</div>
           <div style="font-size:0.8rem; color:var(--text-sub); margin-bottom:6px;">Trainee → <span class="text-orange font-bold">Junior Inspector</span></div>
           <div class="prog-wrap" style="width:180px;">
-            <div class="prog-bar" id="profile-prog-bar" style="width:80%;"></div>
+            <div class="prog-bar" id="profile-prog-bar" style="width:0%;"></div>
           </div>
           <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px; font-family:var(--font-mono);" id="profile-pts-text">0 / 500 pts</div>
           <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;" id="profile-pts-remaining">500 pts to next rank</div>
@@ -587,7 +587,7 @@
       const cs = document.getElementById('profile-callsign');
       if (av) av.textContent = user.avatar || (user.name || 'XX').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
       if (nm) nm.textContent = user.name || 'Inspector';
-      if (cs) cs.textContent = (user.callsign || '—') + '\u00a0|\u00a0Callsign: ' + (user.callsign || '—');
+      if (cs) cs.textContent = (user.uid_display || user.callsign || '—') + '\u00a0|\u00a0Callsign: ' + (user.callsign || '—');
 
       /* Meta row */
       const joinedEl = document.getElementById('meta-joined');
@@ -615,7 +615,15 @@
       const badge = document.getElementById('profile-rank-badge');
       if (badge) {
         badge.textContent = info.rank;
-        badge.className = 'rank-badge';
+        const rankClass = {
+          'Trainee Inspector': 'rank-junior',
+          'Junior Inspector':  'rank-junior',
+          'Inspector':         'rank-inspector',
+          'Senior Inspector':  'rank-senior',
+          'Chief Inspector':   'rank-chief',
+          'Director':          'rank-director'
+        }[info.rank] || 'rank-junior';
+        badge.className = 'rank-badge ' + rankClass;
       }
       const progBar = document.getElementById('profile-prog-bar');
       if (progBar) progBar.style.width = info.pct + '%';

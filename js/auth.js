@@ -116,14 +116,35 @@ const gfigAuth = {
         /* Fetch Firestore profile */
         let profile = null;
         try {
-          const doc = await window.db.collection('users').doc(firebaseUser.uid).get();
+          const docRef = window.db.collection('users').doc(firebaseUser.uid);
+          const doc    = await docRef.get();
           const isBootstrapAdmin = (window.GFIG_ADMIN_EMAILS || []).includes(firebaseUser.email);
-          profile = doc.exists
-            ? { uid: firebaseUser.uid, ...doc.data(), isAdmin: doc.data().isAdmin || isBootstrapAdmin }
-            : { uid: firebaseUser.uid, name: firebaseUser.email, avatar: 'IN', isAdmin: isBootstrapAdmin, email: firebaseUser.email };
+
+          if (doc.exists) {
+            profile = { uid: firebaseUser.uid, ...doc.data(), isAdmin: doc.data().isAdmin || isBootstrapAdmin };
+          } else {
+            /* First login — create profile document */
+            const initials = (firebaseUser.displayName || firebaseUser.email || 'IN')
+              .split(/[\s@]+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+            const newProfile = {
+              name:          firebaseUser.displayName || firebaseUser.email,
+              email:         firebaseUser.email,
+              avatar:        initials,
+              isAdmin:       isBootstrapAdmin,
+              points:        0,
+              totalMissions: 0,
+              passRate:      null,
+              flightHours:   0,
+              joinDate:      window.serverTimestamp ? window.serverTimestamp() : new Date().toISOString(),
+              joinedDisplay: new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' }),
+              status:        'active'
+            };
+            await docRef.set(newProfile).catch(() => {});
+            profile = { uid: firebaseUser.uid, ...newProfile };
+          }
         } catch {
           const isBootstrapAdmin = (window.GFIG_ADMIN_EMAILS || []).includes(firebaseUser.email);
-          profile = { uid: firebaseUser.uid, name: firebaseUser.email, avatar: 'IN', isAdmin: isBootstrapAdmin };
+          profile = { uid: firebaseUser.uid, name: firebaseUser.email, avatar: 'IN', isAdmin: isBootstrapAdmin, email: firebaseUser.email };
         }
 
         this._currentUser = profile;

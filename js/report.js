@@ -5,13 +5,8 @@
 
 let currentStep = 1;
 
-/* missionData is populated dynamically from Firestore (when configured)
-   or falls back to this static seed for demo mode. */
-const missionData = {
-  'GFI-2026-0285': { route: 'EGKK → EIDW', type: 'ILS Calibration',     aircraft: 'King Air B200',  callsign: 'GFIG42I', region: 'Europe', priority: 'Priority' },
-  'GFI-2026-0283': { route: 'EGCC → EGGD', type: 'VOR Check',            aircraft: 'King Air B200',  callsign: 'GFIG42V', region: 'Europe', priority: 'Routine' },
-  'GFI-2026-0281': { route: 'EDDF → EDDM', type: 'Procedure Validation', aircraft: 'Falcon 20',      callsign: 'GFIG42P', region: 'Europe', priority: 'Routine' },
-};
+/* missionData is populated dynamically from Firestore (when configured). */
+const missionData = {};
 
 // ── Step navigation ──────────────────────────────────────────────
 function goToStep(n) {

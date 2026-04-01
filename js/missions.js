@@ -143,14 +143,13 @@ function closeMissionModal() {
 function confirmClaim() {
   const { id, dep, arr, type } = currentMissionData;
   closeMissionModal();
-  showToast(`✓ Mission ${id} claimed — ${dep} → ${arr} · ${type}. Brief posted to #mission-briefing on Discord.`, 'success');
-
-  // Update the card's claim button
+  claimMission(id);
+  /* Card UI revert handled inside claimMission */
   document.querySelectorAll('.mission-card').forEach(card => {
-    if (card.textContent.includes(id)) {
-      const claimBtn = card.querySelector('.btn-primary');
+    if (card.querySelector('.mission-id')?.textContent === id) {
+      const btn   = card.querySelector('.btn-primary');
       const badge = card.querySelector('.badge-available');
-      if (claimBtn) { claimBtn.textContent = '✓ Claimed'; claimBtn.disabled = true; claimBtn.className = 'btn btn-sm btn-success'; claimBtn.style.cursor = 'default'; }
+      if (btn)   { btn.textContent = 'Claiming…'; btn.disabled = true; btn.className = 'btn btn-sm btn-success'; }
       if (badge) { badge.className = 'badge badge-active'; badge.textContent = 'In Progress'; }
     }
   });
