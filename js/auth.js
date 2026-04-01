@@ -144,6 +144,7 @@ const gfigAuth = {
               avatar:        initials,
               isAdmin:       isBootstrapAdmin,
               memberNumber:  memberNumber || null,
+              callsign:      memberNumber || null,
               points:        0,
               totalMissions: 0,
               passRate:      null,

@@ -259,6 +259,28 @@ const PERM_PROFILES = {
     { role: '@everyone', deny:  [P.ViewChannel] },
     { role: 'Member',    allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory, P.AddReactions, P.AttachFiles] }
   ],
+  ops_readonly: [
+    { role: '@everyone', deny:  [P.ViewChannel] },
+    { role: 'Member',    allow: [P.ViewChannel, P.ReadMessageHistory, P.AddReactions], deny: [P.SendMessages, P.AttachFiles] },
+    { role: 'Director',         allow: [P.SendMessages, P.AttachFiles] },
+    { role: 'Chief Inspector',  allow: [P.SendMessages, P.AttachFiles] }
+  ],
+  instructor: [
+    { role: '@everyone',        deny:  [P.ViewChannel] },
+    { role: 'Director',         allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory, P.ManageMessages] },
+    { role: 'Chief Inspector',  allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory] },
+    { role: 'Senior Inspector', allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory] },
+    { role: 'Flight Examiner',  allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory] },
+    { role: 'Training Officer', allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory] }
+  ],
+  training: [
+    { role: '@everyone', deny:  [P.ViewChannel] },
+    { role: 'Member',    allow: [P.ViewChannel, P.ReadMessageHistory, P.AddReactions], deny: [P.SendMessages] },
+    { role: 'Director',         allow: [P.SendMessages, P.AttachFiles] },
+    { role: 'Chief Inspector',  allow: [P.SendMessages, P.AttachFiles] },
+    { role: 'Flight Examiner',  allow: [P.SendMessages, P.AttachFiles] },
+    { role: 'Training Officer', allow: [P.SendMessages, P.AttachFiles] }
+  ],
   community: [
     { role: '@everyone', deny:  [P.ViewChannel] },
     { role: 'Guest',     allow: [P.ViewChannel, P.ReadMessageHistory], deny: [P.SendMessages, P.AddReactions] },
@@ -296,9 +318,9 @@ const GFIG_CHANNELS = [
 
   /* ── OPERATIONS HQ ── */
   { name: '✈ operations-hq',             type: 'category', perms: 'ops' },
-  { name: '📋-mission-briefings',        type: 'text',         cat: '✈ operations-hq', topic: 'Auto-posted from GFIG portal — upcoming and active inspection missions.' },
-  { name: '✅-completed-ops',             type: 'text',         cat: '✈ operations-hq', topic: 'Completed inspection reports — auto-posted when approved by staff.' },
-  { name: '📊-leaderboard',              type: 'text',         cat: '✈ operations-hq', topic: 'Monthly inspector rankings and point standings.' },
+  { name: '📋-mission-briefings',        type: 'text',         cat: '✈ operations-hq', topic: 'Auto-posted from GFIG portal — upcoming and active inspection missions.', perms: 'ops_readonly' },
+  { name: '✅-completed-ops',             type: 'text',         cat: '✈ operations-hq', topic: 'Completed inspection reports — auto-posted when approved by staff.', perms: 'ops_readonly' },
+  { name: '📊-leaderboard',              type: 'text',         cat: '✈ operations-hq', topic: 'Monthly inspector rankings and point standings.', perms: 'ops_readonly' },
   { name: '🗂-flight-dispatch',           type: 'text',         cat: '✈ operations-hq', topic: 'Flight plans, route coordination, and dispatch notes.' },
   { name: '📡-operational-validation',    type: 'text',         cat: '✈ operations-hq', topic: 'Navaids, ILS, and procedure validation discussion.' },
 
@@ -315,15 +337,15 @@ const GFIG_CHANNELS = [
   { name: '🛩-fleet-management',          type: 'text',         cat: '🛩 fleet-standards',  topic: 'Fleet status, aircraft assignments, and maintenance tracking.' },
   { name: '✈-validation-fleet',           type: 'text',         cat: '🛩 fleet-standards',  topic: 'Operational validation fleet — certified inspection aircraft only.' },
   { name: '📈-performance-tracking',      type: 'text',         cat: '🛩 fleet-standards',  topic: 'KPIs, pass rates, and operational efficiency metrics.' },
-  { name: '⚠-safety-reports',            type: 'text',         cat: '🛩 fleet-standards',  topic: 'Safety occurrence reports and hazard tracking.' },
+  { name: '⚠-safety-reports',            type: 'text',         cat: '🛩 fleet-standards',  topic: 'Safety occurrence reports and hazard tracking.', perms: 'ops_readonly' },
 
   /* ── TRAINING DEPARTMENT ── */
-  { name: '🎓 training-dept',            type: 'category', perms: 'ops' },
+  { name: '🎓 training-dept',            type: 'category', perms: 'training' },
   { name: '📢-training-announcements',   type: 'announcement', cat: '🎓 training-dept', topic: 'Training schedule, new courses, and department updates.' },
   { name: '📚-course-materials',         type: 'text',         cat: '🎓 training-dept', topic: 'SOPs, manuals, study guides, and reference documents.' },
   { name: '📝-checkride-schedule',       type: 'text',         cat: '🎓 training-dept', topic: 'Upcoming skill checks and examiner availability.' },
   { name: '📊-trainee-progress',         type: 'text',         cat: '🎓 training-dept', topic: 'Trainee milestones, notes, and progress tracking.' },
-  { name: '🧑‍🏫-mentor-chat',            type: 'text',         cat: '🎓 training-dept', topic: 'Private coordination between mentors and training officers.' },
+  { name: '🧑‍🏫-mentor-chat',            type: 'text',         cat: '🎓 training-dept', topic: 'Private coordination between mentors and training officers.', perms: 'instructor' },
 
   /* ── COMMUNITY ── */
   { name: '💬 community',                type: 'category', perms: 'community' },
@@ -679,7 +701,7 @@ app.delete('/channels/all', auth, async (req, res) => {
 app.post('/mission-embed', auth, async (req, res) => {
   try {
     const guild = getGuild(res); if (!guild) return;
-    const { missionId, title, type, airport, region, date, assignedTo, status, channelName } = req.body;
+    const { missionId, title, type, airport, region, date, assignedTo, status, channelName, brief } = req.body;
     if (!title) return res.status(400).json({ error: 'title is required' });
 
     // Find the target channel (default: mission-briefings)
@@ -691,6 +713,8 @@ app.post('/mission-embed', auth, async (req, res) => {
     if (!ch) return res.status(404).json({ error: 'Channel "' + target + '" not found' });
 
     const statusColors = { active: 0x00E676, scheduled: 0x40AAFF, completed: 0xFF6A00, cancelled: 0xFF4444 };
+
+    /* Build main embed */
     const embed = {
       title:       '✈️ ' + title,
       color:       statusColors[(status || '').toLowerCase()] || 0x40AAFF,
@@ -706,7 +730,24 @@ app.post('/mission-embed', auth, async (req, res) => {
     if (status)     embed.fields.push({ name: 'Status',     value: status,     inline: true });
     if (missionId)  embed.fields.push({ name: 'Mission ID', value: '`' + missionId + '`', inline: false });
 
-    const msg = await ch.send({ embeds: [embed] });
+    const embeds = [embed];
+
+    /* If a structured brief was supplied, add a second detailed embed */
+    if (brief && brief.sections && brief.sections.length) {
+      const briefEmbed = {
+        title:       '📋 Mission Briefing — ' + (brief.missionId || missionId || ''),
+        description: brief.summary || '',
+        color:       0x1a237e,
+        fields:      brief.sections.map(s => ({ name: s.heading, value: s.content.substring(0, 1024), inline: false })),
+        footer:      { text: 'Classification: ' + (brief.classification || 'N/A') + '  |  Issued: ' + (brief.issuedDate || '—') + '  |  Expires: ' + (brief.expiryDate || '—') }
+      };
+      if (brief.priority) briefEmbed.fields.unshift({ name: 'Priority', value: brief.priority, inline: true });
+      if (brief.points)   briefEmbed.fields.push({ name: 'Points', value: String(brief.points), inline: true });
+      if (brief.region)   briefEmbed.fields.push({ name: 'Region', value: brief.region, inline: true });
+      embeds.push(briefEmbed);
+    }
+
+    const msg = await ch.send({ embeds });
     res.json({ ok: true, messageId: msg.id, channelId: ch.id, channelName: ch.name });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -739,6 +780,76 @@ app.post('/report-embed', auth, async (req, res) => {
 
     const msg = await ch.send({ embeds: [embed] });
     res.json({ ok: true, messageId: msg.id });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── Trainee Thread System ──────────────────────────────────── */
+
+app.post('/trainee-thread', auth, async (req, res) => {
+  try {
+    const guild = getGuild(res); if (!guild) return;
+    const { discordId, traineeName, courseTitle } = req.body;
+    if (!traineeName) return res.status(400).json({ error: 'traineeName is required' });
+
+    await guild.channels.fetch();
+    const progressCh = guild.channels.cache.find(c => c.isTextBased() && c.name.includes('trainee-progress'));
+    if (!progressCh) return res.status(404).json({ error: 'trainee-progress channel not found' });
+
+    // Check if thread already exists for this trainee
+    const threads = await progressCh.threads.fetchActive();
+    const existingThread = threads.threads.find(t => t.name.includes(traineeName));
+    if (existingThread) {
+      // Post update to existing thread
+      await existingThread.send({
+        embeds: [{
+          color: 0x40AAFF,
+          title: '📚 Course Enrolled',
+          description: `**${traineeName}** has started: **${courseTitle || 'a new course'}**`,
+          timestamp: new Date().toISOString()
+        }]
+      });
+      return res.json({ ok: true, threadId: existingThread.id, existed: true });
+    }
+
+    // Create new private thread for the trainee
+    const thread = await progressCh.threads.create({
+      name: '📋 ' + traineeName + ' — Training',
+      type: ChannelType.PrivateThread,
+      reason: 'GFIG Trainee Progress Thread'
+    });
+
+    // Add trainee to thread if discordId provided
+    if (discordId) {
+      try { await thread.members.add(discordId); } catch(e) { /* silent */ }
+    }
+
+    // Add instructors/training officers to the thread
+    const instructorRoles = ['Training Officer', 'Flight Examiner', 'Chief Inspector', 'Director'];
+    await guild.roles.fetch();
+    for (const roleName of instructorRoles) {
+      const role = guild.roles.cache.find(r => r.name === roleName);
+      if (role) {
+        for (const [, member] of role.members) {
+          try { await thread.members.add(member.id); } catch(e) { /* silent */ }
+        }
+      }
+    }
+
+    // Post welcome message
+    await thread.send({
+      embeds: [{
+        color: 0xFF6A00,
+        title: '🎓 Training Progress — ' + traineeName,
+        description: 'This thread tracks training progress for **' + traineeName + '**.\n\n'
+          + '**Instructors** — post feedback, checkride results, and notes here.\n'
+          + '**Trainee** — ask questions and track your progress.\n\n'
+          + (courseTitle ? '📚 First course: **' + courseTitle + '**' : ''),
+        footer: { text: 'GFIG Training Department' },
+        timestamp: new Date().toISOString()
+      }]
+    });
+
+    res.json({ ok: true, threadId: thread.id, threadName: thread.name });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

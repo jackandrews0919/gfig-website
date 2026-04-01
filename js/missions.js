@@ -96,7 +96,24 @@ function openMissionModal(id, dep, arr, type, priority, aircraft, region, brief)
   document.getElementById('modal-id').textContent = id;
   document.getElementById('modal-title').textContent = 'Mission Brief — ' + type;
   document.getElementById('modal-route').textContent = dep + '  →  ' + arr;
-  document.getElementById('modal-brief').textContent = brief;
+
+  /* Render structured brief or plain text */
+  var briefEl = document.getElementById('modal-brief');
+  if (brief && typeof brief === 'object' && brief.sections) {
+    var html = '<div style="margin-bottom:10px;color:var(--text);font-size:0.85rem;">' + (brief.summary || '') + '</div>';
+    html += '<div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">';
+    if (brief.classification) html += '<span class="badge" style="background:var(--blue-dark);color:var(--blue-light);">' + brief.classification + '</span>';
+    if (brief.priority)       html += '<span class="badge" style="background:var(--surface2);color:var(--text-sub);">' + brief.priority + '</span>';
+    if (brief.issuedDate)     html += '<span style="font-size:0.72rem;color:var(--text-muted);">Issued: ' + brief.issuedDate + '</span>';
+    if (brief.expiryDate)     html += '<span style="font-size:0.72rem;color:var(--text-muted);">Expires: ' + brief.expiryDate + '</span>';
+    html += '</div>';
+    brief.sections.forEach(function(s) {
+      html += '<div style="margin-bottom:10px;"><div style="font-size:0.72rem;color:var(--blue-light);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:3px;">' + s.heading + '</div><div style="font-size:0.82rem;color:var(--text-sub);line-height:1.5;">' + s.content + '</div></div>';
+    });
+    briefEl.innerHTML = html;
+  } else {
+    briefEl.textContent = brief || '';
+  }
 
   const detailsEl = document.getElementById('modal-details');
   const priorityClass = priority.toLowerCase() === 'urgent' ? 'badge-urgent' : priority.toLowerCase() === 'priority' ? 'badge-priority' : 'badge-routine';

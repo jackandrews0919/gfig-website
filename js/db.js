@@ -79,7 +79,7 @@ window.dbClaimMission = async function(missionId, user) {
   }
 };
 
-/** Create a new mission (admin) */
+/** Create a new mission (admin) — includes auto-generated mission brief */
 window.dbCreateMission = async function(data) {
   if (!window.db) {
     showToast('Mission created. (Demo — not persisted to database)', 'success');
@@ -93,6 +93,9 @@ window.dbCreateMission = async function(data) {
     const year = new Date().getFullYear();
     const missionId = `GFI-${year}-${String(nextNum).padStart(4, '0')}`;
 
+    // Auto-generate mission brief
+    const brief = _generateMissionBrief(missionId, data);
+
     await window.db.collection('missions').doc(missionId).set({
       ...data,
       id:            missionId,
@@ -100,6 +103,7 @@ window.dbCreateMission = async function(data) {
       claimedBy:     null,
       claimedByName: null,
       claimedAt:     null,
+      brief:         brief,
       createdAt:     window.serverTimestamp()
     });
     await dbLogActivity('active', `Admin created mission <strong>${missionId}</strong>`);
@@ -109,6 +113,40 @@ window.dbCreateMission = async function(data) {
     throw e;
   }
 };
+
+/** Generate a structured mission briefing document */
+function _generateMissionBrief(missionId, data) {
+  var icao = data.icao || '????';
+  var nav  = data.nav || data.runway || 'N/A';
+  var type = data.type || 'Flight Inspection';
+  var cls  = data.missionClass || 'Class A';
+  var aircraft = data.aircraft || 'King Air B200';
+  var region   = data.region || 'Global';
+  var priority = data.priority || 'Standard';
+  var points   = data.points || 120;
+  var now = new Date();
+  var expires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+  return {
+    missionId:   missionId,
+    title:       type + ' — ' + icao + ' ' + nav,
+    issuedDate:  now.toISOString().split('T')[0],
+    expiryDate:  expires.toISOString().split('T')[0],
+    classification: cls,
+    priority:    priority,
+    summary:     type + ' at ' + icao + ' (' + nav + '). ' + region + ' region. Aircraft: ' + aircraft + '.',
+    sections: [
+      { heading: 'OBJECTIVE', content: 'Perform ' + type.toLowerCase() + ' of ' + nav + ' at ' + icao + '. Verify signal accuracy, alignment, and compliance with ICAO Annex 10 standards.' },
+      { heading: 'AIRCRAFT & EQUIPMENT', content: aircraft + ' equipped with standard GFIG flight inspection suite. Ensure all calibration equipment is serviceable before departure.' },
+      { heading: 'ROUTE', content: 'Depart ' + icao + ' — conduct inspection orbits as per ' + cls + ' procedures — return to ' + icao + '.' },
+      { heading: 'WEATHER REQUIREMENTS', content: priority === 'Urgent — ATC Hold' ? 'Proceed regardless of weather conditions — ATC hold in effect.' : 'VMC or IMC conditions acceptable. Minimum visibility: 3 SM for visual orbits.' },
+      { heading: 'COMMUNICATIONS', content: 'Contact local ATC on arrival. State callsign and "Flight Inspection" on initial contact. Monitor guard frequency 121.5 MHz.' },
+      { heading: 'REPORTING', content: 'Submit inspection report via GFIG portal within 24 hours of completion. Include all data recordings and any discrepancies noted.' }
+    ],
+    points: points,
+    region: region
+  };
+}
 
 /** Mark a mission as expired (admin) */
 window.dbExpireMission = async function(missionId) {
@@ -699,6 +737,174 @@ window.dbSendAnnouncement = async function(title, body) {
     timestamp:   new Date().toISOString()
   }]);
   return true;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   TRAINING — Courses, Enrolment & Progress
+   ══════════════════════════════════════════════════════════════ */
+
+/** Master course definitions (synced to Firestore on first call) */
+const _GFIG_COURSES = [
+  { id:'foundation',      title:'GFIG Orientation & SOPs',           category:'Foundation',    icon:'◎', modules:6,  hours:'2',    level:'beginner',     tier:0, prereqs:[], desc:'Introduction to GFIG operations, reporting standards, Discord integration, and inspector responsibilities.' },
+  { id:'ils-type-a',      title:'ILS Theory & Type A Calibration',   category:'ILS Systems',   icon:'📡', modules:8,  hours:'4',    level:'intermediate', tier:1, prereqs:['foundation'], desc:'Instrument Landing System fundamentals, glide slope geometry, localizer alignment, and Category I calibration procedures.' },
+  { id:'ils-type-b',      title:'ILS Type B — CAT-II/III Procedures',category:'ILS Systems',   icon:'📡', modules:10, hours:'5',    level:'advanced',     tier:2, prereqs:['ils-type-a'], desc:'Advanced ILS calibration for Category II and III precision approaches. Decision height standards and autoland verification.' },
+  { id:'vor-dme',         title:'VOR & DME Calibration Techniques',  category:'VOR / DME',     icon:'📻', modules:7,  hours:'3.5',  level:'intermediate', tier:1, prereqs:['foundation'], desc:'VHF omnidirectional range signal check, bearing accuracy, DME range verification, and frequency monitoring procedures.' },
+  { id:'approach-val',    title:'Approach Procedure Validation',     category:'Procedures',    icon:'🗺', modules:9,  hours:'4',    level:'intermediate', tier:1, prereqs:['foundation'], desc:'RNAV (GPS/RNP), conventional VOR and NDB approach validation, minimum altitude checks, and obstacle clearance analysis.' },
+  { id:'ndb-cal',         title:'NDB Calibration & Coverage Checks', category:'NDB Systems',   icon:'🔊', modules:6,  hours:'3',    level:'intermediate', tier:1, prereqs:['foundation'], desc:'Non-directional beacon theory, bearing accuracy verification, coverage flight patterns, and signal strength analysis.' },
+  { id:'sid-star',        title:'SID & STAR Procedure Validation',   category:'SID / STAR',    icon:'✈', modules:8,  hours:'4',    level:'intermediate', tier:1, prereqs:['approach-val'], desc:'Standard instrument departure and arrival procedure validation. Track accuracy, altitude constraints, and chart cross-check methodology.' },
+  { id:'airport-survey',  title:'Airport Survey Operations',         category:'Surveys',       icon:'📐', modules:7,  hours:'3.5',  level:'advanced',     tier:2, prereqs:['foundation','vor-dme'], desc:'Full-airport geometry surveys, runway threshold positioning, taxiway verification, and obstacle limitation surface checks.' },
+  { id:'atc-coord',       title:'ATC Coordination for Inspectors',   category:'ATC Operations',icon:'📡', modules:5,  hours:'2',    level:'beginner',     tier:0, prereqs:[], desc:'How to coordinate with virtual ATC during inspection flights. Phraseology, special callsigns, and priority handling procedures.' },
+  { id:'cat-iii-spec',    title:'CAT-III ILS Specialist Rating',     category:'ILS Specialist', icon:'🔒', modules:12, hours:'6',    level:'expert',       tier:3, prereqs:['ils-type-b'], reqMissions:50, desc:'Advanced autoland-category ILS calibration. Aircraft performance analysis, RVR requirements, and regulatory standards.' },
+  { id:'inspector-mgmt',  title:'Inspector Management & Quality',    category:'Chief Track',   icon:'🔒', modules:10, hours:'5',    level:'expert',       tier:3, prereqs:['foundation'], reqMissions:100, reqRank:'Senior Inspector', desc:'Report quality assurance, reviewing junior inspector submissions, mentorship responsibilities, and escalation procedures.' }
+];
+window._GFIG_COURSES = _GFIG_COURSES;
+
+/** Seed courses to Firestore if not present */
+window.dbSeedCourses = async function() {
+  if (!window.db) return;
+  try {
+    const snap = await window.db.collection('courses').limit(1).get();
+    if (!snap.empty) return; // already seeded
+    const batch = window.db.batch();
+    _GFIG_COURSES.forEach(c => {
+      batch.set(window.db.collection('courses').doc(c.id), {
+        ...c, status:'active', createdAt: window.serverTimestamp()
+      });
+    });
+    await batch.commit();
+  } catch(e) { console.warn('dbSeedCourses:', e); }
+};
+
+/** Get all courses */
+window.dbGetCourses = async function() {
+  if (!window.db) return _GFIG_COURSES;
+  try {
+    const snap = await window.db.collection('courses').get();
+    if (snap.empty) { await window.dbSeedCourses(); return _GFIG_COURSES; }
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch { return _GFIG_COURSES; }
+};
+
+/** Create or update a course */
+window.dbSaveCourse = async function(courseId, data) {
+  if (!window.db) return;
+  await window.db.collection('courses').doc(courseId).set(data, { merge: true });
+};
+
+/** Enrol a user in a course */
+window.dbEnrolCourse = async function(uid, courseId) {
+  if (!window.db || !uid) return;
+  const docId = uid + '_' + courseId;
+  await window.db.collection('training_progress').doc(docId).set({
+    uid, courseId, status: 'in-progress', completedModules: [],
+    startedAt: window.serverTimestamp(), completedAt: null, completed: false
+  }, { merge: true });
+};
+
+/** Update course progress — accepts data object with completedModules array */
+window.dbUpdateCourseProgress = async function(uid, courseId, data) {
+  if (!window.db || !uid) return;
+  const docId = uid + '_' + courseId;
+  const update = {};
+  if (data.completedModules) update.completedModules = data.completedModules;
+  if (data.completed) {
+    update.status = 'completed';
+    update.completed = true;
+    update.completedAt = data.completedAt || window.serverTimestamp();
+  }
+  await window.db.collection('training_progress').doc(docId).set(update, { merge: true });
+};
+
+/** Get all progress for a user */
+window.dbGetUserProgress = async function(uid) {
+  if (!window.db || !uid) return [];
+  try {
+    const snap = await window.db.collection('training_progress')
+      .where('uid', '==', uid).get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch { return []; }
+};
+
+/** Get all training progress (admin) */
+window.dbGetAllTrainingProgress = async function() {
+  if (!window.db) return [];
+  try {
+    const snap = await window.db.collection('training_progress').get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch { return []; }
+};
+
+/** Submit a checkride request to Firestore */
+window.dbSubmitCheckride = async function(data) {
+  if (!window.db) return 'demo-' + Date.now();
+  const ref = await window.db.collection('checkrides').add({
+    ...data, status: 'pending', submittedAt: window.serverTimestamp()
+  });
+  await dbLogActivity('training', '<strong>' + (data.name || 'A trainee') + '</strong> requested a checkride for ' + (data.type || ''));
+  return ref.id;
+};
+
+/** Get all checkride requests (admin) */
+window.dbGetCheckrides = async function() {
+  if (!window.db) return [];
+  try {
+    const snap = await window.db.collection('checkrides').orderBy('submittedAt', 'desc').get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch { return []; }
+};
+
+/** Update checkride status (admin) */
+window.dbUpdateCheckride = async function(id, status) {
+  if (!window.db) return;
+  await window.db.collection('checkrides').doc(id).update({ status, reviewedAt: window.serverTimestamp() });
+};
+
+/* ══════════════════════════════════════════════════════════════
+   EVENTS
+   ══════════════════════════════════════════════════════════════ */
+
+/** Create an event */
+window.dbCreateEvent = async function(data) {
+  if (!window.db) return 'demo-evt-' + Date.now();
+  const ref = await window.db.collection('events').add({
+    ...data, rsvps: [], rsvpCount: 0, status: 'upcoming',
+    createdAt: window.serverTimestamp()
+  });
+  await dbLogActivity('event', 'New event created: <strong>' + (data.title || '') + '</strong>');
+  return ref.id;
+};
+
+/** Get events */
+window.dbGetEvents = async function(status) {
+  if (!window.db) return [];
+  try {
+    let q = window.db.collection('events');
+    if (status) q = q.where('status', '==', status);
+    const snap = await q.orderBy('createdAt', 'desc').get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch { return []; }
+};
+
+/** RSVP to an event */
+window.dbRSVPEvent = async function(eventId, uid, name) {
+  if (!window.db || !uid) return;
+  const ref = window.db.collection('events').doc(eventId);
+  await ref.update({
+    rsvps: window.arrayUnion({ uid, name, at: new Date().toISOString() }),
+    rsvpCount: window.increment(1)
+  });
+};
+
+/** Update event (admin) */
+window.dbUpdateEvent = async function(eventId, data) {
+  if (!window.db) return;
+  await window.db.collection('events').doc(eventId).set(data, { merge: true });
+};
+
+/** Delete event (admin) */
+window.dbDeleteEvent = async function(eventId) {
+  if (!window.db) return;
+  await window.db.collection('events').doc(eventId).delete();
 };
 
 /* ══════════════════════════════════════════════════════════════

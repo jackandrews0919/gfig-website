@@ -500,18 +500,25 @@
         </button>
         <button class="admin-nav-item" onclick="showSection('members', this)">
           <span class="admin-nav-icon">👥</span> Members
-          <span class="admin-badge-count">184</span>
+          <span class="admin-badge-count" id="members-badge">0</span>
         </button>
         <button class="admin-nav-item" onclick="showSection('missions', this)">
           <span class="admin-nav-icon">✈</span> Missions
         </button>
         <button class="admin-nav-item" onclick="showSection('reports', this)">
           <span class="admin-nav-icon">📋</span> Reports Queue
-          <span class="admin-badge-count">3</span>
+          <span class="admin-badge-count" id="reports-badge">0</span>
         </button>
         <button class="admin-nav-item" onclick="showSection('applications', this)">
           <span class="admin-nav-icon">📝</span> Applications
           <span class="admin-badge-count" id="applications-badge">0</span>
+        </button>
+        <button class="admin-nav-item" onclick="showSection('training', this)">
+          <span class="admin-nav-icon">🎓</span> Training
+          <span class="admin-badge-count" id="training-badge">0</span>
+        </button>
+        <button class="admin-nav-item" onclick="showSection('events', this)">
+          <span class="admin-nav-icon">◗</span> Events
         </button>
 
         <span class="admin-nav-label">Content</span>
@@ -877,6 +884,162 @@
         </div>
       </section>
 
+      <!-- ─── TRAINING ADMIN ─────────────────────────────── -->
+      <section class="admin-section" id="sec-training">
+        <div class="admin-page-title">Training Administration</div>
+        <div class="admin-page-sub">Manage courses, track trainee progress, review checkride requests and assign instructors.</div>
+
+        <!-- Quick metrics -->
+        <div class="admin-metrics">
+          <div class="metric-card">
+            <div class="metric-label">ACTIVE COURSES</div>
+            <div class="metric-value blue" id="tr-stat-courses">0</div>
+            <div class="metric-sub">&nbsp;</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">ENROLLED TRAINEES</div>
+            <div class="metric-value orange" id="tr-stat-enrolled">0</div>
+            <div class="metric-sub">&nbsp;</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">COMPLETIONS</div>
+            <div class="metric-value green" id="tr-stat-completions">0</div>
+            <div class="metric-sub">&nbsp;</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">PENDING CHECKRIDES</div>
+            <div class="metric-value yellow" id="tr-stat-checkrides">0</div>
+            <div class="metric-sub">&nbsp;</div>
+          </div>
+        </div>
+
+        <!-- Sub-tabs -->
+        <div class="dc-tab-bar">
+          <button class="dc-tab active" onclick="trShowTab('courses', this)">📚 Courses</button>
+          <button class="dc-tab" onclick="trShowTab('progress', this)">📊 Trainee Progress</button>
+          <button class="dc-tab" onclick="trShowTab('checkrides', this)">📝 Checkride Requests</button>
+        </div>
+
+        <!-- Courses Tab -->
+        <div class="dc-tab-panel active" id="tr-panel-courses">
+          <div class="admin-table-wrap">
+            <div class="admin-table-head">
+              <div class="admin-table-title">ALL COURSES</div>
+              <button class="tbl-action-btn" onclick="loadTrainingAdmin()" style="font-size:0.8rem;">↻</button>
+            </div>
+            <table class="admin-table">
+              <thead><tr><th>ID</th><th>TITLE</th><th>CATEGORY</th><th>LEVEL</th><th>MODULES</th><th>TIER</th><th>PREREQS</th><th>ENROLLED</th></tr></thead>
+              <tbody id="tr-courses-tbody">
+                <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">Loading courses…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Progress Tab -->
+        <div class="dc-tab-panel" id="tr-panel-progress">
+          <div class="admin-table-wrap">
+            <div class="admin-table-head">
+              <div class="admin-table-title">TRAINEE PROGRESS</div>
+              <input type="text" class="admin-search" placeholder="Search trainee…" oninput="filterTable(this, 'tr-progress-tbody')">
+            </div>
+            <table class="admin-table">
+              <thead><tr><th>TRAINEE</th><th>COURSE</th><th>STATUS</th><th>MODULES</th><th>STARTED</th><th>COMPLETED</th></tr></thead>
+              <tbody id="tr-progress-tbody">
+                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">Loading progress…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Checkrides Tab -->
+        <div class="dc-tab-panel" id="tr-panel-checkrides">
+          <div class="admin-table-wrap">
+            <div class="admin-table-head">
+              <div class="admin-table-title">CHECKRIDE REQUESTS</div>
+            </div>
+            <table class="admin-table">
+              <thead><tr><th>TRAINEE</th><th>TYPE</th><th>PREFERRED DATE</th><th>TIME</th><th>INSTRUCTOR</th><th>STATUS</th><th></th></tr></thead>
+              <tbody id="tr-checkrides-tbody">
+                <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">Loading checkrides…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── EVENTS ADMIN ───────────────────────────────── -->
+      <section class="admin-section" id="sec-events">
+        <div class="admin-page-title">Events Management</div>
+        <div class="admin-page-sub">Create, edit and manage GFIG events, group operations and community sessions.</div>
+
+        <div class="quick-actions">
+          <button class="qa-btn orange" onclick="toggleEventForm()">+ Create Event</button>
+        </div>
+
+        <!-- Create Event Form -->
+        <div class="admin-form" id="create-event-form" style="display:none">
+          <div class="admin-form-title">NEW EVENT</div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label class="admin-form-label">TITLE</label>
+              <input class="admin-input" id="evt-title" type="text" placeholder="e.g. Operation CALIBRATE BRAVO">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">TYPE</label>
+              <select class="admin-select" id="evt-type">
+                <option value="group-op">Group Operation</option>
+                <option value="checkride">Checkride Session</option>
+                <option value="training">Training Day</option>
+                <option value="flyin">Fly-In</option>
+                <option value="community">Community</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">DATE</label>
+              <input class="admin-input" id="evt-date" type="date">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">TIME (UTC)</label>
+              <input class="admin-input" id="evt-time" type="text" placeholder="e.g. 1400Z – 2200Z">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">MAX SLOTS</label>
+              <input class="admin-input" id="evt-slots" type="number" value="50">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">MIN RANK</label>
+              <select class="admin-select" id="evt-rank">
+                <option>All Welcome</option>
+                <option>Trainee Inspector</option>
+                <option>Junior Inspector</option>
+                <option>Inspector</option>
+                <option>Senior Inspector</option>
+              </select>
+            </div>
+          </div>
+          <div class="admin-form-group" style="margin-bottom:16px">
+            <label class="admin-form-label">DESCRIPTION</label>
+            <textarea class="admin-textarea" id="evt-desc" placeholder="Event description, route details, requirements…"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="createEvent()">Create Event</button>
+          <button class="btn" style="margin-left:10px;background:none;border:1px solid var(--border);color:var(--text-sub);" onclick="toggleEventForm()">Cancel</button>
+        </div>
+
+        <div class="admin-table-wrap">
+          <div class="admin-table-head">
+            <div class="admin-table-title">ALL EVENTS</div>
+            <button class="tbl-action-btn" onclick="loadEventsAdmin()" style="font-size:0.8rem;">↻</button>
+          </div>
+          <table class="admin-table">
+            <thead><tr><th>TITLE</th><th>TYPE</th><th>DATE</th><th>TIME</th><th>SLOTS</th><th>RSVPs</th><th>STATUS</th><th></th></tr></thead>
+            <tbody id="events-admin-tbody">
+              <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">Loading events…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- ─── NOTAM MANAGER ─────────────────────────────── -->
       <section class="admin-section" id="sec-notams">
         <div class="admin-page-title">NOTAM Manager</div>
@@ -924,9 +1087,7 @@
           <table class="admin-table">
             <thead><tr><th>ID</th><th>TYPE</th><th>TITLE</th><th>ICAO</th><th>ISSUED</th><th>EXPIRES</th><th></th></tr></thead>
             <tbody id="notams-admin-tbody">
-              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-047</td><td><span class="notam-type notam-maint">MAINT</span></td><td>CYYZ ILS RWY 06L maintenance suspension</td><td>CYYZ</td><td>22 Jun</td><td>26 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-046</td><td><span class="notam-type notam-ops">OPS</span></td><td>KJFK East Complex approaches paused pending re-survey</td><td>KJFK</td><td>20 Jun</td><td>30 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
-              <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-045</td><td><span class="notam-type notam-trng">TRNG</span></td><td>Europe recurrency training week</td><td>EGNX</td><td>17 Jun</td><td>24 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
+              <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">Loading NOTAMs…</td></tr>
             </tbody>
           </table>
         </div>
@@ -1506,6 +1667,22 @@
       try {
         if (!window.dbAutoGenerateMissions) { toast('Auto-gen not available'); return; }
         const ids = await dbAutoGenerateMissions(count, { region, type, priority });
+        // Post each generated mission brief to Discord
+        for (var i = 0; i < ids.length; i++) {
+          try {
+            if (window.db) {
+              var doc = await window.db.collection('missions').doc(ids[i]).get();
+              if (doc.exists) {
+                var d = doc.data();
+                dcApi('POST', '/mission-embed', {
+                  missionId: ids[i], title: d.title || ids[i],
+                  type: d.type || '', airport: d.icao || '', region: d.region || '',
+                  status: 'Active', date: new Date().toLocaleDateString(), brief: d.brief || null
+                }).catch(function(){});
+              }
+            }
+          } catch(e) {}
+        }
         toast('✓ ' + ids.length + ' mission(s) generated and posted to the mission board');
         toggleAutoGen();
         loadMissionsAdmin();
@@ -1606,16 +1783,25 @@
       };
       try {
         if (window.dbCreateMission) {
-          await dbCreateMission(missionData);
+          const newId = await dbCreateMission(missionData);
           toast('✓ Mission created and posted to member portal');
-          // Auto-post mission embed to Discord
+          // Auto-post mission embed with full brief to Discord
+          var brief = null;
+          if (newId && window.db) {
+            try {
+              var doc = await window.db.collection('missions').doc(newId).get();
+              if (doc.exists && doc.data().brief) brief = doc.data().brief;
+            } catch(e) {}
+          }
           dcApi('POST', '/mission-embed', {
+            missionId: newId || '',
             title: missionData.title,
             type: missionData.type,
             airport: missionData.icao,
             region: missionData.region,
             status: 'Active',
-            date: new Date().toLocaleDateString()
+            date: new Date().toLocaleDateString(),
+            brief: brief
           }).catch(function() {});
           document.getElementById('mission-icao').value   = '';
           document.getElementById('mission-runway').value = '';
@@ -1715,7 +1901,7 @@
         if (reports.value) {
           const el = document.getElementById('ov-reports-pending');
           if (el) el.textContent = reports.value.length;
-          const badge = document.querySelector('.admin-nav-item:nth-child(4) .admin-badge-count');
+          const badge = document.getElementById('reports-badge');
           if (badge) badge.textContent = reports.value.length;
         }
         if (notams.value) {
@@ -1725,7 +1911,7 @@
         if (members.value) {
           const el = document.getElementById('ov-members');
           if (el) el.textContent = members.value.length;
-          const badge = document.querySelector('.admin-nav-item:nth-child(2) .admin-badge-count');
+          const badge = document.getElementById('members-badge');
           if (badge) badge.textContent = members.value.length;
         }
 
@@ -1783,7 +1969,7 @@
           const sc = m.status === 'reserve' ? 'badge-reserve' : m.status === 'inactive' ? 'badge-expired' : 'badge-active';
           const sl = m.status === 'reserve' ? 'Reserve'      : m.status === 'inactive' ? 'Inactive'      : 'Active';
           return '<tr>'
-            + '<td style="font-family:var(--font-mono);color:var(--orange)">' + (m.callsign || '—') + '</td>'
+            + '<td style="font-family:var(--font-mono);color:var(--orange)">' + (m.memberNumber || m.callsign || '—') + '</td>'
             + '<td>' + (m.name || '—') + '</td>'
             + '<td><span class="rank-badge">' + (m.rank || 'Member') + '</span></td>'
             + '<td>' + (m.region || '—') + '</td>'
@@ -2632,6 +2818,186 @@
       }
     }
 
+    /* ── Training Admin ── */
+
+    function trShowTab(tab, btn) {
+      document.querySelectorAll('#sec-training .dc-tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('#sec-training .dc-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+      if (btn) btn.classList.add('active');
+      var panel = document.getElementById('tr-panel-' + tab);
+      if (panel) panel.classList.add('active');
+    }
+
+    async function loadTrainingAdmin() {
+      if (!window.dbGetCourses) return;
+      try {
+        var courses = await dbGetCourses();
+        var progress = window.dbGetAllTrainingProgress ? await dbGetAllTrainingProgress() : [];
+        var checkrides = window.dbGetCheckrides ? await dbGetCheckrides() : [];
+        var members = _membersCache.length ? _membersCache : (window.dbGetMembers ? await dbGetMembers() : []) || [];
+
+        // Metrics
+        var el;
+        el = document.getElementById('tr-stat-courses');
+        if (el) el.textContent = courses.length;
+        el = document.getElementById('tr-stat-enrolled');
+        if (el) el.textContent = progress.filter(function(p) { return p.status === 'in-progress'; }).length;
+        el = document.getElementById('tr-stat-completions');
+        if (el) el.textContent = progress.filter(function(p) { return p.status === 'completed'; }).length;
+        var pendingCR = checkrides.filter(function(c) { return c.status === 'pending'; });
+        el = document.getElementById('tr-stat-checkrides');
+        if (el) el.textContent = pendingCR.length;
+        var badge = document.getElementById('training-badge');
+        if (badge) badge.textContent = pendingCR.length || '';
+
+        // Courses table
+        var courseMap = {};
+        courses.forEach(function(c) { courseMap[c.id] = c; });
+        var enrolCount = {};
+        progress.forEach(function(p) {
+          enrolCount[p.courseId] = (enrolCount[p.courseId] || 0) + 1;
+        });
+        var tbody = document.getElementById('tr-courses-tbody');
+        if (tbody) {
+          tbody.innerHTML = courses.map(function(c) {
+            var preqs = (c.prereqs || []).join(', ') || '—';
+            return '<tr>'
+              + '<td style="font-family:var(--font-mono);color:var(--orange)">' + c.id + '</td>'
+              + '<td><strong>' + c.title + '</strong></td>'
+              + '<td>' + (c.category || '—') + '</td>'
+              + '<td>' + (c.level || '—') + '</td>'
+              + '<td>' + (c.modules || 0) + '</td>'
+              + '<td>' + (c.tier || 0) + '</td>'
+              + '<td style="font-size:0.78rem;color:var(--text-muted)">' + preqs + '</td>'
+              + '<td>' + (enrolCount[c.id] || 0) + '</td>'
+              + '</tr>';
+          }).join('');
+        }
+
+        // Progress table
+        var memberMap = {};
+        members.forEach(function(m) { memberMap[m.id] = m; });
+        var ptbody = document.getElementById('tr-progress-tbody');
+        if (ptbody) {
+          if (!progress.length) {
+            ptbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">No enrolments yet</td></tr>';
+          } else {
+            ptbody.innerHTML = progress.map(function(p) {
+              var mem = memberMap[p.uid] || {};
+              var course = courseMap[p.courseId] || {};
+              var sc = p.status === 'completed' ? 'badge-active' : 'badge-pending';
+              var sl = p.status === 'completed' ? 'Completed' : 'In Progress';
+              return '<tr>'
+                + '<td>' + (mem.name || p.uid || '—') + '</td>'
+                + '<td>' + (course.title || p.courseId) + '</td>'
+                + '<td><span class="status-badge ' + sc + '">' + sl + '</span></td>'
+                + '<td>' + (p.modulesCompleted || 0) + ' / ' + (course.modules || '?') + '</td>'
+                + '<td style="font-size:0.78rem;color:var(--text-muted)">' + (p.startedAt ? _relTime(p.startedAt) : '—') + '</td>'
+                + '<td style="font-size:0.78rem;color:var(--text-muted)">' + (p.completedAt ? _relTime(p.completedAt) : '—') + '</td>'
+                + '</tr>';
+            }).join('');
+          }
+        }
+
+        // Checkrides table
+        var crtbody = document.getElementById('tr-checkrides-tbody');
+        if (crtbody) {
+          if (!checkrides.length) {
+            crtbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">No checkride requests</td></tr>';
+          } else {
+            crtbody.innerHTML = checkrides.map(function(c) {
+              var sc = c.status === 'pending' ? 'badge-pending' : c.status === 'approved' ? 'badge-active' : 'badge-expired';
+              var sl = c.status === 'pending' ? 'Pending' : c.status === 'approved' ? 'Approved' : c.status === 'declined' ? 'Declined' : c.status;
+              var actions = c.status === 'pending'
+                ? '<button class="tbl-action-btn success" onclick="reviewCheckride(\'' + c.id + '\',\'approved\')">✓</button>'
+                  + '<button class="tbl-action-btn danger" onclick="reviewCheckride(\'' + c.id + '\',\'declined\')">✗</button>'
+                : '';
+              return '<tr>'
+                + '<td>' + (c.name || '—') + '</td>'
+                + '<td>' + (c.type || '—') + '</td>'
+                + '<td style="font-family:var(--font-mono)">' + (c.date || '—') + '</td>'
+                + '<td style="font-family:var(--font-mono)">' + (c.time || '—') + '</td>'
+                + '<td>' + (c.instructor || 'Any') + '</td>'
+                + '<td><span class="status-badge ' + sc + '">' + sl + '</span></td>'
+                + '<td>' + actions + '</td>'
+                + '</tr>';
+            }).join('');
+          }
+        }
+      } catch(e) { console.warn('Training admin load error:', e); }
+    }
+
+    async function reviewCheckride(id, status) {
+      if (!window.dbUpdateCheckride) return;
+      try {
+        await dbUpdateCheckride(id, status);
+        toast(status === 'approved' ? '✓ Checkride approved' : '✗ Checkride declined');
+        loadTrainingAdmin();
+      } catch(e) { toast('Error: ' + e.message); }
+    }
+
+    /* ── Events Admin ── */
+
+    function toggleEventForm() {
+      var f = document.getElementById('create-event-form');
+      f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function createEvent() {
+      var title = (document.getElementById('evt-title').value || '').trim();
+      var type  = document.getElementById('evt-type').value;
+      var date  = document.getElementById('evt-date').value;
+      var time  = (document.getElementById('evt-time').value || '').trim();
+      var slots = parseInt(document.getElementById('evt-slots').value, 10) || 50;
+      var rank  = document.getElementById('evt-rank').value;
+      var desc  = (document.getElementById('evt-desc').value || '').trim();
+      if (!title || !date) { toast('Title and date are required'); return; }
+      try {
+        if (window.dbCreateEvent) {
+          await dbCreateEvent({ title, type, date, time, maxSlots: slots, minRank: rank, description: desc });
+          toast('✓ Event created');
+          toggleEventForm();
+          document.getElementById('evt-title').value = '';
+          document.getElementById('evt-desc').value = '';
+          loadEventsAdmin();
+        }
+      } catch(e) { toast('Error: ' + e.message); }
+    }
+
+    async function loadEventsAdmin() {
+      if (!window.dbGetEvents) return;
+      try {
+        var events = await dbGetEvents();
+        var tbody = document.getElementById('events-admin-tbody');
+        if (!tbody) return;
+        if (!events || !events.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">No events created yet</td></tr>';
+          return;
+        }
+        var typeLbl = { 'group-op':'Group Op', 'checkride':'Checkride', 'training':'Training', 'flyin':'Fly-In', 'community':'Community' };
+        tbody.innerHTML = events.map(function(ev) {
+          var sc = ev.status === 'upcoming' ? 'badge-active' : ev.status === 'cancelled' ? 'badge-expired' : 'badge-reserve';
+          return '<tr>'
+            + '<td><strong>' + (ev.title || '—') + '</strong></td>'
+            + '<td>' + (typeLbl[ev.type] || ev.type || '—') + '</td>'
+            + '<td style="font-family:var(--font-mono)">' + (ev.date || '—') + '</td>'
+            + '<td>' + (ev.time || '—') + '</td>'
+            + '<td>' + (ev.maxSlots || '—') + '</td>'
+            + '<td>' + (ev.rsvpCount || 0) + '</td>'
+            + '<td><span class="status-badge ' + sc + '">' + (ev.status || 'upcoming') + '</span></td>'
+            + '<td><button class="tbl-action-btn danger" onclick="deleteEvent(\'' + ev.id + '\')">✕</button></td>'
+            + '</tr>';
+        }).join('');
+      } catch(e) { console.warn('Events admin load error:', e); }
+    }
+
+    async function deleteEvent(evtId) {
+      if (!confirm('Delete this event?')) return;
+      if (!window.dbDeleteEvent) return;
+      try { await dbDeleteEvent(evtId); toast('Event deleted'); loadEventsAdmin(); }
+      catch(e) { toast('Error: ' + e.message); }
+    }
+
     restoreSettings();
 
     /* ── Auth ready — load live data from Firestore ── */
@@ -2648,7 +3014,9 @@
         loadMissionsAdmin(),
         loadReportsAdmin(),
         loadNotamsAdmin(),
-        loadApplicationsAdmin()
+        loadApplicationsAdmin(),
+        loadTrainingAdmin(),
+        loadEventsAdmin()
       ]);
     });
   </script>

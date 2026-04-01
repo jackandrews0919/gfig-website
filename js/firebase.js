@@ -64,6 +64,10 @@ window.increment = window.GFIG_FIREBASE_READY
   ? (n) => firebase.firestore.FieldValue.increment(n)
   : (n) => n; // fallback — won't actually increment server-side in demo
 
+window.arrayUnion = window.GFIG_FIREBASE_READY
+  ? (...items) => firebase.firestore.FieldValue.arrayUnion(...items)
+  : (...items) => items; // fallback for demo
+
 /* ── Discord Webhook helper ── */
 window.sendWebhook = async function(url, content = null, embeds = []) {
   if (!url || !url.startsWith('https://discord.com/api/webhooks/')) return;
