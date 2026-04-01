@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Flight Map — GFIG</title>
+  <meta name="description" content="Track GFIG pilots flying live on VATSIM and IVAO.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    #live-map { width:100%; height:65vh; min-height:400px; border-radius:var(--r-lg); border:1px solid var(--border); }
+    .map-sidebar { display:flex; flex-direction:column; gap:10px; }
+    .flight-card { display:flex; align-items:center; gap:12px; padding:10px 14px; background:var(--bg-secondary); border-radius:var(--r-md); border-left:3px solid var(--blue); cursor:pointer; transition:background 0.15s; }
+    .flight-card:hover { background:var(--bg-card); }
+    .flight-card .callsign { font-family:var(--font-mono); font-weight:700; color:var(--blue-light); font-size:0.85rem; }
+    .flight-card .route { font-size:0.78rem; color:var(--text-sub); }
+    .flight-card .alt-spd { font-size:0.68rem; color:var(--text-muted); }
+    .map-stat { text-align:center; padding:12px; }
+    .map-stat .num { font-family:var(--font-head); font-size:1.8rem; font-weight:700; color:var(--blue-light); }
+    .map-stat .lbl { font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; }
+    .leaflet-popup-content-wrapper { background:var(--bg-card)!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:10px!important; }
+    .leaflet-popup-tip { background:var(--bg-card)!important; border:1px solid var(--border)!important; }
+    .leaflet-popup-content { font-family:'Inter',sans-serif; font-size:0.82rem; }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot">
+          <div class="nav-avatar" id="nav-avatar">—</div>
+          <div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div>
+          <div class="nav-online"></div>
+        </div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>Live Flight Map</h1>
+          <p>Track GFIG pilots flying live on VATSIM & IVAO</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <span class="live-dot">Auto-refresh 60s</span>
+          <button class="btn btn-primary" onclick="refreshFlights()">↻ Refresh Now</button>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="grid-4 mb-24">
+        <div class="metric-card"><div class="map-stat"><div class="num" id="stat-online">0</div><div class="lbl">Pilots Online</div></div></div>
+        <div class="metric-card"><div class="map-stat"><div class="num" id="stat-vatsim">0</div><div class="lbl">On VATSIM</div></div></div>
+        <div class="metric-card"><div class="map-stat"><div class="num" id="stat-ivao">0</div><div class="lbl">On IVAO</div></div></div>
+        <div class="metric-card"><div class="map-stat"><div class="num" id="stat-alt">—</div><div class="lbl">Avg Altitude</div></div></div>
+      </div>
+
+      <!-- Map + Sidebar -->
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;">
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div id="live-map"></div>
+        </div>
+        <div class="map-sidebar">
+          <div class="card">
+            <div class="card-title mb-16">✈ Active Flights</div>
+            <div id="flight-list">
+              <div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">Scanning networks…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-bottom">
+        <span>© 2026 Global Flight Inspection Group</span>
+        <span>Not affiliated with any real-world aviation authority.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var map = L.map('live-map', { zoomControl: true }).setView([30, 0], 3);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap, © CARTO', maxZoom: 18
+    }).addTo(map);
+
+    var markers = [];
+    var routeLines = [];
+    var gfigMembers = {};
+
+    // Load GFIG members from Firestore (to match VATSIM CIDs / IVAO VIDs)
+    async function loadMembers() {
+      if (!window.db) return;
+      try {
+        var snap = await window.db.collection('users').get();
+        snap.docs.forEach(function(d) {
+          var data = d.data();
+          if (data.vatsimCid) gfigMembers['v' + data.vatsimCid] = { name: data.name || data.callsign, callsign: data.callsign, uid: d.id };
+          if (data.ivaoVid) gfigMembers['i' + data.ivaoVid] = { name: data.name || data.callsign, callsign: data.callsign, uid: d.id };
+        });
+      } catch(e) { console.warn('Load members error:', e); }
+    }
+
+    // Aircraft icon
+    var planeIcon = L.divIcon({
+      html: '<div style="font-size:20px;transform:rotate(var(--hdg));filter:drop-shadow(0 0 4px rgba(0,119,255,0.6));">✈</div>',
+      iconSize: [24, 24], iconAnchor: [12, 12], className: ''
+    });
+
+    function makePlaneIcon(heading) {
+      return L.divIcon({
+        html: '<div style="font-size:18px;transform:rotate(' + (heading || 0) + 'deg);filter:drop-shadow(0 0 4px rgba(0,119,255,0.6));line-height:1;">✈</div>',
+        iconSize: [24, 24], iconAnchor: [12, 12], className: ''
+      });
+    }
+
+    function clearMarkers() {
+      markers.forEach(function(m) { map.removeLayer(m); });
+      markers = [];
+      routeLines.forEach(function(l) { map.removeLayer(l); });
+      routeLines = [];
+    }
+
+    async function refreshFlights() {
+      var allFlights = [];
+
+      // Fetch VATSIM data
+      try {
+        var resp = await fetch('https://data.vatsim.net/v3/vatsim-data.json');
+        var data = await resp.json();
+        (data.pilots || []).forEach(function(p) {
+          var key = 'v' + p.cid;
+          if (gfigMembers[key]) {
+            allFlights.push({
+              network: 'VATSIM',
+              callsign: p.callsign,
+              memberName: gfigMembers[key].name,
+              memberCallsign: gfigMembers[key].callsign,
+              lat: p.latitude, lng: p.longitude,
+              altitude: p.altitude, groundspeed: p.groundspeed, heading: p.heading,
+              departure: p.flight_plan?.departure || '—',
+              arrival: p.flight_plan?.arrival || '—',
+              aircraft: p.flight_plan?.aircraft_faa || p.flight_plan?.aircraft_short || '—',
+              route: p.flight_plan?.route || ''
+            });
+          }
+        });
+      } catch(e) { console.warn('VATSIM fetch error:', e); }
+
+      // Fetch IVAO data
+      try {
+        var resp2 = await fetch('https://api.ivao.aero/v2/tracker/whazzup');
+        var data2 = await resp2.json();
+        ((data2.clients && data2.clients.pilots) || []).forEach(function(p) {
+          var key = 'i' + p.userId;
+          if (gfigMembers[key]) {
+            allFlights.push({
+              network: 'IVAO',
+              callsign: p.callsign,
+              memberName: gfigMembers[key].name,
+              memberCallsign: gfigMembers[key].callsign,
+              lat: p.lastTrack?.latitude, lng: p.lastTrack?.longitude,
+              altitude: p.lastTrack?.altitude, groundspeed: p.lastTrack?.groundSpeed, heading: p.lastTrack?.heading,
+              departure: p.flightPlan?.departureId || '—',
+              arrival: p.flightPlan?.arrivalId || '—',
+              aircraft: p.flightPlan?.aircraftId || '—',
+              route: p.flightPlan?.route || ''
+            });
+          }
+        });
+      } catch(e) { console.warn('IVAO fetch error:', e); }
+
+      // Update UI
+      clearMarkers();
+      var vatsimCount = allFlights.filter(function(f) { return f.network === 'VATSIM'; }).length;
+      var ivaoCount = allFlights.filter(function(f) { return f.network === 'IVAO'; }).length;
+      document.getElementById('stat-online').textContent = allFlights.length;
+      document.getElementById('stat-vatsim').textContent = vatsimCount;
+      document.getElementById('stat-ivao').textContent = ivaoCount;
+
+      if (allFlights.length) {
+        var avgAlt = Math.round(allFlights.reduce(function(s, f) { return s + (f.altitude || 0); }, 0) / allFlights.length);
+        document.getElementById('stat-alt').textContent = 'FL' + Math.round(avgAlt / 100);
+      } else {
+        document.getElementById('stat-alt').textContent = '—';
+      }
+
+      // Flight list
+      var listEl = document.getElementById('flight-list');
+      if (!allFlights.length) {
+        listEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">No GFIG pilots currently online.<br><span style="font-size:0.72rem;">Connect your VATSIM CID or IVAO VID in Profile Settings to appear here.</span></div>';
+        return;
+      }
+
+      listEl.innerHTML = allFlights.map(function(f, i) {
+        return '<div class="flight-card" onclick="focusFlight(' + i + ')">'
+          + '<div>✈</div>'
+          + '<div style="flex:1;">'
+          + '<div class="callsign">' + esc(f.memberCallsign || f.callsign) + ' <span style="font-size:0.65rem;color:var(--text-muted);">' + f.network + '</span></div>'
+          + '<div class="route">' + esc(f.departure) + ' → ' + esc(f.arrival) + '</div>'
+          + '<div class="alt-spd">' + (f.aircraft || '') + ' · FL' + Math.round((f.altitude||0)/100) + ' · ' + (f.groundspeed||0) + 'kts</div>'
+          + '</div></div>';
+      }).join('');
+
+      // Place markers
+      allFlights.forEach(function(f, idx) {
+        if (!f.lat || !f.lng) return;
+        var m = L.marker([f.lat, f.lng], { icon: makePlaneIcon(f.heading) }).addTo(map);
+        m.bindPopup(
+          '<div style="min-width:180px;">'
+          + '<div style="font-weight:700;font-size:0.9rem;color:var(--blue-light);margin-bottom:4px;">' + esc(f.memberName) + '</div>'
+          + '<div style="font-family:monospace;font-size:0.8rem;margin-bottom:6px;">' + esc(f.memberCallsign || f.callsign) + ' (' + f.network + ')</div>'
+          + '<div style="font-size:0.78rem;">' + esc(f.departure) + ' → ' + esc(f.arrival) + '</div>'
+          + '<div style="font-size:0.72rem;color:var(--text-sub);margin-top:2px;">' + esc(f.aircraft) + ' · FL' + Math.round((f.altitude||0)/100) + ' · ' + (f.groundspeed||0) + 'kts</div>'
+          + '</div>'
+        );
+        markers.push(m);
+        m._flightData = f;
+        m._flightIdx = idx;
+      });
+
+      // Fit bounds if we have flights
+      if (markers.length) {
+        var group = L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.2));
+      }
+
+      window._allFlights = allFlights;
+    }
+
+    function focusFlight(idx) {
+      var f = window._allFlights && window._allFlights[idx];
+      if (f && f.lat && f.lng) {
+        map.setView([f.lat, f.lng], 8);
+        if (markers[idx]) markers[idx].openPopup();
+      }
+    }
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    // Init
+    loadMembers().then(function() {
+      refreshFlights();
+      setInterval(refreshFlights, 60000);
+    });
+  </script>
+</body>
+</html>

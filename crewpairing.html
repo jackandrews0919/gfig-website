@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crew Pairing — GFIG</title>
+  <meta name="description" content="Book shared flights with other GFIG pilots.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .cp-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:20px; margin-bottom:14px; }
+    .cp-route { font-family:var(--font-mono); font-size:1.1rem; font-weight:700; color:var(--blue-light); }
+    .cp-meta { display:flex; gap:16px; flex-wrap:wrap; font-size:0.78rem; color:var(--text-sub); margin:8px 0; }
+    .cp-slots { display:flex; gap:10px; margin-top:12px; }
+    .cp-slot { padding:8px 14px; border-radius:var(--r-md); text-align:center; flex:1; }
+    .cp-slot.captain { background:linear-gradient(135deg,rgba(0,119,255,0.12),rgba(0,119,255,0.06)); border:1px solid rgba(0,119,255,0.25); }
+    .cp-slot.fo { background:linear-gradient(135deg,rgba(255,106,0,0.12),rgba(255,106,0,0.06)); border:1px solid rgba(255,106,0,0.25); }
+    .cp-slot .role { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); margin-bottom:4px; }
+    .cp-slot .pilot-name { font-weight:600; font-size:0.85rem; }
+    .cp-slot .empty { color:var(--text-muted); font-style:italic; font-size:0.82rem; }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a><a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a><a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a><a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a><a href="roster.html" class="nav-link">◔ Roster</a><a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar" id="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div><h1>Crew Pairing</h1><p>Create or join shared flights — fly as Captain & First Officer together</p></div>
+      </div>
+
+      <!-- Create Flight -->
+      <div class="card mb-24">
+        <div class="card-title mb-16">Create Crew Flight</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:12px;align-items:end;">
+          <div><label class="form-label">Departure</label><input type="text" class="form-control" id="cp-dep" placeholder="EGLL" maxlength="4" style="text-transform:uppercase;"></div>
+          <div><label class="form-label">Arrival</label><input type="text" class="form-control" id="cp-arr" placeholder="KJFK" maxlength="4" style="text-transform:uppercase;"></div>
+          <div><label class="form-label">Aircraft</label><input type="text" class="form-control" id="cp-aircraft" placeholder="B777-300ER"></div>
+          <div><label class="form-label">Date & Time (UTC)</label><input type="datetime-local" class="form-control" id="cp-datetime"></div>
+          <button class="btn btn-primary" onclick="createCrewFlight()" style="height:42px;">Create Flight</button>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:8px;">You'll be assigned as Captain. Another pilot can join as First Officer.</div>
+      </div>
+
+      <!-- Open Flights -->
+      <div class="card mb-24">
+        <div class="card-header">
+          <span class="card-title">✈ Open Crew Flights</span>
+          <span class="badge badge-active" id="cp-open-count">0 Open</span>
+        </div>
+        <div id="cp-open-list">
+          <div style="text-align:center;color:var(--text-muted);padding:32px;font-size:0.82rem;">No open crew flights — be the first to create one!</div>
+        </div>
+      </div>
+
+      <!-- My Crew Flights -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">My Crew Flights</span>
+          <span class="badge badge-pass" id="cp-my-count">0</span>
+        </div>
+        <div id="cp-my-list">
+          <div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">No crew flights yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer><div class="container"><div class="footer-bottom"><span>© 2026 Global Flight Inspection Group</span><span>Not affiliated with any real-world aviation authority.</span></div></div></footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _uid = null, _userName = '';
+    var _flights = [];
+
+    function esc(s) { var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+    async function loadCrewFlights() {
+      var user = gfigAuth.getUser();
+      _uid = user ? user.uid : null;
+      _userName = user ? (user.callsign || user.name || 'Pilot') : 'Pilot';
+      if (!window.db) return;
+
+      try {
+        var snap = await window.db.collection('crew_flights').orderBy('scheduledAt', 'desc').get();
+        _flights = snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+      } catch(e) { _flights = []; }
+
+      renderCrewFlights();
+    }
+
+    function renderCrewFlights() {
+      var open = _flights.filter(function(f) { return !f.foUid && f.status !== 'completed'; });
+      var mine = _flights.filter(function(f) { return f.captainUid === _uid || f.foUid === _uid; });
+
+      document.getElementById('cp-open-count').textContent = open.length + ' Open';
+      document.getElementById('cp-my-count').textContent = mine.length;
+
+      var openEl = document.getElementById('cp-open-list');
+      if (!open.length) {
+        openEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;font-size:0.82rem;">No open crew flights — create one above!</div>';
+      } else {
+        openEl.innerHTML = open.map(function(f) { return renderFlightCard(f, true); }).join('');
+      }
+
+      var myEl = document.getElementById('cp-my-list');
+      if (!mine.length) {
+        myEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">No crew flights yet</div>';
+      } else {
+        myEl.innerHTML = mine.map(function(f) { return renderFlightCard(f, false); }).join('');
+      }
+    }
+
+    function renderFlightCard(f, showJoin) {
+      var dt = f.scheduledAt && f.scheduledAt.toDate ? f.scheduledAt.toDate().toLocaleString() : (f.scheduledStr || '—');
+      var canJoin = showJoin && !f.foUid && f.captainUid !== _uid;
+
+      return '<div class="cp-card">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+        + '<div><div class="cp-route">' + esc(f.dep) + ' → ' + esc(f.arr) + '</div>'
+        + '<div class="cp-meta"><span>✈ ' + esc(f.aircraft||'—') + '</span><span>🕐 ' + dt + '</span></div></div>'
+        + (canJoin ? '<button class="btn btn-primary" onclick="joinCrewFlight(\'' + f.id + '\')" style="font-size:0.82rem;">Join as F/O</button>' : '')
+        + '</div>'
+        + '<div class="cp-slots">'
+        + '<div class="cp-slot captain"><div class="role">Captain (PIC)</div>'
+        + (f.captainName ? '<div class="pilot-name">' + esc(f.captainName) + '</div>' : '<div class="empty">—</div>') + '</div>'
+        + '<div class="cp-slot fo"><div class="role">First Officer (SIC)</div>'
+        + (f.foName ? '<div class="pilot-name">' + esc(f.foName) + '</div>' : '<div class="empty">Waiting for F/O…</div>') + '</div>'
+        + '</div></div>';
+    }
+
+    async function createCrewFlight() {
+      if (!_uid || !window.db) { showToast('Sign in to create crew flights', 'warn'); return; }
+      var dep = (document.getElementById('cp-dep').value||'').trim().toUpperCase();
+      var arr = (document.getElementById('cp-arr').value||'').trim().toUpperCase();
+      var aircraft = (document.getElementById('cp-aircraft').value||'').trim();
+      var datetime = document.getElementById('cp-datetime').value;
+      if (!dep || !arr) { showToast('Enter departure and arrival', 'warn'); return; }
+
+      try {
+        await window.db.collection('crew_flights').add({
+          dep: dep, arr: arr, aircraft: aircraft,
+          captainUid: _uid, captainName: _userName,
+          foUid: null, foName: null,
+          scheduledAt: datetime ? new Date(datetime) : window.serverTimestamp(),
+          scheduledStr: datetime || new Date().toISOString().slice(0,16),
+          status: 'open', createdAt: window.serverTimestamp()
+        });
+        showToast('✓ Crew flight created! Waiting for F/O…', 'success');
+        document.getElementById('cp-dep').value = '';
+        document.getElementById('cp-arr').value = '';
+        document.getElementById('cp-aircraft').value = '';
+        document.getElementById('cp-datetime').value = '';
+        loadCrewFlights();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function joinCrewFlight(flightId) {
+      if (!_uid || !window.db) { showToast('Sign in to join', 'warn'); return; }
+      try {
+        await window.db.collection('crew_flights').doc(flightId).update({
+          foUid: _uid, foName: _userName, status: 'paired'
+        });
+        showToast('✓ Joined as First Officer!', 'success');
+        loadCrewFlights();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    document.addEventListener('gfig:authready', function() { loadCrewFlights(); });
+    if (gfigAuth.getUser()) loadCrewFlights();
+  </script>
+</body>
+</html>

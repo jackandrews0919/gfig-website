@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notification Settings — GFIG</title>
+  <meta name="description" content="Manage your GFIG email and push notification preferences.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .notif-category { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:20px; margin-bottom:12px; }
+    .notif-cat-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+    .notif-cat-title { font-weight:700; font-size:0.92rem; }
+    .notif-cat-desc { font-size:0.78rem; color:var(--text-sub); }
+    .notif-item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); }
+    .notif-item:last-child { border-bottom:none; }
+    .notif-label { font-size:0.85rem; }
+    .notif-sub { font-size:0.72rem; color:var(--text-muted); margin-top:2px; }
+    .toggle-group { display:flex; gap:8px; }
+    .toggle-btn { width:42px; height:24px; border-radius:12px; border:1px solid var(--border); background:var(--bg-secondary); cursor:pointer; position:relative; transition:all 0.2s; }
+    .toggle-btn::after { content:''; width:18px; height:18px; border-radius:50%; background:var(--text-muted); position:absolute; top:2px; left:2px; transition:all 0.2s; }
+    .toggle-btn.active { background:var(--blue); border-color:var(--blue); }
+    .toggle-btn.active::after { left:20px; background:#fff; }
+    .toggle-label { font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; text-align:center; width:42px; }
+    .email-preview { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--r-md); padding:12px; font-size:0.78rem; color:var(--text-sub); margin-top:12px; }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a><a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a><a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a><a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a><a href="roster.html" class="nav-link">◔ Roster</a><a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar" id="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div><h1>Notification Settings</h1><p>Choose how and when you want to be notified</p></div>
+        <button class="btn btn-primary" onclick="saveNotifPrefs()">Save Preferences</button>
+      </div>
+
+      <!-- Email Address -->
+      <div class="card mb-24">
+        <div class="card-title mb-16">Email Address</div>
+        <div style="display:flex;gap:12px;align-items:end;">
+          <div style="flex:1;"><label class="form-label">Notification Email</label>
+            <input type="email" class="form-control" id="notif-email" placeholder="your.email@example.com">
+          </div>
+          <div style="font-size:0.72rem;color:var(--text-muted);padding-bottom:12px;" id="email-status">Not verified</div>
+        </div>
+        <div class="email-preview">Emails are sent from <strong>noreply@gfig-virtual.web.app</strong> via EmailJS. You can change your email anytime.</div>
+      </div>
+
+      <!-- Flight & Operations -->
+      <div class="notif-category">
+        <div class="notif-cat-header">
+          <div><div class="notif-cat-title">✈ Flights & Operations</div><div class="notif-cat-desc">Notifications about your flights, bookings, and PIREPs</div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">Flight Reminders</div><div class="notif-sub">Get reminded 1 hour before a booked scheduled flight</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn active" data-key="flight_reminder_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn active" data-key="flight_reminder_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">PIREP Approved / Rejected</div><div class="notif-sub">When your PIREP is validated by the auto-checker or staff</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn active" data-key="pirep_status_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn" data-key="pirep_status_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">Crew Pairing Updates</div><div class="notif-sub">When someone joins your crew flight or you get paired</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn active" data-key="crew_pair_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn active" data-key="crew_pair_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+      </div>
+
+      <!-- Events & Community -->
+      <div class="notif-category">
+        <div class="notif-cat-header">
+          <div><div class="notif-cat-title">◗ Events & Community</div><div class="notif-cat-desc">Stay informed about events, awards, and community updates</div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">New Event Published</div><div class="notif-sub">When a new group event is scheduled</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn active" data-key="event_new_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn" data-key="event_new_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">Event Reminder</div><div class="notif-sub">24-hour reminder before events you've RSVP'd to</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn active" data-key="event_remind_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn active" data-key="event_remind_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">Monthly Awards</div><div class="notif-sub">Get notified if you win a monthly pilot award</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn active" data-key="award_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn" data-key="award_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">Forum Replies</div><div class="notif-sub">When someone replies to your forum posts</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn active" data-key="forum_reply_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn" data-key="forum_reply_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+      </div>
+
+      <!-- Training & Progression -->
+      <div class="notif-category">
+        <div class="notif-cat-header">
+          <div><div class="notif-cat-title">◎ Training & Progression</div><div class="notif-cat-desc">Type ratings, mentorship, and training updates</div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">Type Rating Unlocked</div><div class="notif-sub">When you unlock a new aircraft type rating</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn active" data-key="typerating_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn" data-key="typerating_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">Mentorship Updates</div><div class="notif-sub">Pairing confirmations and graduation notices</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn active" data-key="mentorship_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn" data-key="mentorship_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">Tour Progress</div><div class="notif-sub">Reminders about in-progress tours and completion badges</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn" data-key="tour_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn" data-key="tour_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+      </div>
+
+      <!-- Admin / NOTAMs -->
+      <div class="notif-category">
+        <div class="notif-cat-header">
+          <div><div class="notif-cat-title">⚠ NOTAMs & Announcements</div><div class="notif-cat-desc">Important notices and VA-wide announcements</div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">New NOTAM</div><div class="notif-sub">When a new NOTAM is published</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn active" data-key="notam_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn active" data-key="notam_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">Mission Assignments</div><div class="notif-sub">When new missions are assigned or you're tagged</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn active" data-key="mission_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn active" data-key="mission_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+        <div class="notif-item">
+          <div><div class="notif-label">Application Status</div><div class="notif-sub">Updates on your GFIG membership application</div></div>
+          <div class="toggle-group"><div><div class="toggle-btn active" data-key="application_email" onclick="toggleNotif(this)"></div><div class="toggle-label">Email</div></div><div><div class="toggle-btn" data-key="application_push" onclick="toggleNotif(this)"></div><div class="toggle-label">Push</div></div></div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div style="display:flex;gap:12px;margin-top:20px;">
+        <button class="btn btn-secondary" onclick="toggleAll(true)">Enable All</button>
+        <button class="btn btn-secondary" onclick="toggleAll(false)">Disable All</button>
+      </div>
+    </div>
+  </div>
+
+  <footer><div class="container"><div class="footer-bottom"><span>© 2026 Global Flight Inspection Group</span><span>Not affiliated with any real-world aviation authority.</span></div></div></footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _uid = null;
+
+    function toggleNotif(btn) {
+      btn.classList.toggle('active');
+    }
+
+    function toggleAll(state) {
+      document.querySelectorAll('.toggle-btn').forEach(function(b) {
+        if (state) b.classList.add('active');
+        else b.classList.remove('active');
+      });
+    }
+
+    function getPrefs() {
+      var prefs = {};
+      document.querySelectorAll('.toggle-btn').forEach(function(b) {
+        var key = b.getAttribute('data-key');
+        if (key) prefs[key] = b.classList.contains('active');
+      });
+      prefs.email = (document.getElementById('notif-email').value||'').trim();
+      return prefs;
+    }
+
+    function applyPrefs(prefs) {
+      if (!prefs) return;
+      if (prefs.email) document.getElementById('notif-email').value = prefs.email;
+      document.querySelectorAll('.toggle-btn').forEach(function(b) {
+        var key = b.getAttribute('data-key');
+        if (key && prefs[key] !== undefined) {
+          if (prefs[key]) b.classList.add('active');
+          else b.classList.remove('active');
+        }
+      });
+    }
+
+    async function loadPrefs() {
+      var user = gfigAuth.getUser();
+      _uid = user ? user.uid : null;
+      if (!_uid || !window.db) return;
+
+      // Pre-fill email from auth
+      if (user.email) {
+        document.getElementById('notif-email').value = user.email;
+        document.getElementById('email-status').textContent = '✓ From your account';
+        document.getElementById('email-status').style.color = 'var(--green)';
+      }
+
+      try {
+        var doc = await window.db.collection('notification_prefs').doc(_uid).get();
+        if (doc.exists) applyPrefs(doc.data());
+      } catch(e) {}
+    }
+
+    async function saveNotifPrefs() {
+      if (!_uid || !window.db) { showToast('Sign in first','warn'); return; }
+      var prefs = getPrefs();
+      try {
+        await window.db.collection('notification_prefs').doc(_uid).set(prefs, { merge:true });
+        showToast('✓ Notification preferences saved','success');
+      } catch(e) { showToast('Error: ' + e.message,'error'); }
+    }
+
+    // Register service worker for push notifications
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(function() {});
+    }
+
+    document.addEventListener('gfig:authready', function() { loadPrefs(); });
+    if (gfigAuth.getUser()) loadPrefs();
+  </script>
+</body>
+</html>

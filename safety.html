@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Safety Reports — GFIG</title>
+  <meta name="description" content="GFIG ASRS-style safety and incident reporting system.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .sr-stat { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:16px; text-align:center; }
+    .sr-stat .val { font-family:var(--font-mono); font-size:1.5rem; font-weight:700; }
+    .sr-stat .lbl { font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-top:4px; }
+    .severity-badge { display:inline-block; padding:3px 10px; border-radius:var(--r-full); font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; }
+    .sev-low { background:rgba(0,188,140,0.12); color:var(--green); border:1px solid rgba(0,188,140,0.25); }
+    .sev-medium { background:rgba(255,215,0,0.12); color:#ffd700; border:1px solid rgba(255,215,0,0.25); }
+    .sev-high { background:rgba(255,149,0,0.12); color:#ff9500; border:1px solid rgba(255,149,0,0.25); }
+    .sev-critical { background:rgba(255,59,48,0.12); color:#ff3b30; border:1px solid rgba(255,59,48,0.25); }
+    .report-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:16px; margin-bottom:10px; }
+    .report-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+    .report-type { font-weight:700; font-size:0.92rem; }
+    .report-meta { font-size:0.75rem; color:var(--text-muted); display:flex; gap:12px; margin-top:4px; }
+    .report-desc { font-size:0.82rem; color:var(--text-sub); line-height:1.5; margin-top:8px; }
+    .status-badge { display:inline-block; padding:3px 10px; border-radius:var(--r-full); font-size:0.68rem; font-weight:700; text-transform:uppercase; }
+    .status-open { background:rgba(0,119,255,0.12); color:var(--blue-light); }
+    .status-review { background:rgba(255,215,0,0.12); color:#ffd700; }
+    .status-resolved { background:rgba(0,188,140,0.12); color:var(--green); }
+    .anon-notice { display:flex; align-items:center; gap:8px; padding:12px; background:rgba(0,119,255,0.06); border:1px solid rgba(0,119,255,0.15); border-radius:var(--r-md); font-size:0.78rem; color:var(--text-sub); margin-bottom:16px; }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a><a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a><a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a><a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a><a href="roster.html" class="nav-link">◔ Roster</a><a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar" id="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div><h1>Safety Reports (ASRS)</h1><p>Aviation Safety Reporting System — report incidents anonymously to improve safety</p></div>
+        <button class="btn btn-primary" onclick="toggleForm()">+ File Report</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;">
+        <div class="sr-stat"><div class="val" id="sr-total" style="color:var(--blue-light);">0</div><div class="lbl">Total Reports</div></div>
+        <div class="sr-stat"><div class="val" id="sr-open" style="color:#ffd700;">0</div><div class="lbl">Open</div></div>
+        <div class="sr-stat"><div class="val" id="sr-resolved" style="color:var(--green);">0</div><div class="lbl">Resolved</div></div>
+        <div class="sr-stat"><div class="val" id="sr-trend" style="color:var(--blue-light);">—</div><div class="lbl">30-day Trend</div></div>
+      </div>
+
+      <!-- New Report Form -->
+      <div class="card mb-24" id="sr-form" style="display:none;">
+        <div class="card-title mb-16">File Safety Report</div>
+        <div class="anon-notice">🔒 Reports are stored securely. Enable anonymous mode to remove your name from the report.</div>
+        <div style="display:grid;gap:12px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+            <div><label class="form-label">Incident Type</label>
+              <select class="form-control" id="sr-type">
+                <option value="runway_incursion">Runway Incursion</option>
+                <option value="airspace_violation">Airspace Violation</option>
+                <option value="atc_communication">ATC Communication Issue</option>
+                <option value="near_miss">Near Miss / TCAS RA</option>
+                <option value="hard_landing">Hard Landing</option>
+                <option value="go_around">Go-Around</option>
+                <option value="equipment_failure">Equipment / Sim Failure</option>
+                <option value="procedure_deviation">Procedure Deviation</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div><label class="form-label">Severity</label>
+              <select class="form-control" id="sr-severity">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+            <div><label class="form-label">Location (Airport/Airspace)</label>
+              <input type="text" class="form-control" id="sr-location" placeholder="EGLL / London TMA">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label class="form-label">Aircraft</label><input type="text" class="form-control" id="sr-aircraft" placeholder="B737-800"></div>
+            <div><label class="form-label">Flight Phase</label>
+              <select class="form-control" id="sr-phase">
+                <option value="taxi">Taxi</option>
+                <option value="takeoff">Takeoff</option>
+                <option value="climb">Climb</option>
+                <option value="cruise">Cruise</option>
+                <option value="descent">Descent</option>
+                <option value="approach">Approach</option>
+                <option value="landing">Landing</option>
+                <option value="go_around">Go-Around</option>
+              </select>
+            </div>
+          </div>
+          <div><label class="form-label">Description</label>
+            <textarea class="form-control" id="sr-desc" rows="4" placeholder="Describe what happened, contributing factors, and any corrective action taken…"></textarea>
+          </div>
+          <div><label class="form-label">Lessons Learned / Recommendations</label>
+            <textarea class="form-control" id="sr-lessons" rows="2" placeholder="What could prevent this in the future?"></textarea>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;">
+              <input type="checkbox" id="sr-anon"> Submit anonymously
+            </label>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-primary" onclick="submitReport()">Submit Report</button>
+            <button class="btn btn-secondary" onclick="toggleForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports List -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Recent Reports</span>
+          <select class="form-control" id="sr-filter" onchange="renderReports()" style="width:160px;font-size:0.78rem;">
+            <option value="all">All Severities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div id="sr-list">
+          <div style="text-align:center;color:var(--text-muted);padding:32px;font-size:0.82rem;">Loading reports…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer><div class="container"><div class="footer-bottom"><span>© 2026 Global Flight Inspection Group</span><span>Not affiliated with any real-world aviation authority.</span></div></div></footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _uid = null, _userName = '', _reports = [];
+
+    function esc(s) { var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+    function toggleForm() { var f=document.getElementById('sr-form'); f.style.display = f.style.display === 'none' ? '' : 'none'; }
+    function formatType(t) { return (t||'other').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }); }
+
+    async function loadReports() {
+      var user = gfigAuth.getUser();
+      _uid = user ? user.uid : null;
+      _userName = user ? (user.callsign || user.name || 'Pilot') : 'Pilot';
+      if (!window.db) return;
+
+      try {
+        var snap = await window.db.collection('safety_reports').orderBy('createdAt','desc').limit(100).get();
+        _reports = snap.docs.map(function(d) { return { id:d.id, ...d.data() }; });
+      } catch(e) { _reports = []; }
+
+      var open = _reports.filter(function(r) { return r.status !== 'resolved'; });
+      var resolved = _reports.filter(function(r) { return r.status === 'resolved'; });
+      var thirtyDaysAgo = Date.now() - 30*86400000;
+      var recentCount = _reports.filter(function(r) {
+        var t = r.createdAt && r.createdAt.toDate ? r.createdAt.toDate().getTime() : 0;
+        return t > thirtyDaysAgo;
+      }).length;
+
+      document.getElementById('sr-total').textContent = _reports.length;
+      document.getElementById('sr-open').textContent = open.length;
+      document.getElementById('sr-resolved').textContent = resolved.length;
+      document.getElementById('sr-trend').textContent = recentCount + '/30d';
+
+      renderReports();
+    }
+
+    function renderReports() {
+      var filter = document.getElementById('sr-filter').value;
+      var list = filter === 'all' ? _reports : _reports.filter(function(r) { return r.severity === filter; });
+      var el = document.getElementById('sr-list');
+
+      if (!list.length) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;font-size:0.82rem;">No reports found</div>';
+        return;
+      }
+
+      el.innerHTML = list.map(function(r) {
+        var dt = r.createdAt && r.createdAt.toDate ? r.createdAt.toDate().toLocaleDateString() : '—';
+        var statusClass = 'status-' + (r.status||'open');
+        return '<div class="report-card">'
+          + '<div class="report-header">'
+          + '<div><div class="report-type">' + formatType(r.type) + '</div>'
+          + '<div class="report-meta"><span>📍 ' + esc(r.location||'—') + '</span><span>✈ ' + esc(r.aircraft||'—') + '</span><span>📅 ' + dt + '</span>'
+          + '<span>👤 ' + (r.anonymous ? 'Anonymous' : esc(r.authorName||'—')) + '</span></div></div>'
+          + '<div style="display:flex;gap:6px;"><span class="severity-badge sev-' + (r.severity||'medium') + '">' + esc(r.severity||'medium') + '</span>'
+          + '<span class="status-badge ' + statusClass + '">' + esc(r.status||'open') + '</span></div>'
+          + '</div>'
+          + '<div class="report-desc">' + esc((r.description||'').slice(0,300)) + '</div>'
+          + (r.lessons ? '<div style="margin-top:8px;padding:8px;background:rgba(0,188,140,0.06);border-radius:var(--r-md);font-size:0.78rem;color:var(--green);">💡 ' + esc(r.lessons) + '</div>' : '')
+          + '</div>';
+      }).join('');
+    }
+
+    async function submitReport() {
+      if (!_uid) { showToast('Sign in first','warn'); return; }
+      var desc = (document.getElementById('sr-desc').value||'').trim();
+      if (!desc) { showToast('Description is required','warn'); return; }
+
+      var isAnon = document.getElementById('sr-anon').checked;
+      try {
+        await window.db.collection('safety_reports').add({
+          type: document.getElementById('sr-type').value,
+          severity: document.getElementById('sr-severity').value,
+          location: document.getElementById('sr-location').value.trim(),
+          aircraft: document.getElementById('sr-aircraft').value.trim(),
+          phase: document.getElementById('sr-phase').value,
+          description: desc,
+          lessons: document.getElementById('sr-lessons').value.trim(),
+          anonymous: isAnon,
+          authorUid: isAnon ? null : _uid,
+          authorName: isAnon ? 'Anonymous' : _userName,
+          status: 'open',
+          createdAt: window.serverTimestamp()
+        });
+        showToast('✓ Safety report submitted','success');
+        toggleForm();
+        loadReports();
+      } catch(e) { showToast('Error: ' + e.message,'error'); }
+    }
+
+    document.addEventListener('gfig:authready', function() { loadReports(); });
+    if (gfigAuth.getUser()) loadReports();
+  </script>
+</body>
+</html>

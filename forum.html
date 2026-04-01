@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forum & Feedback — GFIG</title>
+  <meta name="description" content="GFIG discussion forum and suggestion box.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .forum-tabs { display:flex; gap:4px; margin-bottom:20px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:4px; }
+    .forum-tab { flex:1; padding:10px; text-align:center; border-radius:var(--r-md); font-size:0.82rem; font-weight:600; cursor:pointer; transition:all 0.2s; color:var(--text-sub); border:none; background:none; font-family:inherit; }
+    .forum-tab.active { background:var(--blue); color:#fff; }
+    .post-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:16px; margin-bottom:10px; cursor:pointer; transition:border-color 0.2s; }
+    .post-card:hover { border-color:var(--blue-light); }
+    .post-author { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .post-av { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,rgba(0,119,255,0.2),rgba(0,119,255,0.08)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.72rem; color:var(--blue-light); }
+    .post-name { font-weight:600; font-size:0.85rem; }
+    .post-time { font-size:0.7rem; color:var(--text-muted); }
+    .post-title { font-weight:700; font-size:0.95rem; margin-bottom:4px; }
+    .post-preview { font-size:0.82rem; color:var(--text-sub); line-height:1.5; }
+    .post-footer { display:flex; gap:16px; margin-top:10px; font-size:0.72rem; color:var(--text-muted); }
+    .post-cat { display:inline-block; padding:2px 8px; border-radius:var(--r-full); font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-left:auto; }
+    .cat-general { background:rgba(0,119,255,0.1); color:var(--blue-light); }
+    .cat-suggestion { background:rgba(0,188,140,0.1); color:var(--green); }
+    .cat-bug { background:rgba(255,59,48,0.1); color:#ff3b30; }
+    .cat-question { background:rgba(255,215,0,0.1); color:#ffd700; }
+    .reply-card { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--r-md); padding:12px; margin-bottom:8px; margin-left:24px; }
+    .new-post-form { display:none; }
+    .new-post-form.visible { display:block; }
+    #post-detail-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:1000; overflow-y:auto; padding:40px 20px; }
+    #post-detail-overlay.visible { display:block; }
+    .detail-card { max-width:700px; margin:0 auto; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:24px; }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a><a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a><a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a><a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a><a href="roster.html" class="nav-link">◔ Roster</a><a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar" id="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div><h1>Forum & Feedback</h1><p>Discuss ideas, ask questions, or suggest improvements</p></div>
+        <button class="btn btn-primary" onclick="toggleNewPost()">+ New Post</button>
+      </div>
+
+      <!-- New Post Form -->
+      <div class="card mb-24 new-post-form" id="new-post-form">
+        <div class="card-title mb-16">New Post</div>
+        <div style="display:grid;gap:12px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label class="form-label">Title</label><input type="text" class="form-control" id="fp-title" placeholder="Post title…" maxlength="120"></div>
+            <div><label class="form-label">Category</label>
+              <select class="form-control" id="fp-category">
+                <option value="general">General</option>
+                <option value="suggestion">Suggestion</option>
+                <option value="question">Question</option>
+                <option value="bug">Bug Report</option>
+              </select>
+            </div>
+          </div>
+          <div><label class="form-label">Message</label><textarea class="form-control" id="fp-body" rows="4" placeholder="Write your post…"></textarea></div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-primary" onclick="submitPost()">Post</button>
+            <button class="btn btn-secondary" onclick="toggleNewPost()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="forum-tabs">
+        <button class="forum-tab active" onclick="filterPosts('all',this)">All</button>
+        <button class="forum-tab" onclick="filterPosts('general',this)">General</button>
+        <button class="forum-tab" onclick="filterPosts('suggestion',this)">Suggestions</button>
+        <button class="forum-tab" onclick="filterPosts('question',this)">Questions</button>
+        <button class="forum-tab" onclick="filterPosts('bug',this)">Bugs</button>
+      </div>
+
+      <div id="forum-list">
+        <div style="text-align:center;color:var(--text-muted);padding:40px;font-size:0.82rem;">Loading posts…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post Detail Overlay -->
+  <div id="post-detail-overlay" onclick="if(event.target===this)closeDetail();">
+    <div class="detail-card" id="detail-card"></div>
+  </div>
+
+  <footer><div class="container"><div class="footer-bottom"><span>© 2026 Global Flight Inspection Group</span><span>Not affiliated with any real-world aviation authority.</span></div></div></footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _uid = null, _userName = '', _posts = [], _filter = 'all';
+
+    function esc(s) { var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+    function timeAgo(ts) {
+      if (!ts) return '—';
+      var d = ts.toDate ? ts.toDate() : new Date(ts);
+      var s = Math.floor((Date.now()-d.getTime())/1000);
+      if (s<60) return 'just now';
+      if (s<3600) return Math.floor(s/60) + 'm ago';
+      if (s<86400) return Math.floor(s/3600) + 'h ago';
+      return Math.floor(s/86400) + 'd ago';
+    }
+
+    function toggleNewPost() {
+      document.getElementById('new-post-form').classList.toggle('visible');
+    }
+
+    function filterPosts(cat, btn) {
+      _filter = cat;
+      document.querySelectorAll('.forum-tab').forEach(function(t) { t.classList.remove('active'); });
+      if (btn) btn.classList.add('active');
+      renderPosts();
+    }
+
+    async function loadPosts() {
+      var user = gfigAuth.getUser();
+      _uid = user ? user.uid : null;
+      _userName = user ? (user.callsign || user.name || 'Pilot') : 'Pilot';
+      if (!window.db) return;
+
+      try {
+        var snap = await window.db.collection('forum_posts').orderBy('createdAt','desc').limit(100).get();
+        _posts = snap.docs.map(function(d) { return { id:d.id, ...d.data() }; });
+      } catch(e) { _posts = []; }
+      renderPosts();
+    }
+
+    function renderPosts() {
+      var filtered = _filter === 'all' ? _posts : _posts.filter(function(p) { return p.category === _filter; });
+      var el = document.getElementById('forum-list');
+
+      if (!filtered.length) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:0.82rem;">No posts yet — be the first!</div>';
+        return;
+      }
+
+      el.innerHTML = filtered.map(function(p) {
+        var catClass = 'cat-' + (p.category||'general');
+        return '<div class="post-card" onclick="openDetail(\'' + p.id + '\')">'
+          + '<div class="post-author">'
+          + '<div class="post-av">' + (p.authorName||'?').charAt(0).toUpperCase() + '</div>'
+          + '<div><div class="post-name">' + esc(p.authorName) + '</div><div class="post-time">' + timeAgo(p.createdAt) + '</div></div>'
+          + '<span class="post-cat ' + catClass + '">' + esc(p.category||'general') + '</span>'
+          + '</div>'
+          + '<div class="post-title">' + esc(p.title) + '</div>'
+          + '<div class="post-preview">' + esc((p.body||'').slice(0,200)) + '</div>'
+          + '<div class="post-footer"><span>💬 ' + (p.replyCount||0) + ' replies</span><span>👍 ' + (p.likes||0) + '</span></div>'
+          + '</div>';
+      }).join('');
+    }
+
+    async function submitPost() {
+      if (!_uid) { showToast('Sign in first','warn'); return; }
+      var title = (document.getElementById('fp-title').value||'').trim();
+      var body = (document.getElementById('fp-body').value||'').trim();
+      var category = document.getElementById('fp-category').value;
+      if (!title || !body) { showToast('Title and message are required','warn'); return; }
+
+      try {
+        await window.db.collection('forum_posts').add({
+          title: title, body: body, category: category,
+          authorUid: _uid, authorName: _userName,
+          likes: 0, replyCount: 0,
+          createdAt: window.serverTimestamp()
+        });
+        showToast('✓ Post published!','success');
+        document.getElementById('fp-title').value = '';
+        document.getElementById('fp-body').value = '';
+        toggleNewPost();
+        loadPosts();
+      } catch(e) { showToast('Error: ' + e.message,'error'); }
+    }
+
+    async function openDetail(postId) {
+      var post = _posts.find(function(p) { return p.id === postId; });
+      if (!post) return;
+
+      var repliesSnap = [];
+      try {
+        var rs = await window.db.collection('forum_posts').doc(postId).collection('replies').orderBy('createdAt','asc').get();
+        repliesSnap = rs.docs.map(function(d) { return { id:d.id, ...d.data() }; });
+      } catch(e) {}
+
+      var catClass = 'cat-' + (post.category||'general');
+      var repliesHtml = repliesSnap.map(function(r) {
+        return '<div class="reply-card">'
+          + '<div class="post-author"><div class="post-av">' + (r.authorName||'?').charAt(0).toUpperCase() + '</div>'
+          + '<div><div class="post-name">' + esc(r.authorName) + '</div><div class="post-time">' + timeAgo(r.createdAt) + '</div></div></div>'
+          + '<div style="font-size:0.85rem;color:var(--text-sub);line-height:1.5;">' + esc(r.body) + '</div></div>';
+      }).join('');
+
+      document.getElementById('detail-card').innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">'
+        + '<div><div class="post-author"><div class="post-av">' + (post.authorName||'?').charAt(0).toUpperCase() + '</div>'
+        + '<div><div class="post-name">' + esc(post.authorName) + '</div><div class="post-time">' + timeAgo(post.createdAt) + '</div></div>'
+        + '<span class="post-cat ' + catClass + '">' + esc(post.category||'general') + '</span></div>'
+        + '<h2 style="margin:8px 0 0 0;font-size:1.1rem;">' + esc(post.title) + '</h2></div>'
+        + '<button onclick="closeDetail()" style="background:none;border:none;color:var(--text-muted);font-size:1.4rem;cursor:pointer;">✕</button></div>'
+        + '<div style="font-size:0.88rem;color:var(--text-sub);line-height:1.6;margin-bottom:20px;white-space:pre-wrap;">' + esc(post.body) + '</div>'
+        + '<div style="border-top:1px solid var(--border);padding-top:16px;">'
+        + '<div style="font-weight:700;font-size:0.82rem;margin-bottom:10px;">Replies (' + repliesSnap.length + ')</div>'
+        + (repliesHtml || '<div style="color:var(--text-muted);font-size:0.82rem;">No replies yet</div>')
+        + '<div style="margin-top:12px;display:flex;gap:8px;">'
+        + '<input type="text" class="form-control" id="reply-input" placeholder="Write a reply…" style="flex:1;">'
+        + '<button class="btn btn-primary" onclick="submitReply(\'' + postId + '\')" style="font-size:0.82rem;">Reply</button></div></div>';
+
+      document.getElementById('post-detail-overlay').classList.add('visible');
+    }
+
+    function closeDetail() {
+      document.getElementById('post-detail-overlay').classList.remove('visible');
+    }
+
+    async function submitReply(postId) {
+      if (!_uid) { showToast('Sign in first','warn'); return; }
+      var body = (document.getElementById('reply-input').value||'').trim();
+      if (!body) return;
+      try {
+        await window.db.collection('forum_posts').doc(postId).collection('replies').add({
+          body: body, authorUid: _uid, authorName: _userName,
+          createdAt: window.serverTimestamp()
+        });
+        await window.db.collection('forum_posts').doc(postId).update({
+          replyCount: firebase.firestore.FieldValue.increment(1)
+        });
+        showToast('✓ Reply posted','success');
+        openDetail(postId);
+        loadPosts();
+      } catch(e) { showToast('Error: ' + e.message,'error'); }
+    }
+
+    document.addEventListener('gfig:authready', function() { loadPosts(); });
+    if (gfigAuth.getUser()) loadPosts();
+  </script>
+</body>
+</html>

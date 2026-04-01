@@ -11,6 +11,11 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://jackandrews0919.github.io/gfig-website/">
   <meta name="theme-color" content="#0b1f3a">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GFIG">
+  <link rel="apple-touch-icon" href="logo.png">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="logo.png" type="image/png">
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -606,6 +611,14 @@
         }
       } catch(e) { console.warn('Landing page stats:', e); }
     });
+  </script>
+  <script>
+    // Register PWA service worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').catch(function() {});
+      });
+    }
   </script>
 </body>
 </html>

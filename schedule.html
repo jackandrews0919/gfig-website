@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schedule — GFIG</title>
+  <meta name="description" content="GFIG Flight Schedule — Browse and book scheduled flights.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .sched-filters { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+    .sched-filters select, .sched-filters input { padding:8px 12px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--r-md); color:var(--text); font-size:0.82rem; font-family:inherit; }
+    .sched-row { display:grid; grid-template-columns:100px 80px 80px 1fr 120px 100px 80px 120px; gap:8px; align-items:center; padding:10px 16px; border-radius:var(--r-md); font-size:0.82rem; transition:background 0.15s; }
+    .sched-row:hover { background:var(--bg-secondary); }
+    .sched-row.header { font-family:var(--font-head); font-size:0.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; border-bottom:1px solid var(--border); padding-bottom:12px; }
+    .sched-row .flight-num { font-family:var(--font-mono); font-weight:700; color:var(--blue-light); }
+    .sched-row .icao { font-family:var(--font-mono); font-weight:600; }
+    .sched-row .days { display:flex; gap:2px; }
+    .sched-row .day { width:18px; height:18px; border-radius:3px; display:flex; align-items:center; justify-content:center; font-size:0.58rem; font-weight:700; }
+    .day.active { background:var(--active-bg); color:var(--active); }
+    .day.inactive { background:var(--bg-secondary); color:var(--text-muted); }
+    .book-btn { padding:4px 10px; font-size:0.72rem; }
+    .booked-badge { font-size:0.68rem; color:var(--pass); font-weight:600; }
+    @media(max-width:900px) {
+      .sched-row { grid-template-columns:1fr 1fr; font-size:0.78rem; }
+      .sched-row.header { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot">
+          <div class="nav-avatar" id="nav-avatar">—</div>
+          <div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div>
+          <div class="nav-online"></div>
+        </div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>Flight Schedule</h1>
+          <p>Browse and book GFIG scheduled flights</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span class="badge badge-active" id="sched-count">0 Flights</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="sched-filters">
+          <select id="filter-hub" onchange="applyFilters()">
+            <option value="">All Hubs</option>
+            <option value="EGLL">EGLL — London Heathrow</option>
+            <option value="KJFK">KJFK — New York JFK</option>
+            <option value="OMDB">OMDB — Dubai</option>
+            <option value="WSSS">WSSS — Singapore Changi</option>
+            <option value="YSSY">YSSY — Sydney</option>
+          </select>
+          <select id="filter-day" onchange="applyFilters()">
+            <option value="">All Days</option>
+            <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
+            <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option>
+          </select>
+          <input type="text" id="filter-search" placeholder="Search route, flight #…" oninput="applyFilters()">
+        </div>
+
+        <div class="sched-row header">
+          <div>Flight #</div><div>Dep</div><div>Arr</div><div>Days of Op</div><div>Aircraft</div><div>ETD (UTC)</div><div>Duration</div><div></div>
+        </div>
+        <div id="schedule-list">
+          <div style="text-align:center;color:var(--text-muted);padding:40px;font-size:0.82rem;">Loading schedule…</div>
+        </div>
+      </div>
+
+      <!-- My Bookings -->
+      <div class="card" style="margin-top:24px;">
+        <div class="card-header">
+          <span class="card-title">My Booked Flights</span>
+          <span class="badge badge-pass" id="bookings-count">0</span>
+        </div>
+        <div id="my-bookings">
+          <div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">No bookings yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-bottom">
+        <span>© 2026 Global Flight Inspection Group</span>
+        <span>Not affiliated with any real-world aviation authority.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _schedule = [];
+    var _myBookings = {};
+    var _uid = null;
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+
+    var DEFAULT_SCHEDULE = [
+      { flightNum:'GFI-001', dep:'EGLL', arr:'KJFK', days:[1,2,3,4,5], aircraft:'B777-300ER', etd:'08:00', duration:'7h 30m', hub:'EGLL' },
+      { flightNum:'GFI-002', dep:'KJFK', arr:'EGLL', days:[1,2,3,4,5], aircraft:'B777-300ER', etd:'19:00', duration:'6h 45m', hub:'KJFK' },
+      { flightNum:'GFI-010', dep:'EGLL', arr:'LFPG', days:[1,2,3,4,5,6,0], aircraft:'A320neo', etd:'06:30', duration:'1h 15m', hub:'EGLL' },
+      { flightNum:'GFI-011', dep:'LFPG', arr:'EGLL', days:[1,2,3,4,5,6,0], aircraft:'A320neo', etd:'09:00', duration:'1h 10m', hub:'EGLL' },
+      { flightNum:'GFI-020', dep:'EGLL', arr:'OMDB', days:[1,3,5,0], aircraft:'A350-900', etd:'21:00', duration:'6h 50m', hub:'EGLL' },
+      { flightNum:'GFI-021', dep:'OMDB', arr:'EGLL', days:[2,4,6,1], aircraft:'A350-900', etd:'02:30', duration:'7h 20m', hub:'OMDB' },
+      { flightNum:'GFI-030', dep:'OMDB', arr:'WSSS', days:[1,2,4,6], aircraft:'B787-9', etd:'03:00', duration:'7h 10m', hub:'OMDB' },
+      { flightNum:'GFI-031', dep:'WSSS', arr:'OMDB', days:[2,3,5,0], aircraft:'B787-9', etd:'23:50', duration:'7h 25m', hub:'WSSS' },
+      { flightNum:'GFI-040', dep:'KJFK', arr:'KLAX', days:[1,2,3,4,5,6,0], aircraft:'B737-800', etd:'07:00', duration:'5h 30m', hub:'KJFK' },
+      { flightNum:'GFI-041', dep:'KLAX', arr:'KJFK', days:[1,2,3,4,5,6,0], aircraft:'B737-800', etd:'15:00', duration:'4h 50m', hub:'KJFK' },
+      { flightNum:'GFI-050', dep:'WSSS', arr:'YSSY', days:[2,4,6], aircraft:'A350-900', etd:'22:00', duration:'7h 45m', hub:'WSSS' },
+      { flightNum:'GFI-051', dep:'YSSY', arr:'WSSS', days:[3,5,0], aircraft:'A350-900', etd:'08:00', duration:'8h 05m', hub:'YSSY' },
+      { flightNum:'GFI-060', dep:'EGLL', arr:'EDDF', days:[1,2,3,4,5], aircraft:'A319', etd:'10:00', duration:'1h 35m', hub:'EGLL' },
+      { flightNum:'GFI-061', dep:'EDDF', arr:'EGLL', days:[1,2,3,4,5], aircraft:'A319', etd:'13:00', duration:'1h 30m', hub:'EGLL' },
+      { flightNum:'GFI-070', dep:'OMDB', arr:'VABB', days:[1,3,5], aircraft:'B737 MAX', etd:'08:30', duration:'3h 20m', hub:'OMDB' },
+      { flightNum:'GFI-071', dep:'VABB', arr:'OMDB', days:[1,3,5], aircraft:'B737 MAX', etd:'14:00', duration:'3h 05m', hub:'OMDB' },
+      { flightNum:'GFI-080', dep:'KJFK', arr:'KMIA', days:[1,2,3,4,5,6,0], aircraft:'A321neo', etd:'12:00', duration:'3h 00m', hub:'KJFK' },
+      { flightNum:'GFI-081', dep:'KMIA', arr:'KJFK', days:[1,2,3,4,5,6,0], aircraft:'A321neo', etd:'17:00', duration:'2h 50m', hub:'KJFK' },
+      { flightNum:'GFI-090', dep:'YSSY', arr:'NZAA', days:[2,5,0], aircraft:'B787-9', etd:'07:30', duration:'3h 10m', hub:'YSSY' },
+      { flightNum:'GFI-091', dep:'NZAA', arr:'YSSY', days:[3,6,1], aircraft:'B787-9', etd:'12:00', duration:'3h 30m', hub:'YSSY' }
+    ];
+
+    var dayNames = ['S','M','T','W','T','F','S'];
+
+    async function loadSchedule() {
+      var user = gfigAuth.getUser();
+      _uid = user ? user.uid : null;
+
+      // Try Firestore, fall back to defaults
+      _schedule = DEFAULT_SCHEDULE;
+      if (window.db) {
+        try {
+          var snap = await window.db.collection('schedule').orderBy('flightNum').get();
+          if (!snap.empty) _schedule = snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+        } catch(e) { /* use defaults */ }
+
+        // Load bookings
+        if (_uid) {
+          try {
+            var bSnap = await window.db.collection('flight_bookings').where('uid', '==', _uid).get();
+            bSnap.docs.forEach(function(d) { var data = d.data(); _myBookings[data.flightNum] = { id: d.id, ...data }; });
+          } catch(e) {}
+        }
+      }
+
+      applyFilters();
+      renderBookings();
+    }
+
+    function applyFilters() {
+      var hub = document.getElementById('filter-hub').value;
+      var day = document.getElementById('filter-day').value;
+      var search = document.getElementById('filter-search').value.toLowerCase();
+
+      var filtered = _schedule.filter(function(f) {
+        if (hub && f.hub !== hub && f.dep !== hub) return false;
+        if (day && f.days.indexOf(parseInt(day)) === -1) return false;
+        if (search && (f.flightNum + f.dep + f.arr + f.aircraft).toLowerCase().indexOf(search) === -1) return false;
+        return true;
+      });
+
+      document.getElementById('sched-count').textContent = filtered.length + ' Flights';
+      var el = document.getElementById('schedule-list');
+      if (!filtered.length) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:0.82rem;">No flights match your filters</div>';
+        return;
+      }
+
+      el.innerHTML = filtered.map(function(f) {
+        var daysHtml = [0,1,2,3,4,5,6].map(function(d) {
+          return '<div class="day ' + (f.days.indexOf(d) !== -1 ? 'active' : 'inactive') + '">' + dayNames[d] + '</div>';
+        }).join('');
+        var booked = !!_myBookings[f.flightNum];
+
+        return '<div class="sched-row">'
+          + '<div class="flight-num">' + esc(f.flightNum) + '</div>'
+          + '<div class="icao">' + esc(f.dep) + '</div>'
+          + '<div class="icao">' + esc(f.arr) + '</div>'
+          + '<div class="days">' + daysHtml + '</div>'
+          + '<div style="font-size:0.78rem;color:var(--text-sub);">' + esc(f.aircraft) + '</div>'
+          + '<div style="font-family:var(--font-mono);font-size:0.8rem;">' + esc(f.etd) + 'Z</div>'
+          + '<div style="font-size:0.78rem;color:var(--text-muted);">' + esc(f.duration) + '</div>'
+          + '<div>' + (booked
+            ? '<span class="booked-badge">✓ Booked</span>'
+            : '<button class="btn btn-primary book-btn" onclick="bookFlight(\'' + esc(f.flightNum) + '\')">Book</button>')
+          + '</div></div>';
+      }).join('');
+    }
+
+    async function bookFlight(flightNum) {
+      if (!_uid || !window.db) { showToast('Sign in to book flights', 'warn'); return; }
+      if (_myBookings[flightNum]) { showToast('Already booked', 'info'); return; }
+      var flight = _schedule.find(function(f) { return f.flightNum === flightNum; });
+      if (!flight) return;
+
+      try {
+        var ref = await window.db.collection('flight_bookings').add({
+          uid: _uid,
+          flightNum: flightNum,
+          dep: flight.dep, arr: flight.arr,
+          aircraft: flight.aircraft, etd: flight.etd,
+          bookedAt: window.serverTimestamp()
+        });
+        _myBookings[flightNum] = { id: ref.id, flightNum: flightNum, dep: flight.dep, arr: flight.arr, aircraft: flight.aircraft, etd: flight.etd };
+        showToast('✓ Booked ' + flightNum, 'success');
+        applyFilters();
+        renderBookings();
+      } catch(e) { showToast('Booking error: ' + e.message, 'error'); }
+    }
+
+    async function cancelBooking(flightNum) {
+      if (!_myBookings[flightNum]) return;
+      try {
+        await window.db.collection('flight_bookings').doc(_myBookings[flightNum].id).delete();
+        delete _myBookings[flightNum];
+        showToast('Booking cancelled', 'info');
+        applyFilters();
+        renderBookings();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    function renderBookings() {
+      var el = document.getElementById('my-bookings');
+      var entries = Object.values(_myBookings);
+      document.getElementById('bookings-count').textContent = entries.length;
+      if (!entries.length) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">No bookings yet — browse the schedule above and click Book</div>';
+        return;
+      }
+      el.innerHTML = entries.map(function(b) {
+        return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg-secondary);border-radius:var(--r-md);margin-bottom:6px;">'
+          + '<div style="font-family:var(--font-mono);font-weight:700;color:var(--blue-light);width:90px;">' + esc(b.flightNum) + '</div>'
+          + '<div style="flex:1;font-size:0.82rem;">' + esc(b.dep) + ' → ' + esc(b.arr) + ' <span style="color:var(--text-muted);">· ' + esc(b.aircraft) + ' · ' + esc(b.etd) + 'Z</span></div>'
+          + '<button class="btn btn-sm btn-secondary" onclick="cancelBooking(\'' + esc(b.flightNum) + '\')" style="font-size:0.72rem;">Cancel</button>'
+          + '</div>';
+      }).join('');
+    }
+
+    document.addEventListener('gfig:authready', function() { loadSchedule(); });
+    if (gfigAuth.getUser()) loadSchedule();
+  </script>
+</body>
+</html>

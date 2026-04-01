@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pilot Awards — GFIG</title>
+  <meta name="description" content="Monthly pilot awards and hall of fame.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .award-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:24px; text-align:center; position:relative; overflow:hidden; }
+    .award-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg,var(--blue),var(--orange)); }
+    .award-icon { font-size:2.5rem; margin-bottom:12px; }
+    .award-title { font-family:var(--font-head); font-size:0.82rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
+    .award-winner { font-size:1.1rem; font-weight:700; margin-bottom:4px; }
+    .award-value { font-size:0.82rem; color:var(--blue-light); font-family:var(--font-mono); }
+    .hof-entry { display:flex; align-items:center; gap:14px; padding:14px 18px; background:var(--bg-secondary); border-radius:var(--r-md); margin-bottom:8px; }
+    .hof-rank { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-size:0.85rem; font-weight:700; flex-shrink:0; }
+    .hof-rank.gold { background:linear-gradient(135deg,#ffd700,#ffaa00); color:#1a1a1a; }
+    .hof-rank.silver { background:linear-gradient(135deg,#c0c0c0,#909090); color:#1a1a1a; }
+    .hof-rank.bronze { background:linear-gradient(135deg,#cd7f32,#a0522d); color:white; }
+    .month-selector { display:flex; gap:8px; align-items:center; margin-bottom:24px; }
+    .month-selector select { padding:8px 14px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--r-md); color:var(--text); font-size:0.85rem; font-family:inherit; }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a><a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a><a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a><a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a><a href="roster.html" class="nav-link">◔ Roster</a><a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar" id="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div><h1>Pilot Awards</h1><p>Monthly recognition for outstanding pilots</p></div>
+      </div>
+
+      <div class="month-selector">
+        <label style="font-size:0.82rem;color:var(--text-sub);">Month:</label>
+        <select id="award-month" onchange="loadAwards()"></select>
+      </div>
+
+      <!-- Monthly Awards -->
+      <div class="grid-4 mb-24" id="awards-grid">
+        <div class="award-card"><div class="award-icon">🏆</div><div class="award-title">Most Flights</div><div class="award-winner" id="aw-flights-name">—</div><div class="award-value" id="aw-flights-val">—</div></div>
+        <div class="award-card"><div class="award-icon">🌍</div><div class="award-title">Longest Flight</div><div class="award-winner" id="aw-longest-name">—</div><div class="award-value" id="aw-longest-val">—</div></div>
+        <div class="award-card"><div class="award-icon">⭐</div><div class="award-title">Best Attendance</div><div class="award-winner" id="aw-attend-name">—</div><div class="award-value" id="aw-attend-val">—</div></div>
+        <div class="award-card"><div class="award-icon">🌟</div><div class="award-title">Rookie of the Month</div><div class="award-winner" id="aw-rookie-name">—</div><div class="award-value" id="aw-rookie-val">—</div></div>
+      </div>
+
+      <!-- Additional Awards -->
+      <div class="grid-3 mb-24">
+        <div class="award-card"><div class="award-icon">📊</div><div class="award-title">Most Hours</div><div class="award-winner" id="aw-hours-name">—</div><div class="award-value" id="aw-hours-val">—</div></div>
+        <div class="award-card"><div class="award-icon">🎯</div><div class="award-title">Most Missions</div><div class="award-winner" id="aw-missions-name">—</div><div class="award-value" id="aw-missions-val">—</div></div>
+        <div class="award-card"><div class="award-icon">✈</div><div class="award-title">Most Unique Routes</div><div class="award-winner" id="aw-routes-name">—</div><div class="award-value" id="aw-routes-val">—</div></div>
+      </div>
+
+      <!-- Hall of Fame Leaderboard -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🏅 Hall of Fame — Monthly Leaderboard</span>
+        </div>
+        <div id="hof-list" style="padding:10px 0;">
+          <div style="text-align:center;color:var(--text-muted);padding:32px;font-size:0.82rem;">Loading leaderboard…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer><div class="container"><div class="footer-bottom"><span>© 2026 Global Flight Inspection Group</span><span>Not affiliated with any real-world aviation authority.</span></div></div></footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    function esc(s) { var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+    // Populate month selector
+    (function() {
+      var sel = document.getElementById('award-month');
+      var now = new Date();
+      var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      for (var i = 0; i < 12; i++) {
+        var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        var opt = document.createElement('option');
+        opt.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+        opt.textContent = months[d.getMonth()] + ' ' + d.getFullYear();
+        sel.appendChild(opt);
+      }
+    })();
+
+    async function loadAwards() {
+      if (!window.db) return;
+      var monthKey = document.getElementById('award-month').value;
+      var yearMonth = monthKey; // YYYY-MM
+
+      try {
+        // Gather all logbook entries for this month from all users
+        var usersSnap = await window.db.collection('users').get();
+        var users = {};
+        usersSnap.docs.forEach(function(d) { users[d.id] = d.data(); });
+
+        var logSnap = await window.db.collection('logbook').get();
+        var allEntries = logSnap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+        var monthEntries = allEntries.filter(function(e) { return e.date && e.date.substring(0,7) === yearMonth; });
+
+        // Pilot stats
+        var pilotStats = {};
+        monthEntries.forEach(function(e) {
+          var uid = e.uid || e.pilotUid;
+          if (!uid) return;
+          if (!pilotStats[uid]) pilotStats[uid] = { flights:0, hours:0, routes:new Set(), longestFlight:0, longestRoute:'' };
+          pilotStats[uid].flights++;
+          var hrs = parseFloat(e.blockTime) || 0;
+          pilotStats[uid].hours += hrs;
+          if (e.departure && e.arrival) pilotStats[uid].routes.add(e.departure+'-'+e.arrival);
+          if (hrs > pilotStats[uid].longestFlight) {
+            pilotStats[uid].longestFlight = hrs;
+            pilotStats[uid].longestRoute = (e.departure||'') + '→' + (e.arrival||'');
+          }
+        });
+
+        // Mission stats
+        var missionSnap = await window.db.collection('missions').get();
+        var monthMissions = missionSnap.docs.map(function(d) { return d.data(); }).filter(function(m) {
+          if (!m.claimedAt) return false;
+          var d = m.claimedAt.toDate ? m.claimedAt.toDate() : new Date(m.claimedAt);
+          return (d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0')) === yearMonth;
+        });
+        var missionCounts = {};
+        monthMissions.forEach(function(m) {
+          var uid = m.claimedBy;
+          if (uid) missionCounts[uid] = (missionCounts[uid]||0) + 1;
+        });
+
+        function getName(uid) { return users[uid] ? (users[uid].callsign || users[uid].name || 'Pilot') : 'Pilot'; }
+
+        // Most Flights
+        var topFlights = Object.entries(pilotStats).sort(function(a,b) { return b[1].flights - a[1].flights; });
+        if (topFlights.length) {
+          document.getElementById('aw-flights-name').textContent = getName(topFlights[0][0]);
+          document.getElementById('aw-flights-val').textContent = topFlights[0][1].flights + ' flights';
+        }
+
+        // Longest Flight
+        var topLongest = Object.entries(pilotStats).sort(function(a,b) { return b[1].longestFlight - a[1].longestFlight; });
+        if (topLongest.length) {
+          document.getElementById('aw-longest-name').textContent = getName(topLongest[0][0]);
+          document.getElementById('aw-longest-val').textContent = topLongest[0][1].longestFlight.toFixed(1) + 'h — ' + topLongest[0][1].longestRoute;
+        }
+
+        // Best Attendance (most unique days flown)
+        var dayStats = {};
+        monthEntries.forEach(function(e) {
+          var uid = e.uid || e.pilotUid;
+          if (!uid || !e.date) return;
+          if (!dayStats[uid]) dayStats[uid] = new Set();
+          dayStats[uid].add(e.date);
+        });
+        var topAttend = Object.entries(dayStats).sort(function(a,b) { return b[1].size - a[1].size; });
+        if (topAttend.length) {
+          document.getElementById('aw-attend-name').textContent = getName(topAttend[0][0]);
+          document.getElementById('aw-attend-val').textContent = topAttend[0][1].size + ' days active';
+        }
+
+        // Rookie of the Month (joined this month, most flights)
+        var rookies = Object.entries(pilotStats).filter(function(e) {
+          var u = users[e[0]];
+          if (!u || !u.joinedAt) return false;
+          var jd = u.joinedAt.toDate ? u.joinedAt.toDate() : new Date(u.joinedAt);
+          var joinMonth = jd.getFullYear() + '-' + String(jd.getMonth()+1).padStart(2,'0');
+          return joinMonth === yearMonth;
+        }).sort(function(a,b) { return b[1].flights - a[1].flights; });
+        if (rookies.length) {
+          document.getElementById('aw-rookie-name').textContent = getName(rookies[0][0]);
+          document.getElementById('aw-rookie-val').textContent = rookies[0][1].flights + ' flights (new member!)';
+        }
+
+        // Most Hours
+        var topHours = Object.entries(pilotStats).sort(function(a,b) { return b[1].hours - a[1].hours; });
+        if (topHours.length) {
+          document.getElementById('aw-hours-name').textContent = getName(topHours[0][0]);
+          document.getElementById('aw-hours-val').textContent = topHours[0][1].hours.toFixed(1) + ' hours';
+        }
+
+        // Most Missions
+        var topMissions = Object.entries(missionCounts).sort(function(a,b) { return b[1] - a[1]; });
+        if (topMissions.length) {
+          document.getElementById('aw-missions-name').textContent = getName(topMissions[0][0]);
+          document.getElementById('aw-missions-val').textContent = topMissions[0][1] + ' missions';
+        }
+
+        // Most Unique Routes
+        var topRoutes = Object.entries(pilotStats).sort(function(a,b) { return b[1].routes.size - a[1].routes.size; });
+        if (topRoutes.length) {
+          document.getElementById('aw-routes-name').textContent = getName(topRoutes[0][0]);
+          document.getElementById('aw-routes-val').textContent = topRoutes[0][1].routes.size + ' unique routes';
+        }
+
+        // Hall of Fame leaderboard (by total hours)
+        var hofEl = document.getElementById('hof-list');
+        if (!topHours.length) {
+          hofEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;font-size:0.82rem;">No flights logged this month yet</div>';
+          return;
+        }
+        hofEl.innerHTML = topHours.slice(0, 10).map(function(entry, idx) {
+          var uid = entry[0], stats = entry[1];
+          var rankClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
+          var rankBg = rankClass ? '' : 'background:var(--bg-card);color:var(--text-muted);border:1px solid var(--border);';
+          return '<div class="hof-entry">'
+            + '<div class="hof-rank ' + rankClass + '" style="' + rankBg + '">' + (idx+1) + '</div>'
+            + '<div style="flex:1;"><div style="font-weight:700;font-size:0.92rem;">' + esc(getName(uid)) + '</div>'
+            + '<div style="font-size:0.75rem;color:var(--text-sub);">' + stats.flights + ' flights · ' + stats.hours.toFixed(1) + 'h · ' + stats.routes.size + ' routes</div></div>'
+            + '</div>';
+        }).join('');
+      } catch(e) {
+        console.error('Awards error:', e);
+      }
+    }
+
+    document.addEventListener('gfig:authready', function() { loadAwards(); });
+    if (gfigAuth.getUser()) loadAwards();
+  </script>
+</body>
+</html>

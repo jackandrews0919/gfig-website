@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tours — GFIG</title>
+  <meta name="description" content="Multi-leg guided tours for GFIG pilots. Complete tours to earn badges.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .tour-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden; transition:transform 0.2s,box-shadow 0.2s; }
+    .tour-card:hover { transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,0.3); }
+    .tour-banner { height:120px; background:linear-gradient(135deg,var(--blue),var(--orange)); display:flex; align-items:center; justify-content:center; font-size:2.5rem; }
+    .tour-body { padding:20px; }
+    .tour-title { font-family:var(--font-head); font-size:1rem; font-weight:700; margin-bottom:6px; }
+    .tour-desc { font-size:0.78rem; color:var(--text-sub); margin-bottom:12px; line-height:1.5; }
+    .tour-meta { display:flex; gap:16px; font-size:0.72rem; color:var(--text-muted); margin-bottom:12px; }
+    .tour-meta span { display:flex; align-items:center; gap:4px; }
+    .tour-progress { background:var(--bg-secondary); border-radius:20px; height:8px; overflow:hidden; margin-bottom:8px; }
+    .tour-progress-bar { height:100%; background:linear-gradient(90deg,var(--blue),var(--orange)); border-radius:20px; transition:width 0.4s; }
+    .tour-legs { margin-top:14px; }
+    .leg-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:var(--r-md); background:var(--bg-secondary); margin-bottom:6px; }
+    .leg-num { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-size:0.72rem; font-weight:700; flex-shrink:0; }
+    .leg-num.done { background:var(--pass-bg); color:var(--pass); border:1px solid var(--pass-border); }
+    .leg-num.current { background:var(--active-bg); color:var(--active); border:1px solid rgba(64,170,255,0.3); }
+    .leg-num.locked { background:var(--bg-card); color:var(--text-muted); border:1px solid var(--border); }
+    .leg-route { font-family:var(--font-mono); font-size:0.8rem; font-weight:600; }
+    .leg-info { font-size:0.7rem; color:var(--text-sub); }
+    .badge-earned { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,106,0,0.1)); border:1px solid rgba(255,215,0,0.3); border-radius:20px; font-size:0.75rem; font-weight:600; color:#ffd700; }
+    .tour-detail-overlay { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; }
+    .tour-detail-overlay.open { display:flex; }
+    .tour-detail-panel { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); width:600px; max-height:85vh; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,0.5); }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot">
+          <div class="nav-avatar" id="nav-avatar">—</div>
+          <div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div>
+          <div class="nav-online"></div>
+        </div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>Flight Tours</h1>
+          <p>Complete multi-leg tours to earn exclusive badges and explore the world</p>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <span class="badge badge-active" id="tours-completed-badge">0 Completed</span>
+        </div>
+      </div>
+
+      <div id="tours-grid" class="grid-3" style="gap:24px;">
+        <div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:40px;font-size:0.85rem;">Loading tours…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tour Detail Overlay -->
+  <div class="tour-detail-overlay" id="tour-overlay" onclick="if(event.target===this)closeTourDetail()">
+    <div class="tour-detail-panel" id="tour-detail-panel"></div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-bottom">
+        <span>© 2026 Global Flight Inspection Group</span>
+        <span>Not affiliated with any real-world aviation authority.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _tours = [];
+    var _myProgress = {};
+    var _uid = null;
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    // Default tours (admin can add more via Firestore)
+    var DEFAULT_TOURS = [
+      {
+        id: 'european-inspection',
+        title: 'European Inspection Tour',
+        description: 'Inspect major European airports across 8 legs, from London to Athens.',
+        icon: '🇪🇺',
+        badge: '🏅 European Inspector',
+        difficulty: 'Intermediate',
+        legs: [
+          { dep: 'EGLL', arr: 'LFPG', aircraft: 'Any', note: 'London to Paris' },
+          { dep: 'LFPG', arr: 'EHAM', aircraft: 'Any', note: 'Paris to Amsterdam' },
+          { dep: 'EHAM', arr: 'EDDF', aircraft: 'Any', note: 'Amsterdam to Frankfurt' },
+          { dep: 'EDDF', arr: 'LSZH', aircraft: 'Any', note: 'Frankfurt to Zurich' },
+          { dep: 'LSZH', arr: 'LIRF', aircraft: 'Any', note: 'Zurich to Rome' },
+          { dep: 'LIRF', arr: 'LEMD', aircraft: 'Any', note: 'Rome to Madrid' },
+          { dep: 'LEMD', arr: 'LPPT', aircraft: 'Any', note: 'Madrid to Lisbon' },
+          { dep: 'LPPT', arr: 'LGAV', aircraft: 'Any', note: 'Lisbon to Athens' }
+        ]
+      },
+      {
+        id: 'north-atlantic',
+        title: 'North Atlantic Crossing',
+        description: 'Cross the Atlantic via the classic NAT tracks. Requires long-haul aircraft.',
+        icon: '🌊',
+        badge: '🏅 Atlantic Pioneer',
+        difficulty: 'Advanced',
+        legs: [
+          { dep: 'KJFK', arr: 'CYYR', aircraft: 'Widebody', note: 'New York to Goose Bay' },
+          { dep: 'CYYR', arr: 'BIKF', aircraft: 'Widebody', note: 'Goose Bay to Keflavik' },
+          { dep: 'BIKF', arr: 'EGLL', aircraft: 'Widebody', note: 'Keflavik to London' },
+          { dep: 'EGLL', arr: 'KJFK', aircraft: 'Widebody', note: 'Return: London to New York (direct)' }
+        ]
+      },
+      {
+        id: 'caribbean-island-hop',
+        title: 'Caribbean Island Hopper',
+        description: 'Hop between paradise islands in light aircraft or turboprops.',
+        icon: '🏝',
+        badge: '🏅 Island Hopper',
+        difficulty: 'Beginner',
+        legs: [
+          { dep: 'KMIA', arr: 'MYNN', aircraft: 'Turboprop', note: 'Miami to Nassau' },
+          { dep: 'MYNN', arr: 'MKJP', aircraft: 'Turboprop', note: 'Nassau to Kingston' },
+          { dep: 'MKJP', arr: 'MDSD', aircraft: 'Turboprop', note: 'Kingston to Santo Domingo' },
+          { dep: 'MDSD', arr: 'TJSJ', aircraft: 'Turboprop', note: 'Santo Domingo to San Juan' },
+          { dep: 'TJSJ', arr: 'TIST', aircraft: 'Light', note: 'San Juan to St Thomas' },
+          { dep: 'TIST', arr: 'TLPC', aircraft: 'Light', note: 'St Thomas to St Lucia' }
+        ]
+      },
+      {
+        id: 'silk-road',
+        title: 'Silk Road Expedition',
+        description: 'Follow the ancient Silk Road from Istanbul to Beijing.',
+        icon: '🐪',
+        badge: '🏅 Silk Road Explorer',
+        difficulty: 'Advanced',
+        legs: [
+          { dep: 'LTFM', arr: 'LTCE', aircraft: 'Any', note: 'Istanbul to Ankara' },
+          { dep: 'LTCE', arr: 'OIIE', aircraft: 'Any', note: 'Ankara to Tehran' },
+          { dep: 'OIIE', arr: 'UTTT', aircraft: 'Any', note: 'Tehran to Tashkent' },
+          { dep: 'UTTT', arr: 'UAFM', aircraft: 'Any', note: 'Tashkent to Almaty' },
+          { dep: 'UAFM', arr: 'ZWWW', aircraft: 'Any', note: 'Almaty to Urumqi' },
+          { dep: 'ZWWW', arr: 'ZBAA', aircraft: 'Any', note: 'Urumqi to Beijing' }
+        ]
+      },
+      {
+        id: 'african-safari',
+        title: 'African Safari Circuit',
+        description: 'Fly across Africa visiting major hubs and safari destinations.',
+        icon: '🦁',
+        badge: '🏅 African Explorer',
+        difficulty: 'Intermediate',
+        legs: [
+          { dep: 'HECA', arr: 'HKJK', aircraft: 'Any', note: 'Cairo to Nairobi' },
+          { dep: 'HKJK', arr: 'HTDA', aircraft: 'Any', note: 'Nairobi to Dar es Salaam' },
+          { dep: 'HTDA', arr: 'FVHA', aircraft: 'Any', note: 'Dar es Salaam to Harare' },
+          { dep: 'FVHA', arr: 'FACT', aircraft: 'Any', note: 'Harare to Cape Town' },
+          { dep: 'FACT', arr: 'DNMM', aircraft: 'Any', note: 'Cape Town to Lagos' }
+        ]
+      },
+      {
+        id: 'around-the-world',
+        title: 'Around the World',
+        description: 'The ultimate challenge — circumnavigate the globe in 12 legs.',
+        icon: '🌍',
+        badge: '🏅 Global Inspector',
+        difficulty: 'Expert',
+        legs: [
+          { dep: 'EGLL', arr: 'KJFK', aircraft: 'Widebody', note: 'London to New York' },
+          { dep: 'KJFK', arr: 'KLAX', aircraft: 'Any', note: 'New York to Los Angeles' },
+          { dep: 'KLAX', arr: 'PHNL', aircraft: 'Widebody', note: 'Los Angeles to Honolulu' },
+          { dep: 'PHNL', arr: 'RJTT', aircraft: 'Widebody', note: 'Honolulu to Tokyo' },
+          { dep: 'RJTT', arr: 'VHHH', aircraft: 'Any', note: 'Tokyo to Hong Kong' },
+          { dep: 'VHHH', arr: 'VTBS', aircraft: 'Any', note: 'Hong Kong to Bangkok' },
+          { dep: 'VTBS', arr: 'VABB', aircraft: 'Any', note: 'Bangkok to Mumbai' },
+          { dep: 'VABB', arr: 'OMDB', aircraft: 'Any', note: 'Mumbai to Dubai' },
+          { dep: 'OMDB', arr: 'HECA', aircraft: 'Any', note: 'Dubai to Cairo' },
+          { dep: 'HECA', arr: 'LIRF', aircraft: 'Any', note: 'Cairo to Rome' },
+          { dep: 'LIRF', arr: 'LFPG', aircraft: 'Any', note: 'Rome to Paris' },
+          { dep: 'LFPG', arr: 'EGLL', aircraft: 'Any', note: 'Paris to London' }
+        ]
+      }
+    ];
+
+    async function loadTours() {
+      var user = gfigAuth.getUser();
+      _uid = user ? user.uid : null;
+
+      // Load tours from Firestore, fall back to defaults
+      _tours = DEFAULT_TOURS;
+      if (window.db) {
+        try {
+          var snap = await window.db.collection('tours').get();
+          if (!snap.empty) {
+            _tours = snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+          }
+        } catch(e) { /* use defaults */ }
+      }
+
+      // Load user's tour progress
+      if (_uid && window.db) {
+        try {
+          var pSnap = await window.db.collection('tour_progress').where('uid', '==', _uid).get();
+          pSnap.docs.forEach(function(d) {
+            var data = d.data();
+            _myProgress[data.tourId] = { id: d.id, completedLegs: data.completedLegs || [], completed: data.completed || false };
+          });
+        } catch(e) { /* no progress yet */ }
+      }
+
+      renderTours();
+    }
+
+    function renderTours() {
+      var grid = document.getElementById('tours-grid');
+      var completedCount = Object.values(_myProgress).filter(function(p) { return p.completed; }).length;
+      document.getElementById('tours-completed-badge').textContent = completedCount + ' Completed';
+
+      grid.innerHTML = _tours.map(function(tour) {
+        var progress = _myProgress[tour.id] || { completedLegs: [], completed: false };
+        var pct = tour.legs.length ? Math.round((progress.completedLegs.length / tour.legs.length) * 100) : 0;
+        var diffColor = tour.difficulty === 'Beginner' ? 'var(--pass)' : tour.difficulty === 'Intermediate' ? 'var(--monitor)' : tour.difficulty === 'Advanced' ? 'var(--orange)' : 'var(--fail)';
+
+        return '<div class="tour-card" onclick="openTourDetail(\'' + tour.id + '\')">'
+          + '<div class="tour-banner" style="background:linear-gradient(135deg,var(--blue),var(--orange));">' + (tour.icon || '✈') + '</div>'
+          + '<div class="tour-body">'
+          + '<div class="tour-title">' + esc(tour.title) + '</div>'
+          + '<div class="tour-desc">' + esc(tour.description) + '</div>'
+          + '<div class="tour-meta">'
+          + '<span>📍 ' + tour.legs.length + ' legs</span>'
+          + '<span style="color:' + diffColor + ';">● ' + esc(tour.difficulty || 'Standard') + '</span>'
+          + '</div>'
+          + '<div class="tour-progress"><div class="tour-progress-bar" style="width:' + pct + '%;"></div></div>'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+          + '<span style="font-size:0.72rem;color:var(--text-muted);">' + progress.completedLegs.length + '/' + tour.legs.length + ' legs</span>'
+          + (progress.completed ? '<span class="badge-earned">' + esc(tour.badge || '🏅 Completed') + '</span>' : '<span style="font-size:0.72rem;color:var(--blue-light);">' + pct + '% complete</span>')
+          + '</div></div></div>';
+      }).join('');
+    }
+
+    function openTourDetail(tourId) {
+      var tour = _tours.find(function(t) { return t.id === tourId; });
+      if (!tour) return;
+      var progress = _myProgress[tourId] || { completedLegs: [], completed: false };
+      var panel = document.getElementById('tour-detail-panel');
+
+      var legsHtml = tour.legs.map(function(leg, idx) {
+        var done = progress.completedLegs.indexOf(idx) !== -1;
+        var isCurrent = !done && (idx === 0 || progress.completedLegs.indexOf(idx - 1) !== -1);
+        var statusClass = done ? 'done' : isCurrent ? 'current' : 'locked';
+        var statusIcon = done ? '✓' : (idx + 1);
+
+        return '<div class="leg-item">'
+          + '<div class="leg-num ' + statusClass + '">' + statusIcon + '</div>'
+          + '<div style="flex:1;">'
+          + '<div class="leg-route">' + esc(leg.dep) + ' → ' + esc(leg.arr) + '</div>'
+          + '<div class="leg-info">' + esc(leg.note || '') + (leg.aircraft !== 'Any' ? ' · ' + esc(leg.aircraft) + ' required' : '') + '</div>'
+          + '</div>'
+          + (isCurrent && !progress.completed ? '<button class="btn btn-sm btn-primary" onclick="completeLeg(\'' + tourId + '\',' + idx + ')">Log Leg</button>' : '')
+          + (done ? '<span style="font-size:0.68rem;color:var(--pass);">✓ Done</span>' : '')
+          + '</div>';
+      }).join('');
+
+      panel.innerHTML = '<div style="padding:24px;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">'
+        + '<div><div style="font-size:1.8rem;margin-bottom:8px;">' + (tour.icon || '✈') + '</div>'
+        + '<h2 style="font-family:var(--font-head);font-size:1.1rem;margin-bottom:4px;">' + esc(tour.title) + '</h2>'
+        + '<p style="font-size:0.82rem;color:var(--text-sub);">' + esc(tour.description) + '</p></div>'
+        + '<button onclick="closeTourDetail()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;padding:4px;">&times;</button>'
+        + '</div>'
+        + (progress.completed ? '<div class="badge-earned" style="margin-bottom:16px;">' + esc(tour.badge || '🏅 Completed') + ' — Tour Complete!</div>' : '')
+        + '<div class="tour-legs">' + legsHtml + '</div>'
+        + '</div>';
+
+      document.getElementById('tour-overlay').classList.add('open');
+    }
+
+    function closeTourDetail() {
+      document.getElementById('tour-overlay').classList.remove('open');
+    }
+
+    async function completeLeg(tourId, legIdx) {
+      if (!_uid || !window.db) { showToast('Sign in to track tour progress', 'warn'); return; }
+      var progress = _myProgress[tourId];
+      var tour = _tours.find(function(t) { return t.id === tourId; });
+      if (!tour) return;
+
+      if (!progress) {
+        // Create new progress doc
+        var ref = await window.db.collection('tour_progress').add({
+          uid: _uid, tourId: tourId, completedLegs: [legIdx], completed: false, startedAt: window.serverTimestamp()
+        });
+        _myProgress[tourId] = { id: ref.id, completedLegs: [legIdx], completed: false };
+      } else {
+        if (progress.completedLegs.indexOf(legIdx) !== -1) return;
+        progress.completedLegs.push(legIdx);
+        var isComplete = progress.completedLegs.length >= tour.legs.length;
+        progress.completed = isComplete;
+        await window.db.collection('tour_progress').doc(progress.id).update({
+          completedLegs: progress.completedLegs,
+          completed: isComplete,
+          ...(isComplete ? { completedAt: window.serverTimestamp() } : {})
+        });
+      }
+
+      showToast('✓ Leg ' + (legIdx + 1) + ' logged!', 'success');
+      renderTours();
+      openTourDetail(tourId);
+    }
+
+    document.addEventListener('gfig:authready', function() { loadTours(); });
+    if (gfigAuth.getUser()) loadTours();
+  </script>
+</body>
+</html>

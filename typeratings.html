@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Type Ratings — GFIG</title>
+  <meta name="description" content="Earn type ratings to unlock aircraft in the GFIG fleet.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .tr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; }
+    .tr-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden; transition:transform 0.2s,box-shadow 0.2s; }
+    .tr-card:hover { transform:translateY(-2px); box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+    .tr-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:14px; }
+    .tr-icon { width:48px; height:48px; border-radius:var(--r-md); background:linear-gradient(135deg,var(--blue),var(--orange)); display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
+    .tr-name { font-family:var(--font-head); font-size:0.92rem; font-weight:700; }
+    .tr-cat { font-size:0.72rem; color:var(--text-muted); }
+    .tr-body { padding:16px 20px; }
+    .tr-req { font-size:0.78rem; color:var(--text-sub); margin-bottom:12px; line-height:1.5; }
+    .tr-status { display:flex; align-items:center; justify-content:space-between; }
+    .tr-badge { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:12px; font-size:0.72rem; font-weight:700; letter-spacing:0.04em; }
+    .tr-badge.earned { background:var(--pass-bg); color:var(--pass); border:1px solid var(--pass-border); }
+    .tr-badge.pending { background:var(--monitor-bg); color:var(--monitor); border:1px solid var(--monitor-border); }
+    .tr-badge.locked { background:var(--bg-secondary); color:var(--text-muted); border:1px solid var(--border); }
+    .tr-steps { margin-top:12px; }
+    .tr-step { display:flex; align-items:center; gap:8px; padding:6px 0; font-size:0.78rem; }
+    .tr-step .check { width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.65rem; flex-shrink:0; }
+    .tr-step .check.done { background:var(--pass-bg); color:var(--pass); border:1px solid var(--pass-border); }
+    .tr-step .check.todo { background:var(--bg-secondary); color:var(--text-muted); border:1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar" id="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>Type Ratings</h1>
+          <p>Complete training and checkrides to unlock aircraft types</p>
+        </div>
+        <div><span class="badge badge-active" id="tr-earned-badge">0 Earned</span></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid-4 mb-24">
+        <div class="metric-card"><span class="metric-icon">📜</span><div class="metric-value" id="tr-total">0</div><div class="metric-label">Available Ratings</div></div>
+        <div class="metric-card"><span class="metric-icon">✓</span><div class="metric-value" id="tr-earned">0</div><div class="metric-label">Earned</div></div>
+        <div class="metric-card"><span class="metric-icon">⏳</span><div class="metric-value" id="tr-pending">0</div><div class="metric-label">In Progress</div></div>
+        <div class="metric-card"><span class="metric-icon">🔒</span><div class="metric-value" id="tr-locked">0</div><div class="metric-label">Locked</div></div>
+      </div>
+
+      <div class="tr-grid" id="tr-grid">
+        <div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:40px;">Loading type ratings…</div>
+      </div>
+    </div>
+  </div>
+
+  <footer><div class="container"><div class="footer-bottom"><span>© 2026 Global Flight Inspection Group</span><span>Not affiliated with any real-world aviation authority.</span></div></div></footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _uid = null;
+    var _myRatings = {};
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+
+    var TYPE_RATINGS = [
+      { id:'se-piston', name:'Single Engine Piston', category:'Light Aircraft', icon:'🛩', prereq:null,
+        description:'Basic rating for all single-engine piston aircraft (C172, C182, PA28).',
+        steps:['Complete SE Piston ground school','Pass written exam (80%+)','Complete 3 training flights','Pass checkride with instructor'] },
+      { id:'me-piston', name:'Multi Engine Piston', category:'Light Aircraft', icon:'🛩', prereq:'se-piston',
+        description:'Multi-engine piston rating (Baron 58, PA44 Seminole).',
+        steps:['Hold SE Piston rating','Complete ME ground school','Complete 2 training flights','Pass ME checkride'] },
+      { id:'turboprop', name:'Turboprop', category:'Regional', icon:'🔄', prereq:'me-piston',
+        description:'Turboprop aircraft (King Air, ATR 72, Dash 8).',
+        steps:['Hold ME Piston rating','Complete turboprop systems course','Log 5 turboprop flights','Pass turboprop checkride'] },
+      { id:'a320', name:'Airbus A320 Family', category:'Narrowbody', icon:'✈', prereq:'turboprop',
+        description:'A318/A319/A320/A321 type rating.',
+        steps:['Hold Turboprop rating','Complete A320 systems course','Complete 3 A320 training flights','Pass A320 line check'] },
+      { id:'b737', name:'Boeing 737 Family', category:'Narrowbody', icon:'✈', prereq:'turboprop',
+        description:'B737-700/800/900/MAX type rating.',
+        steps:['Hold Turboprop rating','Complete B737 systems course','Complete 3 B737 training flights','Pass B737 line check'] },
+      { id:'a350', name:'Airbus A350', category:'Widebody', icon:'🌐', prereq:'a320',
+        description:'A350-900/1000 long-haul type rating.',
+        steps:['Hold A320 rating','Complete A350 differences course','Log 10+ hours on narrowbody','Complete 2 A350 long-haul flights','Pass A350 OPC check'] },
+      { id:'b777', name:'Boeing 777', category:'Widebody', icon:'🌐', prereq:'b737',
+        description:'B777-200/300ER heavy type rating.',
+        steps:['Hold B737 rating','Complete B777 systems course','Log 10+ hours on narrowbody','Complete 2 B777 sectors','Pass B777 OPC check'] },
+      { id:'b787', name:'Boeing 787 Dreamliner', category:'Widebody', icon:'🌐', prereq:'b737',
+        description:'B787-8/9/10 type rating.',
+        steps:['Hold B737 rating','Complete B787 systems course','Complete 2 B787 sectors','Pass B787 line check'] },
+      { id:'a380', name:'Airbus A380', category:'Super Heavy', icon:'👑', prereq:'a350',
+        description:'The ultimate rating — A380 superjumbo.',
+        steps:['Hold A350 rating','Log 50+ total hours','Complete A380 command course','Complete 3 A380 ultra-long-haul flights','Pass A380 command check'] },
+      { id:'helicopter', name:'Rotary Wing', category:'Helicopter', icon:'🚁', prereq:null,
+        description:'Helicopter operations rating.',
+        steps:['Complete rotary wing ground school','Complete 3 helicopter training flights','Pass helicopter checkride'] }
+    ];
+
+    async function loadTypeRatings() {
+      var user = gfigAuth.getUser();
+      _uid = user ? user.uid : null;
+
+      if (_uid && window.db) {
+        try {
+          var snap = await window.db.collection('type_ratings').where('uid', '==', _uid).get();
+          snap.docs.forEach(function(d) { var data = d.data(); _myRatings[data.ratingId] = { id: d.id, ...data }; });
+        } catch(e) {}
+      }
+
+      renderTypeRatings();
+    }
+
+    function getRatingStatus(rating) {
+      var my = _myRatings[rating.id];
+      if (my && my.earned) return 'earned';
+      if (my && my.stepsCompleted && my.stepsCompleted.length > 0) return 'pending';
+      if (rating.prereq && (!_myRatings[rating.prereq] || !_myRatings[rating.prereq].earned)) return 'locked';
+      return 'available';
+    }
+
+    function renderTypeRatings() {
+      var earned = 0, pending = 0, locked = 0;
+      TYPE_RATINGS.forEach(function(r) {
+        var s = getRatingStatus(r);
+        if (s === 'earned') earned++;
+        else if (s === 'pending') pending++;
+        else if (s === 'locked') locked++;
+      });
+
+      document.getElementById('tr-total').textContent = TYPE_RATINGS.length;
+      document.getElementById('tr-earned').textContent = earned;
+      document.getElementById('tr-pending').textContent = pending;
+      document.getElementById('tr-locked').textContent = locked;
+      document.getElementById('tr-earned-badge').textContent = earned + ' Earned';
+
+      var grid = document.getElementById('tr-grid');
+      grid.innerHTML = TYPE_RATINGS.map(function(r) {
+        var status = getRatingStatus(r);
+        var my = _myRatings[r.id] || { stepsCompleted: [] };
+        var stepsCompleted = my.stepsCompleted || [];
+
+        var stepsHtml = r.steps.map(function(step, idx) {
+          var done = stepsCompleted.indexOf(idx) !== -1;
+          return '<div class="tr-step">'
+            + '<div class="check ' + (done ? 'done' : 'todo') + '">' + (done ? '✓' : (idx+1)) + '</div>'
+            + '<span style="color:' + (done ? 'var(--text)' : 'var(--text-sub)') + ';">' + esc(step) + '</span>'
+            + (status !== 'locked' && status !== 'earned' && !done ? ' <button class="btn btn-sm btn-primary" onclick="completeStep(\'' + r.id + '\',' + idx + ')" style="font-size:0.65rem;padding:2px 6px;margin-left:auto;">Complete</button>' : '')
+            + '</div>';
+        }).join('');
+
+        var badgeHtml = status === 'earned' ? '<span class="tr-badge earned">✓ EARNED</span>'
+          : status === 'pending' ? '<span class="tr-badge pending">⏳ IN PROGRESS</span>'
+          : status === 'locked' ? '<span class="tr-badge locked">🔒 LOCKED</span>'
+          : '<span class="tr-badge" style="background:var(--active-bg);color:var(--active);border:1px solid rgba(64,170,255,0.3);">AVAILABLE</span>';
+
+        return '<div class="tr-card" style="' + (status === 'locked' ? 'opacity:0.6;' : '') + '">'
+          + '<div class="tr-header">'
+          + '<div class="tr-icon">' + r.icon + '</div>'
+          + '<div><div class="tr-name">' + esc(r.name) + '</div><div class="tr-cat">' + esc(r.category) + '</div></div>'
+          + '</div>'
+          + '<div class="tr-body">'
+          + '<div class="tr-req">' + esc(r.description) + '</div>'
+          + (r.prereq ? '<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:8px;">Prerequisite: ' + esc(TYPE_RATINGS.find(function(t){return t.id===r.prereq;})?.name || r.prereq) + '</div>' : '')
+          + '<div class="tr-status">' + badgeHtml + '<span style="font-size:0.72rem;color:var(--text-muted);">' + stepsCompleted.length + '/' + r.steps.length + ' steps</span></div>'
+          + '<div class="tr-steps">' + stepsHtml + '</div>'
+          + '</div></div>';
+      }).join('');
+    }
+
+    async function completeStep(ratingId, stepIdx) {
+      if (!_uid || !window.db) { showToast('Sign in to track ratings', 'warn'); return; }
+      var rating = TYPE_RATINGS.find(function(r) { return r.id === ratingId; });
+      if (!rating) return;
+      var status = getRatingStatus(rating);
+      if (status === 'locked') { showToast('Complete prerequisite first', 'warn'); return; }
+
+      var my = _myRatings[ratingId];
+      if (!my) {
+        var ref = await window.db.collection('type_ratings').add({
+          uid: _uid, ratingId: ratingId, stepsCompleted: [stepIdx], earned: false, startedAt: window.serverTimestamp()
+        });
+        _myRatings[ratingId] = { id: ref.id, ratingId: ratingId, stepsCompleted: [stepIdx], earned: false };
+      } else {
+        if (my.stepsCompleted.indexOf(stepIdx) !== -1) return;
+        my.stepsCompleted.push(stepIdx);
+        var allDone = my.stepsCompleted.length >= rating.steps.length;
+        my.earned = allDone;
+        await window.db.collection('type_ratings').doc(my.id).update({
+          stepsCompleted: my.stepsCompleted,
+          earned: allDone,
+          ...(allDone ? { earnedAt: window.serverTimestamp() } : {})
+        });
+      }
+      showToast('✓ Step completed!', 'success');
+      renderTypeRatings();
+    }
+
+    document.addEventListener('gfig:authready', function() { loadTypeRatings(); });
+    if (gfigAuth.getUser()) loadTypeRatings();
+  </script>
+</body>
+</html>

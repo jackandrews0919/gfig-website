@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pilot Mentorship — GFIG</title>
+  <meta name="description" content="Mentorship programme pairing new pilots with experienced members.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .mentorship-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:20px; }
+    .mentor-badge { display:inline-block; padding:3px 10px; border-radius:var(--r-full); font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; }
+    .mentor-badge.mentor { background:rgba(0,188,140,0.12); color:var(--green); border:1px solid rgba(0,188,140,0.25); }
+    .mentor-badge.mentee { background:rgba(0,119,255,0.12); color:var(--blue-light); border:1px solid rgba(0,119,255,0.25); }
+    .mentor-badge.available { background:rgba(255,215,0,0.12); color:#ffd700; border:1px solid rgba(255,215,0,0.25); }
+    .pair-card { display:flex; align-items:center; gap:16px; padding:16px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); margin-bottom:10px; }
+    .pair-avatar { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.9rem; }
+    .pair-avatar.mentor-av { background:linear-gradient(135deg,rgba(0,188,140,0.2),rgba(0,188,140,0.08)); color:var(--green); }
+    .pair-avatar.mentee-av { background:linear-gradient(135deg,rgba(0,119,255,0.2),rgba(0,119,255,0.08)); color:var(--blue-light); }
+    .pair-arrow { font-size:1.4rem; color:var(--text-muted); }
+    .goals-list { list-style:none; padding:0; margin:8px 0 0 0; }
+    .goals-list li { padding:4px 0; font-size:0.82rem; color:var(--text-sub); }
+    .goals-list li::before { content:'◉ '; color:var(--blue-light); }
+    .goals-list li.done { color:var(--green); text-decoration:line-through; opacity:0.7; }
+    .goals-list li.done::before { content:'✓ '; }
+    .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }
+    .quick-stat { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:14px; text-align:center; }
+    .quick-stat .val { font-family:var(--font-mono); font-size:1.5rem; font-weight:700; color:var(--blue-light); }
+    .quick-stat .lbl { font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-top:4px; }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a><a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a><a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a><a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a><a href="roster.html" class="nav-link">◔ Roster</a><a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar" id="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div><h1>Pilot Mentorship</h1><p>Pair with an experienced pilot to accelerate your skills, or volunteer as a mentor</p></div>
+      </div>
+
+      <div class="stats-row">
+        <div class="quick-stat"><div class="val" id="ms-active">0</div><div class="lbl">Active Pairs</div></div>
+        <div class="quick-stat"><div class="val" id="ms-mentors">0</div><div class="lbl">Mentors Available</div></div>
+        <div class="quick-stat"><div class="val" id="ms-mentees">0</div><div class="lbl">Mentees Waiting</div></div>
+        <div class="quick-stat"><div class="val" id="ms-completed">0</div><div class="lbl">Graduated</div></div>
+      </div>
+
+      <!-- Register as Mentor / Mentee -->
+      <div class="card mb-24" id="ms-register-card">
+        <div class="card-title mb-16">Join the Programme</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="mentorship-card" style="text-align:center;">
+            <div style="font-size:2rem;margin-bottom:8px;">🎓</div>
+            <h3 style="margin:0 0 8px 0;">Become a Mentor</h3>
+            <p style="font-size:0.82rem;color:var(--text-sub);margin-bottom:16px;">Share your experience with new pilots. Guide them through their first flights and type ratings.</p>
+            <div><label class="form-label">Your Specialties</label><input type="text" class="form-control" id="ms-specialties" placeholder="IFR, B737, Long-haul, etc." style="margin-bottom:10px;"></div>
+            <button class="btn btn-primary" onclick="registerMentor()" style="width:100%;">Register as Mentor</button>
+          </div>
+          <div class="mentorship-card" style="text-align:center;">
+            <div style="font-size:2rem;margin-bottom:8px;">✈️</div>
+            <h3 style="margin:0 0 8px 0;">Request a Mentor</h3>
+            <p style="font-size:0.82rem;color:var(--text-sub);margin-bottom:16px;">New to GFIG or want to improve? Get paired with an experienced pilot for guidance.</p>
+            <div><label class="form-label">What do you want to learn?</label><input type="text" class="form-control" id="ms-goals" placeholder="ILS approaches, FMC, etc." style="margin-bottom:10px;"></div>
+            <button class="btn btn-primary" onclick="requestMentor()" style="width:100%;">Request a Mentor</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Available Mentors -->
+      <div class="card mb-24">
+        <div class="card-header">
+          <span class="card-title">Available Mentors</span>
+        </div>
+        <div id="ms-mentor-list">
+          <div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">Loading mentors…</div>
+        </div>
+      </div>
+
+      <!-- Active Pairings -->
+      <div class="card mb-24">
+        <div class="card-header">
+          <span class="card-title">Active Mentorships</span>
+        </div>
+        <div id="ms-pair-list">
+          <div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">No active mentorships yet</div>
+        </div>
+      </div>
+
+      <!-- My Mentorship -->
+      <div class="card" id="ms-my-card" style="display:none;">
+        <div class="card-header">
+          <span class="card-title">My Mentorship</span>
+          <span class="mentor-badge mentor" id="ms-my-role">—</span>
+        </div>
+        <div id="ms-my-detail"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer><div class="container"><div class="footer-bottom"><span>© 2026 Global Flight Inspection Group</span><span>Not affiliated with any real-world aviation authority.</span></div></div></footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _uid = null, _userName = '';
+
+    function esc(s) { var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+    async function loadMentorships() {
+      var user = gfigAuth.getUser();
+      _uid = user ? user.uid : null;
+      _userName = user ? (user.callsign || user.name || 'Pilot') : 'Pilot';
+      if (!window.db) return;
+
+      var mentorsSnap = await window.db.collection('mentorships').where('type','==','mentor').get();
+      var menteesSnap = await window.db.collection('mentorships').where('type','==','mentee').get();
+      var pairsSnap = await window.db.collection('mentorship_pairs').get();
+
+      var mentors = mentorsSnap.docs.map(function(d) { return { id:d.id, ...d.data() }; });
+      var mentees = menteesSnap.docs.map(function(d) { return { id:d.id, ...d.data() }; });
+      var pairs = pairsSnap.docs.map(function(d) { return { id:d.id, ...d.data() }; });
+
+      var activePairs = pairs.filter(function(p) { return p.status === 'active'; });
+      var graduated = pairs.filter(function(p) { return p.status === 'completed'; });
+      var availableMentors = mentors.filter(function(m) { return m.status === 'available'; });
+
+      document.getElementById('ms-active').textContent = activePairs.length;
+      document.getElementById('ms-mentors').textContent = availableMentors.length;
+      document.getElementById('ms-mentees').textContent = mentees.filter(function(m) { return m.status === 'waiting'; }).length;
+      document.getElementById('ms-completed').textContent = graduated.length;
+
+      // Available mentors
+      var ml = document.getElementById('ms-mentor-list');
+      if (!availableMentors.length) {
+        ml.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">No mentors available right now</div>';
+      } else {
+        ml.innerHTML = availableMentors.map(function(m) {
+          return '<div class="pair-card">'
+            + '<div class="pair-avatar mentor-av">' + (m.name||'?').charAt(0).toUpperCase() + '</div>'
+            + '<div style="flex:1;"><div style="font-weight:600;">' + esc(m.name) + ' <span class="mentor-badge mentor">Mentor</span></div>'
+            + '<div style="font-size:0.78rem;color:var(--text-sub);margin-top:2px;">Specialties: ' + esc(m.specialties||'General') + '</div></div>'
+            + (_uid && m.uid !== _uid ? '<button class="btn btn-primary" onclick="requestPairing(\'' + m.uid + '\',\'' + esc(m.name) + '\')" style="font-size:0.82rem;">Request Pairing</button>' : '')
+            + '</div>';
+        }).join('');
+      }
+
+      // Active pairings
+      var pl = document.getElementById('ms-pair-list');
+      if (!activePairs.length) {
+        pl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">No active mentorships</div>';
+      } else {
+        pl.innerHTML = activePairs.map(function(p) {
+          return '<div class="pair-card">'
+            + '<div class="pair-avatar mentor-av">' + (p.mentorName||'?').charAt(0).toUpperCase() + '</div>'
+            + '<div style="font-weight:600;font-size:0.85rem;">' + esc(p.mentorName) + '</div>'
+            + '<div class="pair-arrow">⟶</div>'
+            + '<div class="pair-avatar mentee-av">' + (p.menteeName||'?').charAt(0).toUpperCase() + '</div>'
+            + '<div style="font-weight:600;font-size:0.85rem;">' + esc(p.menteeName) + '</div>'
+            + '</div>';
+        }).join('');
+      }
+
+      // My mentorship detail
+      var myPair = pairs.find(function(p) { return (p.mentorUid === _uid || p.menteeUid === _uid) && p.status === 'active'; });
+      if (myPair) {
+        document.getElementById('ms-my-card').style.display = '';
+        var isMentor = myPair.mentorUid === _uid;
+        document.getElementById('ms-my-role').textContent = isMentor ? 'Mentor' : 'Mentee';
+        document.getElementById('ms-my-role').className = 'mentor-badge ' + (isMentor ? 'mentor' : 'mentee');
+        var partnerName = isMentor ? myPair.menteeName : myPair.mentorName;
+        document.getElementById('ms-my-detail').innerHTML = '<div style="padding:12px 0;">'
+          + '<div style="font-size:0.85rem;margin-bottom:8px;">Paired with: <strong>' + esc(partnerName) + '</strong></div>'
+          + '<div style="font-size:0.78rem;color:var(--text-sub);">Goals: ' + esc(myPair.goals||'—') + '</div>'
+          + (isMentor ? '<button class="btn btn-primary" onclick="graduateMentee(\'' + myPair.id + '\')" style="margin-top:12px;font-size:0.82rem;">✓ Graduate Mentee</button>' : '')
+          + '</div>';
+      }
+    }
+
+    async function registerMentor() {
+      if (!_uid) { showToast('Sign in first', 'warn'); return; }
+      var specialties = (document.getElementById('ms-specialties').value||'').trim();
+      try {
+        await window.db.collection('mentorships').doc(_uid).set({
+          uid: _uid, name: _userName, type: 'mentor', specialties: specialties,
+          status: 'available', createdAt: window.serverTimestamp()
+        });
+        showToast('✓ You are now registered as a Mentor!', 'success');
+        loadMentorships();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function requestMentor() {
+      if (!_uid) { showToast('Sign in first', 'warn'); return; }
+      var goals = (document.getElementById('ms-goals').value||'').trim();
+      try {
+        await window.db.collection('mentorships').doc(_uid).set({
+          uid: _uid, name: _userName, type: 'mentee', goals: goals,
+          status: 'waiting', createdAt: window.serverTimestamp()
+        });
+        showToast('✓ Mentor requested! An available mentor will pair with you.', 'success');
+        loadMentorships();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function requestPairing(mentorUid, mentorName) {
+      if (!_uid) { showToast('Sign in first', 'warn'); return; }
+      try {
+        await window.db.collection('mentorship_pairs').add({
+          mentorUid: mentorUid, mentorName: mentorName,
+          menteeUid: _uid, menteeName: _userName,
+          goals: '', status: 'active',
+          createdAt: window.serverTimestamp()
+        });
+        await window.db.collection('mentorships').doc(mentorUid).update({ status: 'paired' });
+        showToast('✓ Paired with ' + mentorName + '!', 'success');
+        loadMentorships();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function graduateMentee(pairId) {
+      try {
+        var doc = await window.db.collection('mentorship_pairs').doc(pairId).get();
+        var data = doc.data();
+        await window.db.collection('mentorship_pairs').doc(pairId).update({ status: 'completed', completedAt: window.serverTimestamp() });
+        await window.db.collection('mentorships').doc(data.mentorUid).update({ status: 'available' });
+        showToast('✓ Mentee graduated!', 'success');
+        loadMentorships();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    document.addEventListener('gfig:authready', function() { loadMentorships(); });
+    if (gfigAuth.getUser()) loadMentorships();
+  </script>
+</body>
+</html>

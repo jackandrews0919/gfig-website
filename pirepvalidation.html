@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIREP Validation — GFIG</title>
+  <meta name="description" content="Automated PIREP validation and verification system.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .val-stat { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:16px; text-align:center; }
+    .val-stat .num { font-family:var(--font-mono); font-size:1.5rem; font-weight:700; }
+    .val-stat .lbl { font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-top:4px; }
+    .pirep-row { display:grid; grid-template-columns:100px 80px 80px 120px 1fr 100px 80px; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--border); font-size:0.82rem; }
+    .pirep-row.header { font-weight:700; font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; border-bottom:2px solid var(--border); }
+    .v-badge { display:inline-block; padding:3px 10px; border-radius:var(--r-full); font-size:0.68rem; font-weight:700; text-transform:uppercase; }
+    .v-auto { background:rgba(0,188,140,0.12); color:var(--green); }
+    .v-flagged { background:rgba(255,149,0,0.12); color:#ff9500; }
+    .v-rejected { background:rgba(255,59,48,0.12); color:#ff3b30; }
+    .v-pending { background:rgba(0,119,255,0.12); color:var(--blue-light); }
+    .flag-reason { font-size:0.72rem; color:var(--text-muted); font-style:italic; }
+    .rule-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:14px; margin-bottom:8px; }
+    .rule-name { font-weight:700; font-size:0.85rem; }
+    .rule-desc { font-size:0.78rem; color:var(--text-sub); margin-top:2px; }
+    .rule-indicator { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+    .rule-active { background:var(--green); }
+    @media(max-width:768px) {
+      .pirep-row { grid-template-columns:1fr 1fr; gap:6px; }
+      .pirep-row.header { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a><a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a><a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a><a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a><a href="roster.html" class="nav-link">◔ Roster</a><a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar" id="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div><h1>PIREP Validation</h1><p>Automated validation checks for pilot reports — anomalies flagged for staff review</p></div>
+        <button class="btn btn-primary" onclick="runValidation()">▶ Run Validation</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;">
+        <div class="val-stat"><div class="num" style="color:var(--green);" id="pv-auto">0</div><div class="lbl">Auto-Approved</div></div>
+        <div class="val-stat"><div class="num" style="color:#ff9500;" id="pv-flagged">0</div><div class="lbl">Flagged</div></div>
+        <div class="val-stat"><div class="num" style="color:#ff3b30;" id="pv-rejected">0</div><div class="lbl">Rejected</div></div>
+        <div class="val-stat"><div class="num" style="color:var(--blue-light);" id="pv-pending">0</div><div class="lbl">Pending Review</div></div>
+        <div class="val-stat"><div class="num" style="color:var(--blue-light);" id="pv-rate">0%</div><div class="lbl">Pass Rate</div></div>
+      </div>
+
+      <!-- Validation Rules -->
+      <div class="card mb-24">
+        <div class="card-header">
+          <span class="card-title">Validation Rules</span>
+        </div>
+        <div style="padding-top:8px;">
+          <div class="rule-card"><div class="rule-name"><span class="rule-indicator rule-active"></span>Flight Time Check</div><div class="rule-desc">Flight time must be between 15 minutes and 20 hours</div></div>
+          <div class="rule-card"><div class="rule-name"><span class="rule-indicator rule-active"></span>Route Consistency</div><div class="rule-desc">Departure and arrival airports must be different ICAO codes</div></div>
+          <div class="rule-card"><div class="rule-name"><span class="rule-indicator rule-active"></span>Landing Rate</div><div class="rule-desc">Landing rate exceeding -500 fpm is flagged for review</div></div>
+          <div class="rule-card"><div class="rule-name"><span class="rule-indicator rule-active"></span>Fuel Plausibility</div><div class="rule-desc">Fuel used must be > 0 and reasonable for flight duration</div></div>
+          <div class="rule-card"><div class="rule-name"><span class="rule-indicator rule-active"></span>Duplicate Detection</div><div class="rule-desc">Flags PIREPs with identical route + time within 30 minutes</div></div>
+          <div class="rule-card"><div class="rule-name"><span class="rule-indicator rule-active"></span>Aircraft Type Match</div><div class="rule-desc">Aircraft must exist in the GFIG fleet database</div></div>
+        </div>
+      </div>
+
+      <!-- PIREP List -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Recent PIREPs</span>
+          <select class="form-control" id="pv-filter" onchange="renderPireps()" style="width:160px;font-size:0.78rem;">
+            <option value="all">All</option>
+            <option value="auto-approved">Auto-Approved</option>
+            <option value="flagged">Flagged</option>
+            <option value="rejected">Rejected</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto;">
+          <div class="pirep-row header">
+            <div>Callsign</div><div>Dep</div><div>Arr</div><div>Aircraft</div><div>Flags</div><div>Duration</div><div>Status</div>
+          </div>
+          <div id="pv-list">
+            <div style="text-align:center;color:var(--text-muted);padding:32px;font-size:0.82rem;grid-column:1/-1;">Loading PIREPs…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer><div class="container"><div class="footer-bottom"><span>© 2026 Global Flight Inspection Group</span><span>Not affiliated with any real-world aviation authority.</span></div></div></footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _pireps = [], _fleet = [];
+
+    function esc(s) { var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+    // Validation rules
+    function validatePirep(p) {
+      var flags = [];
+      // Flight time check (15m to 20h in minutes)
+      var dur = parseFloat(p.duration || p.flightTime || 0);
+      if (dur < 15) flags.push('Flight time < 15 min');
+      if (dur > 1200) flags.push('Flight time > 20 hrs');
+      // Route consistency
+      if (p.dep && p.arr && p.dep.toUpperCase() === p.arr.toUpperCase()) flags.push('Dep = Arr');
+      // Landing rate
+      var lr = Math.abs(parseFloat(p.landingRate || 0));
+      if (lr > 500) flags.push('Hard landing: ' + lr + ' fpm');
+      // Fuel plausibility
+      var fuel = parseFloat(p.fuelUsed || 0);
+      if (p.fuelUsed !== undefined && fuel <= 0) flags.push('No fuel used');
+      // Aircraft check
+      if (p.aircraft && _fleet.length > 0) {
+        var found = _fleet.some(function(f) {
+          return (f.type||'').toLowerCase().indexOf(p.aircraft.toLowerCase()) >= 0 || (f.name||'').toLowerCase().indexOf(p.aircraft.toLowerCase()) >= 0;
+        });
+        if (!found) flags.push('Aircraft not in fleet');
+      }
+      return flags;
+    }
+
+    function detectDuplicates(pireps) {
+      for (var i=0; i<pireps.length; i++) {
+        for (var j=i+1; j<pireps.length; j++) {
+          var a = pireps[i], b = pireps[j];
+          if (a.uid === b.uid && a.dep === b.dep && a.arr === b.arr) {
+            var ta = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
+            var tb = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
+            if (Math.abs(ta - tb) < 30*60*1000) {
+              if (!pireps[j]._flags) pireps[j]._flags = [];
+              pireps[j]._flags.push('Possible duplicate');
+            }
+          }
+        }
+      }
+    }
+
+    async function loadData() {
+      if (!window.db) return;
+      try {
+        var fleetSnap = await window.db.collection('fleet').get();
+        _fleet = fleetSnap.docs.map(function(d) { return d.data(); });
+      } catch(e) { _fleet = []; }
+
+      try {
+        var snap = await window.db.collection('pireps').orderBy('createdAt','desc').limit(200).get();
+        _pireps = snap.docs.map(function(d) { return { id:d.id, ...d.data() }; });
+      } catch(e) { _pireps = []; }
+
+      // Run validation
+      _pireps.forEach(function(p) {
+        var flags = validatePirep(p);
+        p._flags = (p._flags || []).concat(flags);
+        if (!p.validationStatus) {
+          p.validationStatus = flags.length === 0 ? 'auto-approved' : (flags.some(function(f) { return f.indexOf('duplicate') >= 0; }) ? 'rejected' : 'flagged');
+        }
+      });
+      detectDuplicates(_pireps);
+
+      updateStats();
+      renderPireps();
+    }
+
+    function updateStats() {
+      var auto = _pireps.filter(function(p) { return p.validationStatus === 'auto-approved'; }).length;
+      var flagged = _pireps.filter(function(p) { return p.validationStatus === 'flagged'; }).length;
+      var rejected = _pireps.filter(function(p) { return p.validationStatus === 'rejected'; }).length;
+      var pending = _pireps.filter(function(p) { return p.validationStatus === 'pending'; }).length;
+      document.getElementById('pv-auto').textContent = auto;
+      document.getElementById('pv-flagged').textContent = flagged;
+      document.getElementById('pv-rejected').textContent = rejected;
+      document.getElementById('pv-pending').textContent = pending;
+      var total = _pireps.length || 1;
+      document.getElementById('pv-rate').textContent = Math.round(auto / total * 100) + '%';
+    }
+
+    function renderPireps() {
+      var filter = document.getElementById('pv-filter').value;
+      var list = filter === 'all' ? _pireps : _pireps.filter(function(p) { return p.validationStatus === filter; });
+      var el = document.getElementById('pv-list');
+
+      if (!list.length) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;font-size:0.82rem;grid-column:1/-1;">No PIREPs found</div>';
+        return;
+      }
+
+      el.innerHTML = list.slice(0,50).map(function(p) {
+        var statusClass = 'v-' + (p.validationStatus||'pending').replace('auto-approved','auto');
+        var flags = (p._flags||[]).join('; ');
+        var dur = p.duration || p.flightTime || '—';
+        return '<div class="pirep-row">'
+          + '<div style="font-weight:600;">' + esc(p.callsign || p.pilotName || '—') + '</div>'
+          + '<div style="font-family:var(--font-mono);">' + esc(p.dep||'—') + '</div>'
+          + '<div style="font-family:var(--font-mono);">' + esc(p.arr||'—') + '</div>'
+          + '<div>' + esc(p.aircraft||'—') + '</div>'
+          + '<div>' + (flags ? '<span class="flag-reason">' + esc(flags) + '</span>' : '<span style="color:var(--green);font-size:0.78rem;">✓ Clean</span>') + '</div>'
+          + '<div>' + esc(dur + (typeof dur === 'number' ? ' min' : '')) + '</div>'
+          + '<div><span class="v-badge ' + statusClass + '">' + esc(p.validationStatus||'pending') + '</span></div>'
+          + '</div>';
+      }).join('');
+    }
+
+    async function runValidation() {
+      showToast('Running validation on all PIREPs…','info');
+      _pireps.forEach(function(p) {
+        p._flags = [];
+        var flags = validatePirep(p);
+        p._flags = flags;
+        p.validationStatus = flags.length === 0 ? 'auto-approved' : 'flagged';
+      });
+      detectDuplicates(_pireps);
+
+      // Save validation results
+      if (window.db) {
+        var batch = window.db.batch();
+        var count = 0;
+        _pireps.forEach(function(p) {
+          if (count < 500) {
+            var ref = window.db.collection('pireps').doc(p.id);
+            batch.update(ref, { validationStatus: p.validationStatus, validationFlags: p._flags });
+            count++;
+          }
+        });
+        try { await batch.commit(); } catch(e) { /* ignore batch errors */ }
+      }
+
+      updateStats();
+      renderPireps();
+      showToast('✓ Validation complete — ' + _pireps.filter(function(p){return p.validationStatus==='auto-approved';}).length + ' auto-approved', 'success');
+    }
+
+    document.addEventListener('gfig:authready', function() { loadData(); });
+    if (gfigAuth.getUser()) loadData();
+  </script>
+</body>
+</html>

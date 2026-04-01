@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Landing Rate — GFIG</title>
+  <meta name="description" content="Track your landing rates and compete on the leaderboard.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .lr-form { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px; align-items:end; margin-bottom:24px; }
+    .lr-entry { display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg-secondary); border-radius:var(--r-md); margin-bottom:8px; }
+    .lr-rate { font-family:var(--font-mono); font-weight:700; font-size:1.1rem; min-width:80px; text-align:center; }
+    .lr-rate.butter { color:#00e676; }
+    .lr-rate.good { color:var(--blue-light); }
+    .lr-rate.ok { color:var(--monitor); }
+    .lr-rate.hard { color:var(--fail); }
+    .lr-grade { font-size:0.68rem; font-weight:700; letter-spacing:0.06em; padding:2px 8px; border-radius:8px; }
+    .lr-chart-bar { display:flex; align-items:flex-end; gap:3px; height:120px; padding:8px 0; }
+    .lr-chart-bar .bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; }
+    .lr-chart-bar .bar { border-radius:3px 3px 0 0; min-height:2px; transition:height 0.3s; width:100%; }
+    @media(max-width:768px) { .lr-form { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a><a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a><a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a><a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a><a href="roster.html" class="nav-link">◔ Roster</a><a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar" id="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div><h1>Landing Rate Tracker</h1><p>Log your touchdown rates and track your personal bests</p></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid-4 mb-24">
+        <div class="metric-card"><span class="metric-icon">🎯</span><div class="metric-value" id="lr-avg">—</div><div class="metric-label">Average (fpm)</div></div>
+        <div class="metric-card"><span class="metric-icon">🥇</span><div class="metric-value" id="lr-best">—</div><div class="metric-label">Personal Best</div></div>
+        <div class="metric-card"><span class="metric-icon">🧈</span><div class="metric-value" id="lr-butter">0</div><div class="metric-label">Butter Landings</div></div>
+        <div class="metric-card"><span class="metric-icon">📊</span><div class="metric-value" id="lr-total">0</div><div class="metric-label">Total Logged</div></div>
+      </div>
+
+      <!-- Log Form -->
+      <div class="card mb-24">
+        <div class="card-title mb-16">Log Landing Rate</div>
+        <div class="lr-form">
+          <div><label class="form-label">Landing Rate (fpm)</label><input type="number" class="form-control" id="lr-rate-input" placeholder="-120" step="1"></div>
+          <div><label class="form-label">Airport (ICAO)</label><input type="text" class="form-control" id="lr-airport" placeholder="EGLL" maxlength="4" style="text-transform:uppercase;"></div>
+          <div><label class="form-label">Aircraft</label><input type="text" class="form-control" id="lr-aircraft" placeholder="B737-800"></div>
+          <button class="btn btn-primary" onclick="logLanding()" style="height:42px;">Log Landing</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <!-- Chart -->
+        <div class="card">
+          <div class="card-title mb-16">📊 Landing Rate History</div>
+          <div id="lr-chart" class="lr-chart-bar">
+            <div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;width:100%;">No landings logged yet</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-muted);margin-top:4px;">
+            <span>🧈 &lt;60 Butter</span><span>✓ 60-150 Good</span><span>⚠ 150-250 OK</span><span>✗ &gt;250 Hard</span>
+          </div>
+        </div>
+
+        <!-- Recent Landings -->
+        <div class="card">
+          <div class="card-title mb-16">Recent Landings</div>
+          <div id="lr-list">
+            <div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">No landings logged yet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Global Leaderboard -->
+      <div class="card" style="margin-top:24px;">
+        <div class="card-header">
+          <span class="card-title">🏆 Softest Landings Leaderboard</span>
+          <span class="text-xs text-sub">Best single landing rate per pilot</span>
+        </div>
+        <div id="lr-leaderboard">
+          <div style="text-align:center;color:var(--text-muted);padding:32px;font-size:0.82rem;">Loading leaderboard…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer><div class="container"><div class="footer-bottom"><span>© 2026 Global Flight Inspection Group</span><span>Not affiliated with any real-world aviation authority.</span></div></div></footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _uid = null;
+    var _myLandings = [];
+
+    function esc(s) { var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+    function gradeRate(fpm) {
+      var abs = Math.abs(fpm);
+      if (abs < 60) return { grade:'BUTTER', cls:'butter', bg:'rgba(0,230,118,0.12)', bc:'rgba(0,230,118,0.3)' };
+      if (abs < 150) return { grade:'GOOD', cls:'good', bg:'rgba(64,170,255,0.12)', bc:'rgba(64,170,255,0.3)' };
+      if (abs < 250) return { grade:'OK', cls:'ok', bg:'var(--monitor-bg)', bc:'var(--monitor-border)' };
+      return { grade:'HARD', cls:'hard', bg:'var(--fail-bg)', bc:'var(--fail-border)' };
+    }
+
+    async function loadLandings() {
+      var user = gfigAuth.getUser();
+      _uid = user ? user.uid : null;
+      if (!_uid || !window.db) return;
+
+      try {
+        var snap = await window.db.collection('landing_rates').where('uid', '==', _uid).orderBy('loggedAt', 'desc').get();
+        _myLandings = snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+      } catch(e) { _myLandings = []; }
+
+      renderLandings();
+      loadLeaderboard();
+    }
+
+    function renderLandings() {
+      // Stats
+      if (_myLandings.length) {
+        var rates = _myLandings.map(function(l) { return Math.abs(l.rate); });
+        var avg = rates.reduce(function(s,v) { return s+v; }, 0) / rates.length;
+        var best = Math.min.apply(null, rates);
+        var butterCount = rates.filter(function(r) { return r < 60; }).length;
+        document.getElementById('lr-avg').textContent = Math.round(avg);
+        document.getElementById('lr-best').textContent = '-' + best;
+        document.getElementById('lr-butter').textContent = butterCount;
+      }
+      document.getElementById('lr-total').textContent = _myLandings.length;
+
+      // Chart (last 20)
+      var chartData = _myLandings.slice(0, 20).reverse();
+      var chartEl = document.getElementById('lr-chart');
+      if (!chartData.length) { chartEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;width:100%;">No landings yet</div>'; return; }
+
+      var maxRate = Math.max.apply(null, chartData.map(function(l) { return Math.abs(l.rate); })) || 1;
+      chartEl.innerHTML = chartData.map(function(l) {
+        var abs = Math.abs(l.rate);
+        var pct = Math.max(abs / maxRate * 100, 4);
+        var g = gradeRate(l.rate);
+        var color = g.cls === 'butter' ? '#00e676' : g.cls === 'good' ? 'var(--blue-light)' : g.cls === 'ok' ? 'var(--monitor)' : 'var(--fail)';
+        return '<div class="bar-col" title="-' + abs + ' fpm · ' + esc(l.airport||'') + '">'
+          + '<div style="font-size:0.55rem;color:var(--text-muted);">' + abs + '</div>'
+          + '<div class="bar" style="height:' + pct + '%;background:' + color + ';"></div>'
+          + '</div>';
+      }).join('');
+
+      // List
+      var listEl = document.getElementById('lr-list');
+      listEl.innerHTML = _myLandings.slice(0, 15).map(function(l) {
+        var abs = Math.abs(l.rate);
+        var g = gradeRate(l.rate);
+        var date = l.loggedAt && l.loggedAt.toDate ? l.loggedAt.toDate().toLocaleDateString() : '';
+        return '<div class="lr-entry">'
+          + '<div class="lr-rate ' + g.cls + '">-' + abs + '</div>'
+          + '<div style="flex:1;"><div style="font-size:0.82rem;font-weight:600;">' + esc(l.airport||'—') + '</div>'
+          + '<div style="font-size:0.72rem;color:var(--text-sub);">' + esc(l.aircraft||'') + ' · ' + date + '</div></div>'
+          + '<span class="lr-grade" style="background:' + g.bg + ';color:' + (g.cls==='butter'?'#00e676':g.cls==='good'?'var(--blue-light)':g.cls==='ok'?'var(--monitor)':'var(--fail)') + ';border:1px solid ' + g.bc + ';">' + g.grade + '</span>'
+          + '</div>';
+      }).join('');
+    }
+
+    async function logLanding() {
+      if (!_uid || !window.db) { showToast('Sign in to log landings', 'warn'); return; }
+      var rate = parseInt(document.getElementById('lr-rate-input').value);
+      var airport = (document.getElementById('lr-airport').value || '').trim().toUpperCase();
+      var aircraft = (document.getElementById('lr-aircraft').value || '').trim();
+      if (isNaN(rate)) { showToast('Enter a landing rate (fpm)', 'warn'); return; }
+      if (rate > 0) rate = -rate; // Ensure negative
+
+      try {
+        var ref = await window.db.collection('landing_rates').add({
+          uid: _uid, rate: rate, airport: airport, aircraft: aircraft, loggedAt: window.serverTimestamp()
+        });
+        _myLandings.unshift({ id: ref.id, uid: _uid, rate: rate, airport: airport, aircraft: aircraft, loggedAt: { toDate: function() { return new Date(); } } });
+        document.getElementById('lr-rate-input').value = '';
+        document.getElementById('lr-airport').value = '';
+        document.getElementById('lr-aircraft').value = '';
+        showToast('✓ Landing logged: ' + rate + ' fpm', 'success');
+        renderLandings();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function loadLeaderboard() {
+      if (!window.db) return;
+      try {
+        var snap = await window.db.collection('landing_rates').get();
+        var byPilot = {};
+        snap.docs.forEach(function(d) {
+          var data = d.data();
+          var abs = Math.abs(data.rate);
+          if (!byPilot[data.uid] || abs < byPilot[data.uid].best) {
+            byPilot[data.uid] = { best: abs, airport: data.airport, aircraft: data.aircraft };
+          }
+        });
+
+        var usersSnap = await window.db.collection('users').get();
+        var users = {};
+        usersSnap.docs.forEach(function(d) { users[d.id] = d.data(); });
+
+        var sorted = Object.entries(byPilot).sort(function(a,b) { return a[1].best - b[1].best; });
+        var lbEl = document.getElementById('lr-leaderboard');
+        if (!sorted.length) { lbEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;font-size:0.82rem;">No landings yet</div>'; return; }
+
+        lbEl.innerHTML = sorted.slice(0,10).map(function(e,idx) {
+          var uid = e[0], data = e[1];
+          var name = users[uid] ? (users[uid].callsign || users[uid].name || 'Pilot') : 'Pilot';
+          var g = gradeRate(-data.best);
+          var rankClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
+          return '<div class="lr-entry">'
+            + '<div class="hof-rank ' + rankClass + '" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-size:0.75rem;font-weight:700;' + (rankClass?'':'background:var(--bg-card);color:var(--text-muted);border:1px solid var(--border);') + '">' + (idx+1) + '</div>'
+            + '<div style="flex:1;"><div style="font-weight:700;">' + esc(name) + '</div>'
+            + '<div style="font-size:0.72rem;color:var(--text-sub);">' + esc(data.airport||'') + ' · ' + esc(data.aircraft||'') + '</div></div>'
+            + '<div class="lr-rate ' + g.cls + '" style="font-size:0.95rem;">-' + data.best + '</div>'
+            + '</div>';
+        }).join('');
+      } catch(e) { console.error('Leaderboard error:', e); }
+    }
+
+    document.addEventListener('gfig:authready', function() { loadLandings(); });
+    if (gfigAuth.getUser()) loadLandings();
+  </script>
+</body>
+</html>

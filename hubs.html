@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hub System — GFIG</title>
+  <meta name="description" content="GFIG operational hubs with routes, leaderboards, and management.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .hub-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; }
+    .hub-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden; transition:border-color 0.2s; }
+    .hub-card:hover { border-color:var(--blue-light); }
+    .hub-banner { height:80px; display:flex; align-items:center; justify-content:center; position:relative; }
+    .hub-icao { font-family:var(--font-mono); font-size:2rem; font-weight:900; letter-spacing:0.08em; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,0.4); }
+    .hub-body { padding:16px; }
+    .hub-name { font-weight:700; font-size:0.95rem; margin-bottom:4px; }
+    .hub-loc { font-size:0.78rem; color:var(--text-sub); margin-bottom:12px; }
+    .hub-stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+    .hub-mini-stat { text-align:center; }
+    .hub-mini-stat .v { font-family:var(--font-mono); font-weight:700; font-size:0.95rem; color:var(--blue-light); }
+    .hub-mini-stat .l { font-size:0.62rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; }
+    .hub-routes { max-height:120px; overflow-y:auto; }
+    .hub-route-item { display:flex; justify-content:space-between; padding:4px 0; font-size:0.78rem; border-bottom:1px solid var(--border); }
+    .hub-route-item:last-child { border-bottom:none; }
+    .hub-route-item .code { font-family:var(--font-mono); font-weight:600; color:var(--blue-light); }
+    .hub-manager { display:flex; align-items:center; gap:8px; padding:8px 12px; background:rgba(0,119,255,0.06); border-radius:var(--r-md); font-size:0.78rem; margin-top:10px; }
+    .hub-manager-av { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,rgba(0,119,255,0.2),rgba(0,119,255,0.08)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.65rem; color:var(--blue-light); }
+    .my-hub-badge { position:absolute; top:8px; right:8px; padding:3px 10px; border-radius:var(--r-full); font-size:0.65rem; font-weight:700; background:rgba(0,188,140,0.9); color:#fff; }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a><a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a><a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a><a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a><a href="roster.html" class="nav-link">◔ Roster</a><a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar" id="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div><h1>Hub System</h1><p>GFIG operational hubs — choose your home base and fly hub routes</p></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;">
+        <div class="card" style="text-align:center;padding:16px;">
+          <div style="font-family:var(--font-mono);font-size:1.5rem;font-weight:700;color:var(--blue-light);" id="hub-count">0</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;">Active Hubs</div>
+        </div>
+        <div class="card" style="text-align:center;padding:16px;">
+          <div style="font-family:var(--font-mono);font-size:1.5rem;font-weight:700;color:var(--blue-light);" id="hub-routes-total">0</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;">Total Routes</div>
+        </div>
+        <div class="card" style="text-align:center;padding:16px;">
+          <div style="font-family:var(--font-mono);font-size:1.5rem;font-weight:700;color:var(--blue-light);" id="hub-pilots">0</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;">Hub Pilots</div>
+        </div>
+        <div class="card" style="text-align:center;padding:16px;">
+          <div style="font-family:var(--font-mono);font-size:1.1rem;font-weight:700;color:var(--green);" id="hub-my">None</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;">My Home Hub</div>
+        </div>
+      </div>
+
+      <div class="hub-grid" id="hub-grid"></div>
+    </div>
+  </div>
+
+  <footer><div class="container"><div class="footer-bottom"><span>© 2026 Global Flight Inspection Group</span><span>Not affiliated with any real-world aviation authority.</span></div></div></footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var _uid = null;
+
+    var defaultHubs = [
+      {
+        icao: 'EGLL', name: 'London Heathrow', location: 'London, United Kingdom',
+        color: 'linear-gradient(135deg,#1a3a5c,#0d2137)',
+        manager: 'Staff', managerName: 'Hub Manager',
+        routes: [
+          { dest:'KJFK', aircraft:'B777-300ER' }, { dest:'EDDF', aircraft:'A320neo' },
+          { dest:'LFPG', aircraft:'A320neo' }, { dest:'EHAM', aircraft:'A320neo' },
+          { dest:'OMDB', aircraft:'A380-800' }, { dest:'WSSS', aircraft:'A350-900' },
+          { dest:'LEMD', aircraft:'A320neo' }, { dest:'LIRF', aircraft:'A320neo' }
+        ],
+        pilots: 0
+      },
+      {
+        icao: 'KJFK', name: 'John F Kennedy Intl', location: 'New York, United States',
+        color: 'linear-gradient(135deg,#2d1a4e,#1a0d2f)',
+        manager: 'Staff', managerName: 'Hub Manager',
+        routes: [
+          { dest:'EGLL', aircraft:'B777-300ER' }, { dest:'KLAX', aircraft:'B737-800' },
+          { dest:'KATL', aircraft:'B737-800' }, { dest:'KORD', aircraft:'B737-800' },
+          { dest:'LFPG', aircraft:'B787-9' }, { dest:'CYYZ', aircraft:'A320neo' }
+        ],
+        pilots: 0
+      },
+      {
+        icao: 'OMDB', name: 'Dubai International', location: 'Dubai, United Arab Emirates',
+        color: 'linear-gradient(135deg,#4a3a1a,#2f2510)',
+        manager: 'Staff', managerName: 'Hub Manager',
+        routes: [
+          { dest:'EGLL', aircraft:'A380-800' }, { dest:'KJFK', aircraft:'B777-300ER' },
+          { dest:'WSSS', aircraft:'A350-900' }, { dest:'VABB', aircraft:'B787-9' },
+          { dest:'FAOR', aircraft:'A350-900' }
+        ],
+        pilots: 0
+      },
+      {
+        icao: 'WSSS', name: 'Singapore Changi', location: 'Singapore',
+        color: 'linear-gradient(135deg,#1a4a3a,#0d2f25)',
+        manager: 'Staff', managerName: 'Hub Manager',
+        routes: [
+          { dest:'YSSY', aircraft:'A350-900' }, { dest:'OMDB', aircraft:'A350-900' },
+          { dest:'RJTT', aircraft:'B787-9' }, { dest:'VHHH', aircraft:'A320neo' },
+          { dest:'VTBS', aircraft:'A320neo' }
+        ],
+        pilots: 0
+      },
+      {
+        icao: 'YSSY', name: 'Sydney Kingsford Smith', location: 'Sydney, Australia',
+        color: 'linear-gradient(135deg,#1a2a4a,#0d1a2f)',
+        manager: 'Staff', managerName: 'Hub Manager',
+        routes: [
+          { dest:'WSSS', aircraft:'A350-900' }, { dest:'NZAA', aircraft:'B787-9' },
+          { dest:'YMML', aircraft:'B737-800' }, { dest:'YBBN', aircraft:'B737-800' }
+        ],
+        pilots: 0
+      }
+    ];
+
+    function esc(s) { var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+    async function loadHubs() {
+      var user = gfigAuth.getUser();
+      _uid = user ? user.uid : null;
+      if (!window.db) { renderHubs(defaultHubs, null); return; }
+
+      var hubs = defaultHubs;
+      try {
+        var snap = await window.db.collection('hubs').get();
+        if (snap.size > 0) hubs = snap.docs.map(function(d) { return { id:d.id, ...d.data() }; });
+      } catch(e) {}
+
+      // Get user's home hub
+      var myHub = null;
+      if (_uid) {
+        try {
+          var uDoc = await window.db.collection('users').doc(_uid).get();
+          if (uDoc.exists) myHub = uDoc.data().homeHub || null;
+        } catch(e) {}
+      }
+
+      // Count pilots per hub
+      try {
+        var usersSnap = await window.db.collection('users').get();
+        var hubCounts = {};
+        usersSnap.forEach(function(d) {
+          var h = d.data().homeHub;
+          if (h) hubCounts[h] = (hubCounts[h]||0) + 1;
+        });
+        hubs.forEach(function(hub) { hub.pilots = hubCounts[hub.icao] || 0; });
+      } catch(e) {}
+
+      renderHubs(hubs, myHub);
+    }
+
+    function renderHubs(hubs, myHub) {
+      var totalRoutes = 0;
+      var totalPilots = 0;
+      hubs.forEach(function(h) {
+        totalRoutes += (h.routes||[]).length;
+        totalPilots += (h.pilots||0);
+      });
+
+      document.getElementById('hub-count').textContent = hubs.length;
+      document.getElementById('hub-routes-total').textContent = totalRoutes;
+      document.getElementById('hub-pilots').textContent = totalPilots;
+      document.getElementById('hub-my').textContent = myHub || 'None';
+
+      document.getElementById('hub-grid').innerHTML = hubs.map(function(h) {
+        var isMyHub = myHub && myHub === h.icao;
+        var routeHtml = (h.routes||[]).map(function(r) {
+          return '<div class="hub-route-item"><span class="code">' + h.icao + ' → ' + esc(r.dest) + '</span><span>' + esc(r.aircraft) + '</span></div>';
+        }).join('');
+
+        return '<div class="hub-card">'
+          + '<div class="hub-banner" style="background:' + (h.color||'linear-gradient(135deg,#1a3a5c,#0d2137)') + ';">'
+          + '<div class="hub-icao">' + esc(h.icao) + '</div>'
+          + (isMyHub ? '<div class="my-hub-badge">MY HUB</div>' : '')
+          + '</div>'
+          + '<div class="hub-body">'
+          + '<div class="hub-name">' + esc(h.name) + '</div>'
+          + '<div class="hub-loc">' + esc(h.location) + '</div>'
+          + '<div class="hub-stats-row">'
+          + '<div class="hub-mini-stat"><div class="v">' + (h.routes||[]).length + '</div><div class="l">Routes</div></div>'
+          + '<div class="hub-mini-stat"><div class="v">' + (h.pilots||0) + '</div><div class="l">Pilots</div></div>'
+          + '<div class="hub-mini-stat"><div class="v">' + esc(h.icao) + '</div><div class="l">ICAO</div></div>'
+          + '</div>'
+          + '<div class="hub-routes">' + routeHtml + '</div>'
+          + '<div class="hub-manager"><div class="hub-manager-av">' + (h.managerName||'?').charAt(0) + '</div><span>Hub Manager: <strong>' + esc(h.managerName||'Staff') + '</strong></span></div>'
+          + (!isMyHub && _uid ? '<button class="btn btn-primary" onclick="setHomeHub(\'' + esc(h.icao) + '\')" style="width:100%;margin-top:10px;font-size:0.82rem;">Set as Home Hub</button>' : '')
+          + '</div></div>';
+      }).join('');
+    }
+
+    async function setHomeHub(icao) {
+      if (!_uid || !window.db) { showToast('Sign in first','warn'); return; }
+      try {
+        await window.db.collection('users').doc(_uid).update({ homeHub: icao });
+        showToast('✓ Home hub set to ' + icao, 'success');
+        loadHubs();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    document.addEventListener('gfig:authready', function() { loadHubs(); });
+    if (gfigAuth.getUser()) loadHubs();
+  </script>
+</body>
+</html>

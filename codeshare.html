@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codeshare Partnerships — GFIG</title>
+  <meta name="description" content="GFIG partner virtual airlines and codeshare routes.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .partner-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+    .partner-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:24px; transition:border-color 0.2s; }
+    .partner-card:hover { border-color:var(--blue-light); }
+    .partner-logo { width:56px; height:56px; background:linear-gradient(135deg,rgba(0,119,255,0.12),rgba(0,119,255,0.06)); border-radius:var(--r-md); display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:700; color:var(--blue-light); margin-bottom:14px; }
+    .partner-name { font-size:1.05rem; font-weight:700; margin-bottom:4px; }
+    .partner-desc { font-size:0.82rem; color:var(--text-sub); line-height:1.5; margin-bottom:12px; }
+    .partner-tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+    .partner-tag { padding:2px 8px; border-radius:var(--r-full); font-size:0.68rem; font-weight:600; background:rgba(0,119,255,0.1); color:var(--blue-light); border:1px solid rgba(0,119,255,0.2); }
+    .codeshare-route { display:flex; align-items:center; gap:8px; padding:6px 0; font-size:0.82rem; border-bottom:1px solid var(--border); }
+    .codeshare-route:last-child { border-bottom:none; }
+    .codeshare-route .cs-code { font-family:var(--font-mono); font-weight:700; color:var(--blue-light); min-width:74px; }
+    .codeshare-route .cs-route { color:var(--text-sub); }
+    .partner-link { display:inline-block; padding:6px 14px; border-radius:var(--r-md); font-size:0.78rem; font-weight:600; background:rgba(0,119,255,0.08); color:var(--blue-light); border:1px solid rgba(0,119,255,0.2); text-decoration:none; transition:background 0.2s; }
+    .partner-link:hover { background:rgba(0,119,255,0.16); }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a><a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a><a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a><a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a><a href="roster.html" class="nav-link">◔ Roster</a><a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar" id="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name" id="nav-name">Member</div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div><h1>Codeshare Partnerships</h1><p>Fly codeshare routes with our partner virtual airlines</p></div>
+      </div>
+
+      <div class="stats-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;">
+        <div class="card" style="text-align:center;padding:16px;">
+          <div style="font-family:var(--font-mono);font-size:1.5rem;font-weight:700;color:var(--blue-light);" id="cs-partners">0</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;">Partner VAs</div>
+        </div>
+        <div class="card" style="text-align:center;padding:16px;">
+          <div style="font-family:var(--font-mono);font-size:1.5rem;font-weight:700;color:var(--blue-light);" id="cs-routes">0</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;">Codeshare Routes</div>
+        </div>
+        <div class="card" style="text-align:center;padding:16px;">
+          <div style="font-family:var(--font-mono);font-size:1.5rem;font-weight:700;color:var(--green);" id="cs-active">ACTIVE</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;">Programme Status</div>
+        </div>
+      </div>
+
+      <div class="partner-grid" id="cs-grid"></div>
+    </div>
+  </div>
+
+  <footer><div class="container"><div class="footer-bottom"><span>© 2026 Global Flight Inspection Group</span><span>Not affiliated with any real-world aviation authority.</span></div></div></footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var defaultPartners = [
+      {
+        code: 'SVA', name: 'SkyVoyage Airlines', icon: 'SV',
+        desc: 'European-focused virtual airline operating from major EU hubs with emphasis on realistic operations.',
+        tags: ['Europe', 'Short-haul', 'Airbus'],
+        website: '#',
+        routes: [
+          { code: 'GFI/SVA-101', route: 'EGLL → EDDF' },
+          { code: 'GFI/SVA-102', route: 'EGLL → LFPG' },
+          { code: 'GFI/SVA-103', route: 'EGLL → EHAM' }
+        ]
+      },
+      {
+        code: 'PAC', name: 'Pacific Star Virtual', icon: 'PS',
+        desc: 'Asia-Pacific carrier connecting major hubs across Australia, Southeast Asia, and the Pacific Islands.',
+        tags: ['Asia-Pacific', 'Long-haul', 'Boeing'],
+        website: '#',
+        routes: [
+          { code: 'GFI/PAC-201', route: 'YSSY → WSSS' },
+          { code: 'GFI/PAC-202', route: 'NZAA → YSSY' },
+          { code: 'GFI/PAC-203', route: 'WSSS → VHHH' }
+        ]
+      },
+      {
+        code: 'ATL', name: 'Atlantic Bridge VA', icon: 'AB',
+        desc: 'Transatlantic specialists operating widebody routes between North America and Europe.',
+        tags: ['Transatlantic', 'Widebody', 'Mixed Fleet'],
+        website: '#',
+        routes: [
+          { code: 'GFI/ATL-301', route: 'KJFK → EGLL' },
+          { code: 'GFI/ATL-302', route: 'KATL → EIDW' },
+          { code: 'GFI/ATL-303', route: 'CYYZ → EGLL' },
+          { code: 'GFI/ATL-304', route: 'KJFK → LFPG' }
+        ]
+      },
+      {
+        code: 'DSV', name: 'Desert Sky Virtual', icon: 'DS',
+        desc: 'Middle-Eastern carrier with luxury long-haul operations from Dubai and Doha.',
+        tags: ['Middle East', 'Long-haul', 'A380'],
+        website: '#',
+        routes: [
+          { code: 'GFI/DSV-401', route: 'OMDB → EGLL' },
+          { code: 'GFI/DSV-402', route: 'OTHH → KJFK' }
+        ]
+      },
+      {
+        code: 'NAV', name: 'Nordic Air Virtual', icon: 'NA',
+        desc: 'Scandinavian and Arctic operations including challenging airports and winter weather flying.',
+        tags: ['Nordic', 'Regional', 'Challenging Ops'],
+        website: '#',
+        routes: [
+          { code: 'GFI/NAV-501', route: 'ENGM → BIKF' },
+          { code: 'GFI/NAV-502', route: 'ESSA → EFHK' }
+        ]
+      }
+    ];
+
+    function esc(s) { var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+    async function loadPartners() {
+      var partners = defaultPartners;
+      if (window.db) {
+        try {
+          var snap = await window.db.collection('codeshare_partners').get();
+          if (snap.size > 0) {
+            partners = snap.docs.map(function(d) { return { id:d.id, ...d.data() }; });
+          }
+        } catch(e) { /* use defaults */ }
+      }
+
+      var totalRoutes = 0;
+      partners.forEach(function(p) { totalRoutes += (p.routes||[]).length; });
+      document.getElementById('cs-partners').textContent = partners.length;
+      document.getElementById('cs-routes').textContent = totalRoutes;
+
+      document.getElementById('cs-grid').innerHTML = partners.map(function(p) {
+        var routeHtml = (p.routes||[]).map(function(r) {
+          return '<div class="codeshare-route"><span class="cs-code">' + esc(r.code) + '</span><span class="cs-route">' + esc(r.route) + '</span></div>';
+        }).join('');
+        var tagHtml = (p.tags||[]).map(function(t) { return '<span class="partner-tag">' + esc(t) + '</span>'; }).join('');
+        return '<div class="partner-card">'
+          + '<div class="partner-logo">' + esc(p.icon||p.code.slice(0,2)) + '</div>'
+          + '<div class="partner-name">' + esc(p.name) + '</div>'
+          + '<div class="partner-desc">' + esc(p.desc) + '</div>'
+          + '<div class="partner-tags">' + tagHtml + '</div>'
+          + '<div style="margin-bottom:14px;">' + routeHtml + '</div>'
+          + (p.website && p.website !== '#' ? '<a href="' + esc(p.website) + '" target="_blank" rel="noopener" class="partner-link">Visit Partner →</a>' : '')
+          + '</div>';
+      }).join('');
+    }
+
+    document.addEventListener('gfig:authready', function() { loadPartners(); });
+    if (gfigAuth.getUser()) loadPartners();
+  </script>
+</body>
+</html>

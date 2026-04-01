@@ -1,0 +1,27 @@
+{
+  "name": "GFIG Virtual Airline",
+  "short_name": "GFIG",
+  "description": "Global Flight Inspection Group — Virtual Airline Operations Hub",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0b1f3a",
+  "theme_color": "#0077ff",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "lang": "en",
+  "scope": "/"
+}

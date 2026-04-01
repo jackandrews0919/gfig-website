@@ -69,15 +69,29 @@ document.addEventListener('DOMContentLoaded', () => {
   var currentPage = (window.location.pathname.split('/').pop() || '').toLowerCase();
   if (publicPages.indexOf(currentPage) !== -1) return;
   var toolsPages = [
-    { href:'logbook.html',      label:'📒 Logbook' },
-    { href:'pireps.html',       label:'📡 PIREPs' },
-    { href:'dispatch.html',     label:'📋 Dispatch' },
-    { href:'weather.html',      label:'🌤 Weather' },
-    { href:'fleet.html',        label:'✈ Fleet' },
-    { href:'map.html',          label:'🗺 Route Map' },
-    { href:'achievements.html', label:'🏆 Achievements' },
-    { href:'documents.html',    label:'📁 Documents' },
-    { href:'stats.html',        label:'📊 Statistics' }
+    { href:'logbook.html',           label:'📒 Logbook' },
+    { href:'pireps.html',            label:'📡 PIREPs' },
+    { href:'dispatch.html',          label:'📋 Dispatch' },
+    { href:'weather.html',           label:'🌤 Weather' },
+    { href:'fleet.html',             label:'✈ Fleet' },
+    { href:'map.html',               label:'🗺 Route Map' },
+    { href:'achievements.html',      label:'🏆 Achievements' },
+    { href:'documents.html',         label:'📁 Documents' },
+    { href:'stats.html',             label:'📊 Statistics' },
+    { href:'livemap.html',           label:'📡 Live Map' },
+    { href:'tours.html',             label:'🧭 Tours' },
+    { href:'schedule.html',          label:'🕐 Schedule' },
+    { href:'typeratings.html',       label:'📜 Type Ratings' },
+    { href:'awards.html',            label:'🥇 Awards' },
+    { href:'landings.html',          label:'🛬 Landings' },
+    { href:'crewpairing.html',       label:'👨‍✈️ Crew Pairing' },
+    { href:'mentorship.html',        label:'🎓 Mentorship' },
+    { href:'codeshare.html',         label:'🤝 Codeshare' },
+    { href:'forum.html',             label:'💬 Forum' },
+    { href:'safety.html',            label:'🔒 Safety Reports' },
+    { href:'pirepvalidation.html',   label:'✅ PIREP Validation' },
+    { href:'hubs.html',              label:'🏠 Hubs' },
+    { href:'notifications-settings.html', label:'🔔 Notifications' }
   ];
   // Build dropdown wrapper
   var wrap = document.createElement('div');
