@@ -28,6 +28,14 @@ const FIREBASE_CONFIG = {
   appId:             "YOUR_APP_ID"
 };
 
+/* ── Bootstrap admin accounts ─────────────────────────────────
+   Emails listed here are always treated as admins, even before
+   a Firestore user document exists. Add/remove as needed.
+   ─────────────────────────────────────────────────────────── */
+window.GFIG_ADMIN_EMAILS = [
+  'jackandrews0919@gmail.com'
+];
+
 /* ── Initialize (only when config is filled in) ── */
 window.GFIG_FIREBASE_READY = false;
 window.db   = null;

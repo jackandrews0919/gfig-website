@@ -117,11 +117,13 @@ const gfigAuth = {
         let profile = null;
         try {
           const doc = await window.db.collection('users').doc(firebaseUser.uid).get();
+          const isBootstrapAdmin = (window.GFIG_ADMIN_EMAILS || []).includes(firebaseUser.email);
           profile = doc.exists
-            ? { uid: firebaseUser.uid, ...doc.data() }
-            : { uid: firebaseUser.uid, name: firebaseUser.email, avatar: 'IN', isAdmin: false, email: firebaseUser.email };
+            ? { uid: firebaseUser.uid, ...doc.data(), isAdmin: doc.data().isAdmin || isBootstrapAdmin }
+            : { uid: firebaseUser.uid, name: firebaseUser.email, avatar: 'IN', isAdmin: isBootstrapAdmin, email: firebaseUser.email };
         } catch {
-          profile = { uid: firebaseUser.uid, name: firebaseUser.email, avatar: 'IN', isAdmin: false };
+          const isBootstrapAdmin = (window.GFIG_ADMIN_EMAILS || []).includes(firebaseUser.email);
+          profile = { uid: firebaseUser.uid, name: firebaseUser.email, avatar: 'IN', isAdmin: isBootstrapAdmin };
         }
 
         this._currentUser = profile;
