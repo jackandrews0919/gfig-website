@@ -36,6 +36,7 @@
         <a href="training.html"  class="nav-link">◎ Training</a>
         <a href="events.html"    class="nav-link">◗ Events</a>
         <a href="sops.html"      class="nav-link">≡ SOPs</a>
+        <a href="roster.html"    class="nav-link">◔ Roster</a>
         <a href="profile.html"   class="nav-link active">▣ Profile</a>
       </div>
       <div class="nav-actions">
@@ -81,6 +82,7 @@
           <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
             <span class="rank-badge rank-junior" id="profile-rank-badge">Trainee Inspector</span>
             <span class="badge badge-active">● Online</span>
+            <span class="badge" id="profile-vatsim-badge" style="display:none;background:#26A69A;color:#fff;"></span>
           </div>
           <div class="profile-meta">
             <div class="profile-meta-item" id="meta-joined">📅 Joined —</div>
@@ -296,18 +298,18 @@
         </div>
         <div>
           <div class="footer-col-title">Rank System</div>
-          <a href="#" class="footer-link">Trainee Inspector</a>
-          <a href="#" class="footer-link">Junior Inspector</a>
-          <a href="#" class="footer-link">Inspector</a>
-          <a href="#" class="footer-link">Senior Inspector</a>
-          <a href="#" class="footer-link">Chief Inspector</a>
+          <a href="sops.html" class="footer-link">Trainee Inspector</a>
+          <a href="sops.html" class="footer-link">Junior Inspector</a>
+          <a href="sops.html" class="footer-link">Inspector</a>
+          <a href="sops.html" class="footer-link">Senior Inspector</a>
+          <a href="sops.html" class="footer-link">Chief Inspector</a>
         </div>
         <div>
           <div class="footer-col-title">Community</div>
-          <a href="#" class="footer-link">Discord Server</a>
-          <a href="#" class="footer-link">Rules & SOPs</a>
-          <a href="#" class="footer-link">Support</a>
-          <a href="#" class="footer-link">About GFIG</a>
+          <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="footer-link">Discord Server</a>
+          <a href="sops.html" class="footer-link">Rules &amp; SOPs</a>
+          <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="footer-link">Support</a>
+          <a href="index.html" class="footer-link">About GFIG</a>
         </div>
       </div>
       <div class="footer-bottom">
@@ -417,6 +419,13 @@
         } else {
           rankProg.innerHTML = info.rank + ' → <span class="text-orange font-bold">' + (info.next || 'Max Rank') + '</span>';
         }
+      }
+
+      /* VATSIM ATC Rating badge */
+      const vBadge = document.getElementById('profile-vatsim-badge');
+      if (vBadge && user.vatsimAtcRating) {
+        vBadge.textContent = 'VATSIM ATC: ' + user.vatsimAtcRating;
+        vBadge.style.display = '';
       }
 
       /* Earned certifications — only show if user has them in Firestore */

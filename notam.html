@@ -176,6 +176,7 @@
         <a href="training.html"  class="nav-link">◎ Training</a>
         <a href="events.html"    class="nav-link">◗ Events</a>
         <a href="sops.html"      class="nav-link">≡ SOPs</a>
+        <a href="roster.html"    class="nav-link">◔ Roster</a>
         <a href="profile.html"   class="nav-link">▣ Profile</a>
       </div>
       <div class="nav-actions">
@@ -210,6 +211,15 @@
           <button class="btn btn-secondary" onclick="location.reload()">↻ Refresh</button>
         </div>
       </div>
+
+      <!-- Tab Switcher -->
+      <div style="display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid var(--border);">
+        <button id="tab-gfig" onclick="switchTab('gfig')" style="padding:12px 24px;font-family:var(--font-head);font-size:0.82rem;font-weight:700;letter-spacing:0.08em;background:none;border:none;border-bottom:2px solid var(--blue);color:var(--blue-light);cursor:pointer;margin-bottom:-2px;">GFIG NOTAMs</button>
+        <button id="tab-live" onclick="switchTab('live')" style="padding:12px 24px;font-family:var(--font-head);font-size:0.82rem;font-weight:700;letter-spacing:0.08em;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);cursor:pointer;margin-bottom:-2px;">Real-World NOTAMs</button>
+      </div>
+
+      <!-- ═══ GFIG NOTAMs Tab ═══ -->
+      <div id="panel-gfig">
 
       <!-- Summary Stats -->
       <div class="notam-summary">
@@ -269,6 +279,68 @@
           <div style="font-size:0.8rem;">NOTAMs will appear here when published by staff via the Admin Panel.</div>
         </div>
       </div><!-- /notam-list -->
+
+      </div><!-- /panel-gfig -->
+
+      <!-- ═══ Real-World NOTAMs Tab ═══ -->
+      <div id="panel-live" style="display:none;">
+
+        <div class="notam-filter" style="margin-bottom:20px;">
+          <label>ICAO Airport(s):</label>
+          <input type="text" class="form-control" id="live-icao-input" placeholder="e.g. KJFK, EGLL, KLAX" value="KJFK, EGLL, KLAX, EGKK" style="flex:1;min-width:200px;">
+          <select class="input-ctrl" id="live-sev-filter" onchange="filterLiveNotams()" style="width:auto;padding:6px 12px;">
+            <option value="">All Severities</option>
+            <option value="critical">Critical</option>
+            <option value="advisory">Advisory</option>
+            <option value="info">Informational</option>
+          </select>
+          <button class="btn btn-primary" style="padding:8px 18px;font-size:0.82rem;" onclick="fetchLiveNotams()">🔍 Fetch NOTAMs</button>
+        </div>
+
+        <!-- Quick Airport Buttons -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+          <span style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;align-self:center;">Quick:</span>
+          <button class="btn btn-secondary" style="padding:4px 12px;font-size:0.75rem;" onclick="setLiveIcao('KJFK, KLGA, KEWR')">New York</button>
+          <button class="btn btn-secondary" style="padding:4px 12px;font-size:0.75rem;" onclick="setLiveIcao('EGLL, EGKK, EGLC, EGSS')">London</button>
+          <button class="btn btn-secondary" style="padding:4px 12px;font-size:0.75rem;" onclick="setLiveIcao('KLAX, KSFO, KSAN')">California</button>
+          <button class="btn btn-secondary" style="padding:4px 12px;font-size:0.75rem;" onclick="setLiveIcao('KATL, KMIA, KMCO')">Southeast US</button>
+          <button class="btn btn-secondary" style="padding:4px 12px;font-size:0.75rem;" onclick="setLiveIcao('KORD, KDTW, KMSP')">Midwest US</button>
+          <button class="btn btn-secondary" style="padding:4px 12px;font-size:0.75rem;" onclick="setLiveIcao('LFPG, EDDF, EHAM')">Europe Major</button>
+          <button class="btn btn-secondary" style="padding:4px 12px;font-size:0.75rem;" onclick="setLiveIcao('EGBB, EGCC, EGNX')">UK Regional</button>
+          <button class="btn btn-secondary" style="padding:4px 12px;font-size:0.75rem;" onclick="setLiveIcao('OMDB, VHHH, WSSS')">Asia / Middle East</button>
+        </div>
+
+        <!-- Live Stats -->
+        <div class="notam-summary" id="live-stats" style="display:none;">
+          <div class="notam-stat critical">
+            <div class="notam-stat-num" id="live-stat-critical">0</div>
+            <div class="notam-stat-label">Critical</div>
+          </div>
+          <div class="notam-stat advisory">
+            <div class="notam-stat-num" id="live-stat-advisory">0</div>
+            <div class="notam-stat-label">Advisory</div>
+          </div>
+          <div class="notam-stat info">
+            <div class="notam-stat-num" id="live-stat-info">0</div>
+            <div class="notam-stat-label">Informational</div>
+          </div>
+          <div class="notam-stat total">
+            <div class="notam-stat-num" id="live-stat-total">0</div>
+            <div class="notam-stat-label">Total Fetched</div>
+          </div>
+        </div>
+
+        <!-- Live NOTAM List -->
+        <div class="notam-list" id="live-notam-list">
+          <div style="text-align:center;color:var(--text-muted);padding:48px 20px;">
+            <div style="font-size:2rem;margin-bottom:12px;">🌍</div>
+            <div style="font-size:0.95rem;margin-bottom:6px;">Real-World NOTAMs</div>
+            <div style="font-size:0.8rem;">Enter ICAO airport codes above and click "Fetch NOTAMs" to pull live data from the FAA / international NOTAM feed.</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:8px;">Supports US (K-prefix), UK (EG-prefix), and international ICAO codes. Data is cached for 15 minutes.</div>
+          </div>
+        </div>
+
+      </div><!-- /panel-live -->
 
     </div>
   </div>
@@ -369,6 +441,133 @@
         if (upd) upd.textContent = new Date().toISOString().slice(0,16).replace('T',' ') + 'Z';
       } catch(e) { console.warn('NOTAM load error:', e); }
     });
+
+    /* ═══ Tab Switching ═══ */
+    function switchTab(tab) {
+      var gfigPanel = document.getElementById('panel-gfig');
+      var livePanel = document.getElementById('panel-live');
+      var tabGfig   = document.getElementById('tab-gfig');
+      var tabLive   = document.getElementById('tab-live');
+      if (tab === 'live') {
+        gfigPanel.style.display = 'none';
+        livePanel.style.display = 'block';
+        tabGfig.style.borderBottomColor = 'transparent';
+        tabGfig.style.color = 'var(--text-muted)';
+        tabLive.style.borderBottomColor = 'var(--blue)';
+        tabLive.style.color = 'var(--blue-light)';
+      } else {
+        gfigPanel.style.display = 'block';
+        livePanel.style.display = 'none';
+        tabGfig.style.borderBottomColor = 'var(--blue)';
+        tabGfig.style.color = 'var(--blue-light)';
+        tabLive.style.borderBottomColor = 'transparent';
+        tabLive.style.color = 'var(--text-muted)';
+      }
+    }
+
+    function setLiveIcao(val) {
+      document.getElementById('live-icao-input').value = val;
+      fetchLiveNotams();
+    }
+
+    /* ═══ Live NOTAM Fetching ═══ */
+    var liveNotamCache = [];
+    var BOT_URL = 'https://gfig-website-production.up.railway.app';
+
+    async function fetchLiveNotams() {
+      var input = document.getElementById('live-icao-input').value.trim();
+      if (!input) { if (typeof showToast === 'function') showToast('Enter at least one ICAO code', 'warn'); return; }
+
+      var icaoList = input.toUpperCase().replace(/[^A-Z,\s]/g, '').split(/[,\s]+/).filter(Boolean);
+      if (!icaoList.length) return;
+
+      var listEl = document.getElementById('live-notam-list');
+      listEl.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted);"><div style="font-size:1.5rem;margin-bottom:12px;">⏳</div>Fetching NOTAMs for ' + icaoList.join(', ') + '…</div>';
+      document.getElementById('live-stats').style.display = 'grid';
+
+      try {
+        var resp = await fetch(BOT_URL + '/notams/live?icao=' + icaoList.join(','));
+        if (!resp.ok) throw new Error('API returned ' + resp.status);
+        var data = await resp.json();
+        liveNotamCache = data.notams || [];
+        renderLiveNotams(liveNotamCache);
+        updateLiveStats(liveNotamCache);
+      } catch (err) {
+        console.warn('Live NOTAM fetch error:', err);
+        listEl.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted);">'
+          + '<div style="font-size:1.5rem;margin-bottom:12px;">⚠</div>'
+          + '<div style="font-size:0.95rem;margin-bottom:8px;">Could not fetch live NOTAMs</div>'
+          + '<div style="font-size:0.8rem;">' + (err.message || 'Network error') + '</div>'
+          + '<div style="font-size:0.75rem;margin-top:12px;color:var(--text-sub);">Ensure the GFIG bot server is running and FAA_NOTAM_API_KEY is configured. NOTAMs are fetched via the FAA NOTAM API.</div>'
+          + '</div>';
+      }
+    }
+
+    function escapeHtml(text) {
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function renderLiveNotams(notams) {
+      var listEl = document.getElementById('live-notam-list');
+      if (!notams.length) {
+        listEl.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted);">No NOTAMs found for the requested airports.</div>';
+        return;
+      }
+
+      listEl.innerHTML = notams.map(function(n) {
+        var sev = n.severity || 'info';
+        var sevLabel = { critical: 'CRITICAL', advisory: 'ADVISORY', info: 'INFORMATIONAL' }[sev] || 'INFO';
+        var startDate = n.effectiveStart ? new Date(n.effectiveStart).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        var endDate = n.effectiveEnd ? new Date(n.effectiveEnd).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : 'PERM';
+        var source = n.source || 'FAA';
+        var sourceBg = source === 'UK-NATS' ? 'background:rgba(38,166,154,0.12);color:#26A69A;' : 'background:rgba(0,119,255,0.1);color:var(--blue-light);';
+
+        return '<div class="notam-card ' + sev + '" data-sev="' + sev + '">'
+          + '<div class="notam-header" onclick="toggleNotam(this)">'
+          + '<span class="notam-sev">' + sevLabel + '</span>'
+          + '<span class="notam-id">' + escapeHtml(n.id || '—') + '</span>'
+          + '<span class="notam-title-txt">' + escapeHtml(n.icao || '') + ' — ' + escapeHtml((n.text || '').substring(0, 80)) + (n.text && n.text.length > 80 ? '…' : '') + '</span>'
+          + '<div class="notam-meta-row">'
+          + '<span style="padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:700;' + sourceBg + '">' + source + '</span>'
+          + '<span>' + escapeHtml(n.icao || '') + '</span>'
+          + '<span>Expires: ' + endDate + '</span>'
+          + '</div>'
+          + '<span class="notam-chevron">▼</span>'
+          + '</div>'
+          + '<div class="notam-body">'
+          + '<div class="notam-body-grid">'
+          + '<div class="notam-field"><label>NOTAM ID</label><span>' + escapeHtml(n.id || '—') + '</span></div>'
+          + '<div class="notam-field"><label>ICAO</label><span>' + escapeHtml(n.icao || '—') + '</span></div>'
+          + '<div class="notam-field"><label>Effective</label><span>' + startDate + '</span></div>'
+          + '<div class="notam-field"><label>Expires</label><span>' + endDate + '</span></div>'
+          + '<div class="notam-field"><label>Classification</label><span>' + escapeHtml(n.classification || '—') + '</span></div>'
+          + '<div class="notam-field"><label>Source</label><span>' + source + '</span></div>'
+          + '</div>'
+          + '<div class="notam-text">' + escapeHtml(n.text || 'No text available') + '</div>'
+          + '<div class="notam-actions">'
+          + '<button class="btn btn-secondary" style="font-size:0.8rem;padding:7px 14px;" onclick="copyNotam(\'' + escapeHtml(n.id || '') + '\')">⎘ Copy ID</button>'
+          + '</div></div></div>';
+      }).join('');
+    }
+
+    function updateLiveStats(notams) {
+      var counts = { critical: 0, advisory: 0, info: 0 };
+      notams.forEach(function(n) { counts[n.severity || 'info']++; });
+      var sc = document.getElementById('live-stat-critical'); if (sc) sc.textContent = counts.critical;
+      var sa = document.getElementById('live-stat-advisory'); if (sa) sa.textContent = counts.advisory;
+      var si = document.getElementById('live-stat-info');     if (si) si.textContent = counts.info;
+      var st = document.getElementById('live-stat-total');    if (st) st.textContent = notams.length;
+    }
+
+    function filterLiveNotams() {
+      var sevFilter = document.getElementById('live-sev-filter').value;
+      var filtered = liveNotamCache.filter(function(n) {
+        return !sevFilter || n.severity === sevFilter;
+      });
+      renderLiveNotams(filtered);
+    }
   </script>
 </body>
 </html>

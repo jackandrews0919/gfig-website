@@ -1570,6 +1570,7 @@
             <option>Director</option>
             <option>Flight Examiner</option>
             <option>Training Officer</option>
+            <option>HR Officer</option>
           </select>
         </div>
         <div class="admin-form-group">
@@ -1604,6 +1605,28 @@
         <div class="admin-form-group">
           <label class="admin-form-label">DISCORD USER ID <span style="color:var(--text-muted);font-size:0.7rem;font-family:var(--font-body);letter-spacing:0">(right-click user → Copy User ID)</span></label>
           <input id="mem-edit-discordId" class="admin-input" type="text" placeholder="e.g. 123456789012345678" style="font-family:var(--font-mono);">
+        </div>
+        <div class="admin-form-group">
+          <label class="admin-form-label">VATSIM CID</label>
+          <input id="mem-edit-vatsimCid" class="admin-input" type="text" placeholder="e.g. 1234567" style="font-family:var(--font-mono);">
+        </div>
+        <div class="admin-form-group">
+          <label class="admin-form-label">VATSIM ATC RATING</label>
+          <select id="mem-edit-vatsimAtc" class="admin-select">
+            <option value="">None</option>
+            <option value="OBS">OBS — Observer</option>
+            <option value="S1">S1 — Tower Trainee</option>
+            <option value="S2">S2 — Tower Controller</option>
+            <option value="S3">S3 — TMA Controller</option>
+            <option value="C1">C1 — Enroute Controller</option>
+            <option value="C2">C2 — Controller 2 (rare)</option>
+            <option value="C3">C3 — Senior Controller</option>
+            <option value="I1">I1 — Instructor</option>
+            <option value="I2">I2 — Instructor 2 (rare)</option>
+            <option value="I3">I3 — Senior Instructor</option>
+            <option value="SUP">SUP — Supervisor</option>
+            <option value="ADM">ADM — Administrator</option>
+          </select>
         </div>
       </div>
       <div class="mem-modal-footer">
@@ -1998,6 +2021,8 @@
       document.getElementById('mem-edit-status').value   = m.status   || 'active';
       document.getElementById('mem-edit-admin').value    = m.isAdmin  ? 'true' : 'false';
       document.getElementById('mem-edit-discordId').value = m.discordId || '';
+      document.getElementById('mem-edit-vatsimCid').value = m.vatsimCid || '';
+      document.getElementById('mem-edit-vatsimAtc').value = m.vatsimAtcRating || '';
       m._prevStatus = m.status || 'active';
       document.getElementById('mem-edit-overlay').classList.remove('hidden');
     }
@@ -2016,7 +2041,9 @@
         region:     document.getElementById('mem-edit-region').value,
         status:     document.getElementById('mem-edit-status').value,
         isAdmin:    document.getElementById('mem-edit-admin').value === 'true',
-        discordId: (document.getElementById('mem-edit-discordId').value || '').trim()
+        discordId: (document.getElementById('mem-edit-discordId').value || '').trim(),
+        vatsimCid: (document.getElementById('mem-edit-vatsimCid').value || '').trim(),
+        vatsimAtcRating: document.getElementById('mem-edit-vatsimAtc').value || ''
       };
       if (!data.name) { toast('Name is required'); return; }
       // Auto-assign member number if pending/empty

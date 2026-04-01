@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pilot Roster — GFIG</title>
+  <meta name="description" content="GFIG Pilot Roster — View all active inspectors, their ranks, flight hours and VATSIM ratings. Global Flight Inspection Group Virtual.">
+  <meta property="og:title" content="GFIG — Pilot Roster">
+  <meta property="og:description" content="View all active inspectors, their ranks, flight hours and VATSIM ratings.">
+  <meta property="og:image" content="https://jackandrews0919.github.io/gfig-website/logo.png">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    .roster-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .roster-stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 18px 20px;
+      text-align: center;
+    }
+    .roster-stat-num {
+      font-family: var(--font-head);
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .roster-stat-label { font-size: 0.78rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.1em; }
+
+    .roster-filter {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+    }
+    .roster-filter label { font-size: 0.78rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .roster-table-wrap {
+      overflow-x: auto;
+      border-radius: var(--r-lg);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+    .roster-table { width: 100%; border-collapse: collapse; }
+    .roster-table thead tr { background: var(--bg-secondary); }
+    .roster-table thead th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .roster-table tbody tr { border-bottom: 1px solid var(--border); transition: background var(--t); }
+    .roster-table tbody tr:hover { background: var(--bg-hover); }
+    .roster-table tbody td { padding: 13px 16px; font-size: 0.875rem; color: var(--text); }
+    .roster-table tbody tr:last-child { border-bottom: none; }
+
+    .roster-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue), var(--orange));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; font-family: var(--font-head);
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .roster-name-cell { display: flex; align-items: center; gap: 10px; }
+    .roster-vatsim-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: var(--r-sm);
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: var(--font-head);
+      letter-spacing: 0.08em;
+      background: rgba(38, 166, 154, 0.12);
+      color: #26A69A;
+    }
+
+    @media (max-width: 768px) {
+      .roster-summary { grid-template-columns: repeat(2, 1fr); }
+      .roster-filter { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation (public) ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="logo.png" alt="GFIG – Global Flight Inspection Group Virtual" class="nav-logo-img">
+      </a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html"  class="nav-link">⌂ Home</a>
+        <a href="roster.html" class="nav-link active">◔ Roster</a>
+        <a href="sops.html"   class="nav-link">≡ SOPs</a>
+      </div>
+      <div class="nav-actions">
+        <a href="join.html" class="btn btn-secondary" style="font-size:0.82rem;padding:7px 16px;">Apply to Join</a>
+        <a href="login.html" class="btn btn-primary" style="font-size:0.82rem;padding:7px 16px;">Member Login →</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Page ── -->
+  <div class="page">
+    <div class="container">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1>GFIG Pilot Roster</h1>
+          <p style="color:var(--text-sub);font-size:0.85rem;margin-top:4px;">All active inspectors of the Global Flight Inspection Group Virtual</p>
+        </div>
+      </div>
+
+      <!-- Summary Stats -->
+      <div class="roster-summary">
+        <div class="roster-stat">
+          <div class="roster-stat-num" style="color:var(--blue-light)" id="roster-total">—</div>
+          <div class="roster-stat-label">Total Members</div>
+        </div>
+        <div class="roster-stat">
+          <div class="roster-stat-num" style="color:var(--pass)" id="roster-active">—</div>
+          <div class="roster-stat-label">Active</div>
+        </div>
+        <div class="roster-stat">
+          <div class="roster-stat-num" style="color:var(--orange)" id="roster-hours">—</div>
+          <div class="roster-stat-label">Total Flight Hours</div>
+        </div>
+        <div class="roster-stat">
+          <div class="roster-stat-num" style="color:#26A69A" id="roster-vatsim">—</div>
+          <div class="roster-stat-label">VATSIM Rated</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="roster-filter">
+        <label>Filter:</label>
+        <input type="text" class="form-control" id="roster-search" placeholder="Search by name, callsign, or member number…" style="flex:1;min-width:200px;" oninput="filterRoster()">
+        <select class="form-control" id="roster-rank-filter" onchange="filterRoster()" style="width:auto;">
+          <option value="">All Ranks</option>
+          <option value="Director">Director</option>
+          <option value="Chief Inspector">Chief Inspector</option>
+          <option value="Senior Inspector">Senior Inspector</option>
+          <option value="Inspector">Inspector</option>
+          <option value="Junior Inspector">Junior Inspector</option>
+          <option value="Trainee Inspector">Trainee Inspector</option>
+          <option value="HR Officer">HR Officer</option>
+        </select>
+        <select class="form-control" id="roster-region-filter" onchange="filterRoster()" style="width:auto;">
+          <option value="">All Regions</option>
+        </select>
+        <select class="form-control" id="roster-status-filter" onchange="filterRoster()" style="width:auto;">
+          <option value="active">Active</option>
+          <option value="">All Statuses</option>
+          <option value="reserve">Reserve</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      <!-- Roster Table -->
+      <div class="roster-table-wrap">
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Member #</th>
+              <th>Callsign</th>
+              <th>Rank</th>
+              <th>Region</th>
+              <th>Missions</th>
+              <th>Hours</th>
+              <th>VATSIM CID</th>
+              <th>ATC Rating</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="roster-tbody">
+            <tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:32px;">Loading roster…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:24px;text-align:center;color:var(--text-muted);font-size:0.78rem;">
+        <p>Global Flight Inspection Group Virtual &nbsp;·&nbsp; For VATSIM VA Partnership</p>
+        <p style="margin-top:4px;">Roster data is updated in real time from the GFIG member database.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <img src="logo.png" alt="GFIG" class="footer-logo-img">
+          <p class="footer-desc">Global Flight Inspection Group — Maintaining the highest standards of virtual aviation through systematic flight inspection operations worldwide.</p>
+        </div>
+        <div>
+          <div class="footer-col-title">Navigation</div>
+          <a href="index.html"     class="footer-link">Home</a>
+          <a href="roster.html"    class="footer-link">Pilot Roster</a>
+          <a href="sops.html"      class="footer-link">Rules &amp; SOPs</a>
+          <a href="join.html"      class="footer-link">Apply to Join</a>
+          <a href="login.html"     class="footer-link">Member Login</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Operations</div>
+          <a href="missions.html" class="footer-link">Active Missions</a>
+          <a href="notam.html"    class="footer-link">NOTAM Board</a>
+          <a href="events.html"   class="footer-link">Events</a>
+          <a href="training.html" class="footer-link">Training Centre</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Community</div>
+          <a href="https://discord.gg/pyMHMCzApW" target="_blank" rel="noopener" class="footer-link">Discord Server</a>
+          <a href="sops.html"    class="footer-link">Rules &amp; SOPs</a>
+          <a href="join.html"    class="footer-link">How to Join</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Global Flight Inspection Group &nbsp;·&nbsp; Virtual organization for flight simulation purposes.</span>
+        <span>Not affiliated with any real-world aviation authority.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script>
+    /* ── Roster Data ── */
+    var rosterData = [];
+
+    function getRankClass(rank) {
+      if (!rank) return 'rank-trainee';
+      var r = rank.toLowerCase();
+      if (r.indexOf('director') > -1) return 'rank-director';
+      if (r.indexOf('chief') > -1) return 'rank-chief';
+      if (r.indexOf('senior') > -1) return 'rank-senior';
+      if (r === 'inspector') return 'rank-inspector';
+      if (r.indexOf('junior') > -1) return 'rank-junior';
+      if (r.indexOf('hr') > -1) return 'rank-inspector';
+      return 'rank-trainee';
+    }
+
+    function getInitials(name) {
+      if (!name) return '—';
+      var parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      return name.substring(0, 2).toUpperCase();
+    }
+
+    function renderRoster(members) {
+      var tbody = document.getElementById('roster-tbody');
+      if (!members || members.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:32px;">No members found.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = members.map(function(m) {
+        var sc = m.status === 'reserve' ? 'badge-reserve' : m.status === 'inactive' ? 'badge-expired' : 'badge-active';
+        var sl = m.status === 'reserve' ? 'Reserve' : m.status === 'inactive' ? 'Inactive' : 'Active';
+        var initials = getInitials(m.name);
+        var rc = getRankClass(m.rank);
+        var joinStr = '';
+        if (m.joinDate) {
+          var d = m.joinDate.toDate ? m.joinDate.toDate() : new Date(m.joinDate);
+          joinStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        var vatsimCid = m.vatsimCid || '—';
+        var vatsimAtc = m.vatsimAtcRating ? '<span class="roster-vatsim-badge">' + m.vatsimAtcRating + '</span>' : '—';
+
+        return '<tr>'
+          + '<td><div class="roster-name-cell"><div class="roster-avatar">' + initials + '</div><div>' + (m.name || '—') + '</div></div></td>'
+          + '<td style="font-family:var(--font-mono);color:var(--orange);">' + (m.memberNumber || '—') + '</td>'
+          + '<td style="font-family:var(--font-mono);color:var(--blue-light);">' + (m.callsign || '—') + '</td>'
+          + '<td><span class="rank-badge ' + rc + '">' + (m.rank || 'Member') + '</span></td>'
+          + '<td>' + (m.region || '—') + '</td>'
+          + '<td>' + (m.totalMissions || 0) + '</td>'
+          + '<td>' + (m.flightHours || 0) + 'h</td>'
+          + '<td>' + vatsimCid + '</td>'
+          + '<td>' + vatsimAtc + '</td>'
+          + '<td><span class="status-badge ' + sc + '">' + sl + '</span></td>'
+          + '</tr>';
+      }).join('');
+    }
+
+    function updateStats(members) {
+      var total = members.length;
+      var active = members.filter(function(m) { return m.status !== 'inactive'; }).length;
+      var hours = members.reduce(function(sum, m) { return sum + (m.flightHours || 0); }, 0);
+      var vatsim = members.filter(function(m) { return m.vatsimAtcRating; }).length;
+      document.getElementById('roster-total').textContent = total;
+      document.getElementById('roster-active').textContent = active;
+      document.getElementById('roster-hours').textContent = hours;
+      document.getElementById('roster-vatsim').textContent = vatsim;
+    }
+
+    function populateRegionFilter(members) {
+      var regions = {};
+      members.forEach(function(m) {
+        if (m.region) regions[m.region] = true;
+      });
+      var sel = document.getElementById('roster-region-filter');
+      Object.keys(regions).sort().forEach(function(r) {
+        var opt = document.createElement('option');
+        opt.value = r;
+        opt.textContent = r;
+        sel.appendChild(opt);
+      });
+    }
+
+    function filterRoster() {
+      var search = (document.getElementById('roster-search').value || '').toLowerCase();
+      var rankF = document.getElementById('roster-rank-filter').value;
+      var regionF = document.getElementById('roster-region-filter').value;
+      var statusF = document.getElementById('roster-status-filter').value;
+
+      var filtered = rosterData.filter(function(m) {
+        if (search) {
+          var hay = ((m.name || '') + ' ' + (m.callsign || '') + ' ' + (m.memberNumber || '') + ' ' + (m.vatsimCid || '')).toLowerCase();
+          if (hay.indexOf(search) === -1) return false;
+        }
+        if (rankF && m.rank !== rankF) return false;
+        if (regionF && m.region !== regionF) return false;
+        if (statusF && m.status !== statusF) return false;
+        return true;
+      });
+      renderRoster(filtered);
+    }
+
+    /* ── Load Roster ── */
+    document.addEventListener('gfig:authready', async function() {
+      if (!window.GFIG_FIREBASE_READY) {
+        document.getElementById('roster-tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:32px;">Unable to connect to database.</td></tr>';
+        return;
+      }
+      try {
+        var snap = await window.db.collection('users').orderBy('name').get();
+        rosterData = snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); });
+        updateStats(rosterData);
+        populateRegionFilter(rosterData);
+        renderRoster(rosterData.filter(function(m) { return m.status !== 'inactive'; }));
+      } catch (err) {
+        console.error('Roster load error:', err);
+        document.getElementById('roster-tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:32px;">Error loading roster data.</td></tr>';
+      }
+    });
+  </script>
+</body>
+</html>

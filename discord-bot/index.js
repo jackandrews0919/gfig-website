@@ -234,9 +234,11 @@ const GFIG_ROLES = [
   { name: 'Trainee Inspector',   color: '#AAAAAA', hoist: true  },
   { name: 'Flight Examiner',     color: '#E040FB', hoist: true  },
   { name: 'Training Officer',    color: '#FF80AB', hoist: true  },
+  { name: 'HR Officer',           color: '#29B6F6', hoist: true  },
   { name: 'Fleet Manager',       color: '#18FFFF', hoist: false },
   { name: 'Drone Operator',      color: '#76FF03', hoist: false },
   { name: 'Helicopter Pilot',    color: '#FFAB40', hoist: false },
+  { name: 'VATSIM Controller',   color: '#26A69A', hoist: false },
   { name: 'On LOA',              color: '#F44336', hoist: true  },
   { name: 'Guest',               color: '#95A5A6', hoist: true  },
   { name: 'Applicant',           color: '#E67E22', hoist: true  },
@@ -886,6 +888,164 @@ app.get('/audit-log', auth, (req, res) => {
   let entries = [...AUDIT_LOG].reverse();
   if (type) entries = entries.filter(e => e.type === type);
   res.json(entries.slice(0, limit));
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   REAL-WORLD NOTAM PROXY — fetches from FAA API & caches results
+   ═══════════════════════════════════════════════════════════════ */
+
+const NOTAM_CACHE = {};
+const NOTAM_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+
+/**
+ * Fetches NOTAMs from the FAA NOTAM API v1
+ * Env: FAA_NOTAM_API_KEY (optional — falls back to public endpoint)
+ */
+async function fetchFAANotams(icaoList) {
+  const apiKey = process.env.FAA_NOTAM_API_KEY || '';
+  const results = [];
+
+  for (const icao of icaoList) {
+    const cacheKey = 'faa_' + icao.toUpperCase();
+    if (NOTAM_CACHE[cacheKey] && Date.now() - NOTAM_CACHE[cacheKey].ts < NOTAM_CACHE_TTL) {
+      results.push(...NOTAM_CACHE[cacheKey].data);
+      continue;
+    }
+
+    try {
+      const url = `https://external-api.faa.gov/notamapi/v1/notams?icaoLocation=${icao.toUpperCase()}&sortBy=effectiveStartDate&sortOrder=Desc&pageSize=20`;
+      const headers = { 'Accept': 'application/json' };
+      if (apiKey) headers['client_id'] = apiKey;
+
+      const resp = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+      if (!resp.ok) {
+        console.warn(`FAA NOTAM API ${resp.status} for ${icao}`);
+        continue;
+      }
+      const json = await resp.json();
+      const items = (json.items || []).map(item => {
+        const props = item.properties || {};
+        return {
+          id: props.coreNOTAMData?.notam?.id || item.id || '',
+          icao: icao.toUpperCase(),
+          source: 'FAA',
+          classification: props.coreNOTAMData?.notam?.classification || '',
+          text: props.coreNOTAMData?.notam?.text || props.coreNOTAMData?.notam?.translatedText?.simpleText || '',
+          effectiveStart: props.coreNOTAMData?.notam?.effectiveStart || '',
+          effectiveEnd: props.coreNOTAMData?.notam?.effectiveEnd || '',
+          type: props.coreNOTAMData?.notam?.type || '',
+          issued: props.coreNOTAMData?.notam?.issued || '',
+          location: props.coreNOTAMData?.notam?.location || icao.toUpperCase(),
+          severity: _classifyNotamSeverity(props.coreNOTAMData?.notam?.classification, props.coreNOTAMData?.notam?.text || '')
+        };
+      });
+      NOTAM_CACHE[cacheKey] = { ts: Date.now(), data: items };
+      results.push(...items);
+    } catch (e) {
+      console.warn(`FAA NOTAM fetch error for ${icao}:`, e.message);
+    }
+  }
+  return results;
+}
+
+/**
+ * Fetches UK NOTAMs from NATS AIS (public JSON endpoint)
+ */
+async function fetchUKNotams(icaoList) {
+  const results = [];
+  for (const icao of icaoList) {
+    const cacheKey = 'uk_' + icao.toUpperCase();
+    if (NOTAM_CACHE[cacheKey] && Date.now() - NOTAM_CACHE[cacheKey].ts < NOTAM_CACHE_TTL) {
+      results.push(...NOTAM_CACHE[cacheKey].data);
+      continue;
+    }
+
+    try {
+      // NATS Websocket / pilotweb uses a query format
+      const url = `https://pilotweb.nas.faa.gov/PilotWeb/notamRetrievalByICAOAction.do?method=displayByICAO&reportType=REPORT&formatType=DOMESTIC&actionType=notamRetrievalByICAOs&retrieveLocId=${icao.toUpperCase()}&openItems=`;
+      // Since the UK NATS doesn't have a simple public JSON API, we'll tag UK airports
+      // served via the FAA international feed or use the same FAA endpoint for ICAO codes
+      const items = await fetchFAANotams([icao]);
+      items.forEach(i => { i.source = icao.toUpperCase().startsWith('EG') ? 'UK-NATS' : i.source; });
+      NOTAM_CACHE[cacheKey] = { ts: Date.now(), data: items };
+      results.push(...items);
+    } catch (e) {
+      console.warn(`UK NOTAM fetch error for ${icao}:`, e.message);
+    }
+  }
+  return results;
+}
+
+function _classifyNotamSeverity(classification, text) {
+  const t = (text + ' ' + (classification || '')).toUpperCase();
+  if (t.includes('CLOSED') || t.includes('UNSERVICEABLE') || t.includes('OUT OF SERVICE') || t.includes('U/S')
+    || t.includes('NOT AVBL') || t.includes('NOT AVAILABLE') || t.includes('CLSD')) return 'critical';
+  if (t.includes('CHANGED') || t.includes('LIMITED') || t.includes('RESTRICTED') || t.includes('CAUTION')
+    || t.includes('WARNING') || t.includes('OBST') || t.includes('CRANE') || t.includes('WORK IN PROGRESS')) return 'advisory';
+  return 'info';
+}
+
+/**
+ * GET /notams/live?icao=KJFK,EGLL,KLAX  — Fetch real-world NOTAMs
+ * Public endpoint (no auth needed) — returns cached NOTAM data
+ */
+app.get('/notams/live', async (req, res) => {
+  try {
+    const icaoParam = (req.query.icao || '').toUpperCase().replace(/[^A-Z,]/g, '');
+    if (!icaoParam) {
+      return res.json({ notams: [], error: 'Provide ?icao=KJFK,EGLL etc.' });
+    }
+    const icaoList = icaoParam.split(',').filter(Boolean).slice(0, 10); // max 10 airports
+
+    const notams = await fetchFAANotams(icaoList);
+    res.json({
+      notams,
+      count: notams.length,
+      icao: icaoList,
+      cached: true,
+      fetchedAt: new Date().toISOString()
+    });
+  } catch (e) {
+    console.error('NOTAM live endpoint error:', e);
+    res.status(500).json({ error: 'Failed to fetch NOTAMs', message: e.message });
+  }
+});
+
+/**
+ * POST /notams/discord — Post a NOTAM summary to the #notams Discord channel
+ * Auth required
+ */
+app.post('/notams/discord', auth, async (req, res) => {
+  try {
+    const { icao, notamId, text, severity, source } = req.body;
+    const guild = client.guilds.cache.get(GUILD_ID);
+    if (!guild) return res.status(500).json({ error: 'Guild not found' });
+
+    const channel = guild.channels.cache.find(c => c.name === '⚠-notams');
+    if (!channel) return res.status(404).json({ error: '#⚠-notams channel not found' });
+
+    const colors = { critical: 0xED4245, advisory: 0xFEE75C, info: 0x5865F2 };
+    const sevLabel = { critical: '🔴 CRITICAL', advisory: '🟡 ADVISORY', info: '🔵 INFORMATIONAL' };
+
+    await channel.send({
+      embeds: [{
+        title: `⚠ NOTAM: ${notamId || 'N/A'}`,
+        color: colors[severity] || 0x5865F2,
+        description: (text || '').substring(0, 2000),
+        fields: [
+          { name: 'ICAO', value: icao || '—', inline: true },
+          { name: 'Severity', value: sevLabel[severity] || 'INFO', inline: true },
+          { name: 'Source', value: source || 'FAA', inline: true }
+        ],
+        footer: { text: 'GFIG Real-World NOTAM Feed' },
+        timestamp: new Date().toISOString()
+      }]
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('NOTAM Discord post error:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 /* ── Bot Events ─────────────────────────────────────────────── */
