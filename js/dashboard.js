@@ -95,6 +95,14 @@ document.addEventListener('gfig:authready', async (e) => {
     document.querySelectorAll(sel).forEach(el => el.textContent = val);
   });
 
+  /* Sidebar status card identity */
+  const dashName = document.getElementById('dash-status-name');
+  const dashCallsign = document.getElementById('dash-status-callsign');
+  const dashRankBadge = document.getElementById('dash-status-rank-badge');
+  if (dashName) dashName.textContent = user.name || 'Inspector';
+  if (dashCallsign) dashCallsign.textContent = user.callsign || '—';
+  if (dashRankBadge) { dashRankBadge.textContent = user.rank || 'Trainee Inspector'; dashRankBadge.className = 'rank-badge'; }
+
   /* Progress bar */
   const rankPts   = { 'Junior Inspector': 500, 'Inspector': 1500, 'Senior Inspector': 3000, 'Chief Inspector': 6000, 'Deputy Director': 12000, 'Director': 999999 };
   const nextRanks = Object.keys(rankPts);
@@ -134,7 +142,22 @@ document.addEventListener('gfig:authready', async (e) => {
     const liveEl = document.querySelector('.page-header .live-dot');
     if (liveEl) liveEl.textContent = `Operations Live`;
 
-    /* ── Load user's active missions metric ── */
+    /* Render live missions preview table */
+    const liveBody = document.getElementById('live-missions-tbody');
+    if (liveBody) {
+      const top5 = snap.docs.slice(0, 5);
+      liveBody.innerHTML = top5.length ? top5.map(d => {
+        const m = d.data();
+        const pri = m.priority === 'urgent' ? 'badge-urgent' : m.priority === 'priority' ? 'badge-priority' : 'badge-routine';
+        const sts = m.status === 'active' ? 'badge-active' : 'badge-available';
+        const act = m.status === 'available'
+          ? `<a href="missions.html" class="btn btn-xs btn-primary">Claim</a>`
+          : `<a href="#" class="btn btn-xs btn-secondary">Brief</a>`;
+        return `<tr><td class="td-mono">${m.missionId||d.id}</td><td><span class="td-route">${m.departure||'—'} <span class="td-route-arrow">→</span> ${m.destination||m.icao||'—'}</span></td><td>${m.type||m.missionType||'—'}</td><td><span class="badge ${pri}">${m.priority||'Routine'}</span></td><td><span class="badge ${sts}">${m.status==='active'?'In Progress':'Available'}</span></td><td class="${m.status==='active'?'text-sm':'text-muted text-sm'}">${m.claimedByName||'—'}</td><td>${act}</td></tr>`;
+      }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);font-family:var(--font-head);font-size:0.78rem;letter-spacing:0.08em;padding:20px;">NO ACTIVE MISSIONS</td></tr>';
+    }
+
+    /* ── Load user’s active missions metric ── */
     if (!user._isDemo) {
       const mySnap = await window.db.collection('missions')
         .where('claimedBy', '==', user.uid)
@@ -142,6 +165,16 @@ document.addEventListener('gfig:authready', async (e) => {
       if (metricCards[1]) {
         const valEl = metricCards[1].querySelector('.metric-value');
         if (valEl) animateCounter(valEl, mySnap.size);
+      }
+      /* Render my active missions table */
+      const myBody  = document.getElementById('my-missions-tbody');
+      const myBadge = document.getElementById('my-missions-badge');
+      if (myBadge) myBadge.textContent = mySnap.size + ' Active';
+      if (myBody) {
+        myBody.innerHTML = mySnap.size ? mySnap.docs.map(d => {
+          const m = d.data(); const pending = m.reportPending;
+          return `<tr><td class="td-mono">${m.missionId||d.id}</td><td><span class="td-route">${m.departure||'—'} <span class="td-route-arrow">→</span> ${m.destination||m.icao||'—'}</span></td><td>${m.type||m.missionType||'—'}</td><td><span class="badge ${pending?'badge-pending':'badge-active'}">${pending?'Report Due':'Flying'}</span></td><td>${pending?`<a href="report.html" class="btn btn-xs btn-warn">Submit Report</a>`:`<a href="#" class="btn btn-xs btn-secondary">Track</a>`}</td></tr>`;
+        }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);font-family:var(--font-head);font-size:0.78rem;letter-spacing:0.08em;padding:20px;">NO ACTIVE MISSIONS</td></tr>';
       }
     }
   } catch (err) {
@@ -170,6 +203,9 @@ document.addEventListener('gfig:authready', async (e) => {
           feed.appendChild(item);
         });
       }
+    } else {
+      const feedEl = document.getElementById('activity-feed');
+      if (feedEl) feedEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-family:var(--font-head);font-size:0.78rem;letter-spacing:0.08em;">NO RECENT ACTIVITY</div>';
     }
   } catch (err) {
     console.warn('Activity feed load error:', err.message);
@@ -178,33 +214,31 @@ document.addEventListener('gfig:authready', async (e) => {
   /* ── Load leaderboard ── */
   try {
     const leaders = await dbGetLeaderboard(6);
+    const lbList  = document.getElementById('leaderboard-list');
     if (leaders && leaders.length) {
-      const rankIcons = ['🥇', '🥈', '🥉', '4', '5', '6'];
-      const lbEl = document.querySelector('.card .lb-item')?.closest('.card');
-      if (lbEl) {
-        const container = lbEl.querySelectorAll('.lb-item')[0]?.parentElement;
-        if (container) {
-          container.innerHTML = '';
-          leaders.forEach((leader, i) => {
-            const av   = leader.avatar || (leader.name || 'IN').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-            const isMe = leader.id === user.uid;
-            const item = document.createElement('div');
-            item.className = 'lb-item' + (isMe ? '' : '');
-            if (isMe) item.style.cssText = 'background:rgba(0,119,255,0.05);border-radius:6px;padding:11px 6px;';
-            const rankClasses = ['gold','silver','bronze','','',''];
-            item.innerHTML = `
-              <div class="lb-rank ${rankClasses[i] || ''}">${i + 1}</div>
-              <div class="lb-avatar">${av}</div>
-              <div class="lb-info">
-                <div class="lb-name">${leader.name || '—'}${isMe ? ' <span class="text-xs text-muted">(you)</span>' : ''}</div>
-                <div class="lb-detail">${leader.rank || 'Inspector'} · ${leader.totalMissions || 0} missions</div>
-              </div>
-              <div class="lb-pts">${(leader.points || 0).toLocaleString()}</div>
-            `;
-            container.appendChild(item);
-          });
-        }
+      if (lbList) {
+        lbList.innerHTML = '';
+        leaders.forEach((leader, i) => {
+          const av   = leader.avatar || (leader.name || 'IN').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+          const isMe = leader.id === user.uid;
+          const item = document.createElement('div');
+          item.className = 'lb-item';
+          if (isMe) item.style.cssText = 'background:rgba(0,119,255,0.05);border-radius:6px;padding:11px 6px;';
+          const rankClasses = ['gold','silver','bronze','','',''];
+          item.innerHTML = `
+            <div class="lb-rank ${rankClasses[i] || ''}">${i + 1}</div>
+            <div class="lb-avatar">${av}</div>
+            <div class="lb-info">
+              <div class="lb-name">${leader.name || '—'}${isMe ? ' <span class="text-xs text-muted">(you)</span>' : ''}</div>
+              <div class="lb-detail">${leader.rank || 'Inspector'} · ${leader.totalMissions || 0} missions</div>
+            </div>
+            <div class="lb-pts">${(leader.points || 0).toLocaleString()}</div>
+          `;
+          lbList.appendChild(item);
+        });
       }
+    } else if (lbList) {
+      lbList.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-family:var(--font-head);font-size:0.78rem;letter-spacing:0.08em;">NO DATA YET</div>';
     }
   } catch (err) {
     console.warn('Leaderboard load error:', err.message);
