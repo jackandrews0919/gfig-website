@@ -2009,6 +2009,7 @@
 
     async function saveMemberEdit() {
       if (!_editMemberUid) return;
+      var memNumVal = (document.getElementById('mem-edit-memberNumber').value || '').trim();
       const data = {
         name:      (document.getElementById('mem-edit-name').value || '').trim(),
         rank:       document.getElementById('mem-edit-rank').value,
@@ -2018,6 +2019,14 @@
         discordId: (document.getElementById('mem-edit-discordId').value || '').trim()
       };
       if (!data.name) { toast('Name is required'); return; }
+      // Auto-assign member number if pending/empty
+      if (!memNumVal || memNumVal === '(pending)') {
+        try {
+          memNumVal = window.dbGetNextMemberNumber ? await dbGetNextMemberNumber() : 'GFIG-0001';
+        } catch(e) { memNumVal = 'GFIG-0001'; }
+      }
+      data.memberNumber = memNumVal;
+      data.callsign = memNumVal;
       const btn = document.querySelector('.mem-modal-save');
       if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
       try {

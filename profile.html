@@ -91,7 +91,7 @@
         </div>
         <div style="text-align:right; flex-shrink:0;">
           <div style="font-family:var(--font-head); font-size:0.65rem; color:var(--text-muted); letter-spacing:0.12em; margin-bottom:8px;">RANK PROGRESS</div>
-          <div style="font-size:0.8rem; color:var(--text-sub); margin-bottom:6px;">Trainee → <span class="text-orange font-bold">Junior Inspector</span></div>
+          <div style="font-size:0.8rem; color:var(--text-sub); margin-bottom:6px;" id="profile-rank-progress">Loading…</div>
           <div class="prog-wrap" style="width:180px;">
             <div class="prog-bar" id="profile-prog-bar" style="width:0%;"></div>
           </div>
@@ -386,12 +386,14 @@
       if (shEl)  shEl.textContent  = (user.flightHours  != null ? user.flightHours.toLocaleString() + 'h' : '—');
       if (spEl)  spEl.textContent  = (user.points || 0).toLocaleString();
 
-      /* Rank progress */
+      /* Rank progress — use admin-assigned rank if set, otherwise derive from points */
       const pts  = user.points || 0;
       const info = getRankInfo(pts);
+      const adminRank = user.rank || null;
+      const displayRank = adminRank || info.rank;
       const badge = document.getElementById('profile-rank-badge');
       if (badge) {
-        badge.textContent = info.rank;
+        badge.textContent = displayRank;
         const rankClass = {
           'Trainee Inspector': 'rank-junior',
           'Junior Inspector':  'rank-junior',
@@ -399,15 +401,23 @@
           'Senior Inspector':  'rank-senior',
           'Chief Inspector':   'rank-chief',
           'Director':          'rank-director'
-        }[info.rank] || 'rank-junior';
+        }[displayRank] || 'rank-junior';
         badge.className = 'rank-badge ' + rankClass;
       }
       const progBar = document.getElementById('profile-prog-bar');
-      if (progBar) progBar.style.width = info.pct + '%';
+      if (progBar) progBar.style.width = adminRank ? 100 : info.pct + '%';
       const ptsTxt = document.getElementById('profile-pts-text');
       if (ptsTxt) ptsTxt.textContent = pts.toLocaleString() + ' / ' + (info.nextMin || pts).toLocaleString() + ' pts';
       const ptsRem = document.getElementById('profile-pts-remaining');
       if (ptsRem) ptsRem.textContent = info.next ? info.remaining.toLocaleString() + ' pts to next rank' : 'Max rank achieved';
+      const rankProg = document.getElementById('profile-rank-progress');
+      if (rankProg) {
+        if (adminRank) {
+          rankProg.innerHTML = '<span class="text-orange font-bold">' + displayRank + '</span>';
+        } else {
+          rankProg.innerHTML = info.rank + ' → <span class="text-orange font-bold">' + (info.next || 'Max Rank') + '</span>';
+        }
+      }
 
       /* Earned certifications — only show if user has them in Firestore */
       const certsSection = document.getElementById('certs-earned-section');
@@ -423,7 +433,7 @@
       const navRkEl = document.querySelector('.nav-pilot-rank');
       if (navAvEl) navAvEl.textContent = user.avatar || (user.name || 'XX').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
       if (navNmEl) navNmEl.textContent = user.name  || 'Inspector';
-      if (navRkEl) navRkEl.textContent = info.rank  || 'Inspector';
+      if (navRkEl) navRkEl.textContent = displayRank  || 'Inspector';
 
       /* ── Mission history + Stats + Awards from Firestore ── */
       const histTbody = document.getElementById('history-tbody');
