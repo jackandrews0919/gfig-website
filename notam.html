@@ -564,18 +564,25 @@
     /* ── Load NOTAMs from Firestore when available ── */
     document.addEventListener('gfig:authready', async function() {
       if (!window.dbGetNotams) return;
+      const list = document.getElementById('notam-list');
       try {
         const notams = await dbGetNotams();
-        if (!notams || !notams.length) return;
-        const active = notams.filter(n => !n.expired);
-        if (!active.length) return;
+        const active = notams ? notams.filter(n => !n.expired) : [];
+
+        if (!active.length) {
+          /* Clear static placeholder cards and show empty state */
+          if (list) list.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted);font-family:var(--font-head);font-size:0.8rem;letter-spacing:0.1em;">NO ACTIVE NOTAMS</div>';
+          ['stat-critical','stat-advisory','stat-info','stat-total'].forEach(function(id) {
+            const el = document.getElementById(id); if (el) el.textContent = '0';
+          });
+          return;
+        }
 
         /* Severity mapping from Firestore NOTAM type */
         const sevMap  = { AIRSPACE:'critical', OPERATIONAL:'advisory', MAINTENANCE:'advisory', TRAINING:'info', SYSTEM:'info' };
         const typeMap = { AIRSPACE:'airspace', OPERATIONAL:'ops', MAINTENANCE:'maintenance', TRAINING:'event', SYSTEM:'ops' };
         const sevLabel= { critical:'CRITICAL', advisory:'ADVISORY', info:'INFORMATIONAL' };
 
-        const list = document.getElementById('notam-list');
         if (!list) return;
         list.innerHTML = active.map(function(n) {
           const sev  = sevMap[n.type]  || 'advisory';

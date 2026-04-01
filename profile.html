@@ -74,48 +74,48 @@
 
       <!-- Profile Hero -->
       <div class="profile-hero">
-        <div class="profile-avatar" id="profile-avatar">JH</div>
+        <div class="profile-avatar" id="profile-avatar">IN</div>
         <div class="profile-info">
-          <div class="profile-name" id="profile-name">James Harrison</div>
-          <div class="profile-callsign" id="profile-callsign">GFIG-INS-0042 &nbsp;|&nbsp; Callsign: GFIG42</div>
+          <div class="profile-name" id="profile-name">Inspector</div>
+          <div class="profile-callsign" id="profile-callsign">— &nbsp;|&nbsp; Callsign: —</div>
           <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
-            <span class="rank-badge rank-senior" id="profile-rank-badge">Senior Inspector</span>
+            <span class="rank-badge rank-junior" id="profile-rank-badge">Trainee Inspector</span>
             <span class="badge badge-active">● Online</span>
           </div>
           <div class="profile-meta">
-            <div class="profile-meta-item" id="meta-joined">📅 Joined March 2024</div>
-            <div class="profile-meta-item" id="meta-region">🌍 Region: Europe</div>
-            <div class="profile-meta-item" id="meta-network">🖥 Network: VATSIM</div>
-            <div class="profile-meta-item" id="meta-points">⭐ 4,820 Inspector Points</div>
+            <div class="profile-meta-item" id="meta-joined">📅 Joined —</div>
+            <div class="profile-meta-item" id="meta-region">🌍 Region: —</div>
+            <div class="profile-meta-item" id="meta-network">🖥 Network: —</div>
+            <div class="profile-meta-item" id="meta-points">⭐ 0 Inspector Points</div>
           </div>
         </div>
         <div style="text-align:right; flex-shrink:0;">
           <div style="font-family:var(--font-head); font-size:0.65rem; color:var(--text-muted); letter-spacing:0.12em; margin-bottom:8px;">RANK PROGRESS</div>
-          <div style="font-size:0.8rem; color:var(--text-sub); margin-bottom:6px;">Senior → <span class="text-orange font-bold">Chief Inspector</span></div>
+          <div style="font-size:0.8rem; color:var(--text-sub); margin-bottom:6px;">Trainee → <span class="text-orange font-bold">Junior Inspector</span></div>
           <div class="prog-wrap" style="width:180px;">
             <div class="prog-bar" id="profile-prog-bar" style="width:80%;"></div>
           </div>
-          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px; font-family:var(--font-mono);" id="profile-pts-text">4,820 / 6,000 pts</div>
-          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;" id="profile-pts-remaining">1,180 pts to next rank</div>
+          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px; font-family:var(--font-mono);" id="profile-pts-text">0 / 500 pts</div>
+          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;" id="profile-pts-remaining">500 pts to next rank</div>
         </div>
       </div>
 
       <!-- Stats Row -->
       <div class="profile-stats mb-32">
         <div class="profile-stat">
-          <div class="profile-stat-value" id="stat-missions">142</div>
+          <div class="profile-stat-value" id="stat-missions">0</div>
           <div class="profile-stat-label">Total Missions</div>
         </div>
         <div class="profile-stat">
-          <div class="profile-stat-value" id="stat-passrate" style="color:var(--pass);">96%</div>
+          <div class="profile-stat-value" id="stat-passrate" style="color:var(--pass);">—</div>
           <div class="profile-stat-label">Pass Rate</div>
         </div>
         <div class="profile-stat">
-          <div class="profile-stat-value" id="stat-hours" style="color:var(--orange);">1,246h</div>
+          <div class="profile-stat-value" id="stat-hours" style="color:var(--orange);">0h</div>
           <div class="profile-stat-label">Flight Hours</div>
         </div>
         <div class="profile-stat">
-          <div class="profile-stat-value" id="stat-points">4,820</div>
+          <div class="profile-stat-value" id="stat-points">0</div>
           <div class="profile-stat-label">Inspector Points</div>
         </div>
       </div>
@@ -135,7 +135,9 @@
         </div>
         <div class="grid-2">
 
-          <div class="cert-card earned">
+          <div id="certs-earned-section" style="display:contents;">
+
+          <div class="cert-card earned" style="display:none;">
             <div class="cert-icon">📡</div>
             <div style="flex:1;">
               <div class="cert-name">ILS Calibration — Type A</div>
@@ -145,7 +147,7 @@
             <div class="cert-status"><span class="badge badge-pass">✓ Active</span></div>
           </div>
 
-          <div class="cert-card earned">
+          <div class="cert-card earned" style="display:none;">
             <div class="cert-icon">📡</div>
             <div style="flex:1;">
               <div class="cert-name">ILS Calibration — Type B</div>
@@ -155,7 +157,7 @@
             <div class="cert-status"><span class="badge badge-pass">✓ Active</span></div>
           </div>
 
-          <div class="cert-card earned">
+          <div class="cert-card earned" style="display:none;">
             <div class="cert-icon">📻</div>
             <div style="flex:1;">
               <div class="cert-name">VOR / DME Flight Check</div>
@@ -165,7 +167,7 @@
             <div class="cert-status"><span class="badge badge-pass">✓ Active</span></div>
           </div>
 
-          <div class="cert-card earned">
+          <div class="cert-card earned" style="display:none;">
             <div class="cert-icon">🗺</div>
             <div style="flex:1;">
               <div class="cert-name">Approach Procedure Validation</div>
@@ -175,7 +177,7 @@
             <div class="cert-status"><span class="badge badge-pass">✓ Active</span></div>
           </div>
 
-          <div class="cert-card earned">
+          <div class="cert-card earned" style="display:none;">
             <div class="cert-icon">✈</div>
             <div style="flex:1;">
               <div class="cert-name">SID / STAR Validation</div>
@@ -184,6 +186,8 @@
             </div>
             <div class="cert-status"><span class="badge badge-pass">✓ Active</span></div>
           </div>
+
+          </div><!-- /#certs-earned-section -->
 
           <div class="cert-card">
             <div class="cert-icon" style="opacity:0.5;">🔊</div>
@@ -590,9 +594,9 @@
       const regionEl = document.getElementById('meta-region');
       const netEl    = document.getElementById('meta-network');
       const ptsMetaEl= document.getElementById('meta-points');
-      if (joinedEl && user.joinedDisplay) joinedEl.textContent = '📅 Joined ' + user.joinedDisplay;
-      if (regionEl && user.region)        regionEl.textContent  = '🌍 Region: ' + user.region;
-      if (netEl    && user.network)       netEl.textContent     = '🖥 Network: ' + user.network;
+      if (joinedEl) joinedEl.textContent = '📅 Joined ' + (user.joinedDisplay || '—');
+      if (regionEl) regionEl.textContent  = '🌍 Region: '  + (user.region      || '—');
+      if (netEl)    netEl.textContent     = '🖥 Network: ' + (user.network     || '—');
       if (ptsMetaEl) ptsMetaEl.textContent = '⭐ ' + ((user.points || 0).toLocaleString()) + ' Inspector Points';
 
       /* Stats row */
@@ -619,6 +623,14 @@
       if (ptsTxt) ptsTxt.textContent = pts.toLocaleString() + ' / ' + (info.nextMin || pts).toLocaleString() + ' pts';
       const ptsRem = document.getElementById('profile-pts-remaining');
       if (ptsRem) ptsRem.textContent = info.next ? info.remaining.toLocaleString() + ' pts to next rank' : 'Max rank achieved';
+
+      /* Earned certifications — only show if user has them in Firestore */
+      const certsSection = document.getElementById('certs-earned-section');
+      if (certsSection) {
+        if (user.certifications && user.certifications.length) {
+          certsSection.querySelectorAll('.cert-card.earned').forEach(function(c) { c.style.display = ''; });
+        }
+      }
 
       /* Nav info */
       const navAvEl = document.querySelector('.nav-avatar');

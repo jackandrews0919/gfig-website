@@ -86,10 +86,10 @@ document.addEventListener('gfig:authready', async (e) => {
 
   /* Status card values */
   const statMap = {
-    '[data-stat="missions"]':  (user.totalMissions || 142).toLocaleString(),
-    '[data-stat="passrate"]':  (user.passRate       || 96) + '%',
-    '[data-stat="points"]':    (user.points         || 4820).toLocaleString(),
-    '[data-stat="hours"]':     (user.flightHours    || 1246) + 'h'
+    '[data-stat="missions"]':  (user.totalMissions || 0).toLocaleString(),
+    '[data-stat="passrate"]':  user.passRate != null ? user.passRate + '%' : '—',
+    '[data-stat="points"]':    (user.points   || 0).toLocaleString(),
+    '[data-stat="hours"]':     user.flightHours != null ? user.flightHours + 'h' : '—'
   };
   Object.entries(statMap).forEach(([sel, val]) => {
     document.querySelectorAll(sel).forEach(el => el.textContent = val);
