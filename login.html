@@ -118,61 +118,6 @@
     }
     .btn-discord svg { flex-shrink: 0; }
 
-    .btn-demo-login {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      padding: 12px 20px;
-      background: rgba(0,119,255,0.1);
-      color: var(--blue);
-      font-size: 0.88rem;
-      font-weight: 500;
-      border-radius: var(--r-md);
-      border: 1px solid rgba(0,119,255,0.25);
-      cursor: pointer;
-      transition: background var(--t), border-color var(--t);
-      margin-bottom: 10px;
-    }
-    .btn-demo-login:hover { background: rgba(0,119,255,0.18); border-color: var(--blue); }
-
-    .login-divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 18px 0;
-    }
-    .login-divider-line { flex: 1; height: 1px; background: var(--border); }
-    .login-divider-text { font-size: 0.68rem; letter-spacing: 0.12em; color: var(--text-muted); font-family: var(--font-head); }
-
-    .btn-admin-demo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      padding: 12px 20px;
-      background: rgba(255,106,0,0.07);
-      color: var(--orange);
-      font-size: 0.85rem;
-      font-weight: 500;
-      border-radius: var(--r-md);
-      border: 1px solid rgba(255,106,0,0.2);
-      cursor: pointer;
-      transition: background var(--t), border-color var(--t);
-    }
-    .btn-admin-demo:hover { background: rgba(255,106,0,0.14); border-color: var(--orange); }
-
-    .login-note {
-      margin-top: 24px;
-      font-size: 0.73rem;
-      color: var(--text-muted);
-      line-height: 1.6;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-    }
-
     .login-back {
       position: absolute;
       top: 20px; left: 24px;
@@ -239,26 +184,7 @@
         </a>
       </div>
 
-      <div class="login-divider">
-        <div class="login-divider-line"></div>
-        <span class="login-divider-text">DEMO ACCESS</span>
-        <div class="login-divider-line"></div>
-      </div>
 
-      <!-- Demo inspector login -->
-      <button class="btn-demo-login" onclick="gfigAuth.demoLogin()">
-        ▶ Demo Login — Inspector
-      </button>
-
-      <!-- Demo admin login -->
-      <button class="btn-admin-demo" onclick="gfigAuth.adminDemoLogin()" style="margin-top:8px;">
-        ⚙ Demo Login — Admin / Director
-      </button>
-
-      <div class="login-note">
-        Demo logins load sample session data for UI preview only.<br>
-        Create a real account via <a href="join.html" style="color:var(--orange);">Apply to Join</a>.
-      </div>
     </div>
   </div>
 
@@ -300,7 +226,7 @@
         return;
       }
       if (!window.GFIG_FIREBASE_READY) {
-        errEl.textContent = 'Firebase is not configured yet. Use a Demo Login below.';
+        errEl.textContent = 'Login service is not available. Please try again later.';
         errEl.style.display = 'block';
         return;
       }
