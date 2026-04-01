@@ -378,7 +378,8 @@ const GFIG_CHANNELS = [
   { name: '📬-applications',             type: 'text',         cat: '🔒 staff',        topic: 'Incoming applications — auto-posted from the GFIG portal.' },
   { name: '📋-loa-requests',             type: 'text',         cat: '🔒 staff',        topic: 'Leave of Absence requests — auto-posted when members submit LOA forms.' },
   { name: '🤖-bot-commands',             type: 'text',         cat: '🔒 staff',        topic: 'Bot command testing.' },
-  { name: '📜-audit-log',                type: 'text',         cat: '🔒 staff',        topic: 'Auto-posted audit trail — message edits, deletes, member events.' }
+  { name: '�-safety-log',              type: 'text',         cat: '🔒 staff',        topic: 'Auto-posted safety & incident reports from the GFIG portal.' },
+  { name: '�📜-audit-log',                type: 'text',         cat: '🔒 staff',        topic: 'Auto-posted audit trail — message edits, deletes, member events.' }
 ];
 
 app.post('/setup', auth, async (req, res) => {
@@ -803,6 +804,47 @@ app.post('/report-embed', auth, async (req, res) => {
     if (result)    embed.fields.push({ name: 'Result',    value: result,    inline: true });
     if (points)    embed.fields.push({ name: 'Points',    value: String(points), inline: true });
     if (date)      embed.fields.push({ name: 'Date',      value: date,      inline: true });
+
+    const msg = await ch.send({ embeds: [embed] });
+    res.json({ ok: true, messageId: msg.id });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── Safety Report Embed (auto-post to staff safety-log) ──── */
+
+app.post('/safety-embed', auth, async (req, res) => {
+  try {
+    const guild = getGuild(res); if (!guild) return;
+    const { type, severity, location, aircraft, phase, description, lessons, reporter, reportId } = req.body;
+    if (!description) return res.status(400).json({ error: 'description is required' });
+
+    await guild.channels.fetch();
+    const ch = guild.channels.cache.find(c =>
+      c.isTextBased() && c.name.toLowerCase().replace(/[^a-z0-9-]/g, '').includes('safety-log')
+    );
+    if (!ch) return res.status(404).json({ error: 'safety-log channel not found' });
+
+    const sevColors = { low: 0x00E676, medium: 0xFFD700, high: 0xFF9500, critical: 0xFF4444 };
+    const sevEmoji  = { low: '🟢', medium: '🟡', high: '🟠', critical: '🔴' };
+    const sev = (severity || 'medium').toLowerCase();
+
+    const embed = {
+      title:     (sevEmoji[sev] || '⚠️') + ' Safety Report — ' + (type || 'General'),
+      color:     sevColors[sev] || 0xFFD700,
+      fields:    [],
+      footer:    { text: 'GFIG Safety Reporting System' },
+      timestamp: new Date().toISOString()
+    };
+
+    if (severity)    embed.fields.push({ name: 'Severity',    value: severity,    inline: true });
+    if (type)        embed.fields.push({ name: 'Type',        value: type,        inline: true });
+    if (phase)       embed.fields.push({ name: 'Flight Phase',value: phase,       inline: true });
+    if (location)    embed.fields.push({ name: 'Location',    value: location,    inline: true });
+    if (aircraft)    embed.fields.push({ name: 'Aircraft',    value: aircraft,    inline: true });
+    if (reporter)    embed.fields.push({ name: 'Reporter',    value: reporter,    inline: true });
+    if (description) embed.fields.push({ name: 'Description', value: description.substring(0, 1024), inline: false });
+    if (lessons)     embed.fields.push({ name: 'Lessons / Recommendations', value: lessons.substring(0, 1024), inline: false });
+    if (reportId)    embed.fields.push({ name: 'Report ID',   value: '`' + reportId + '`', inline: false });
 
     const msg = await ch.send({ embeds: [embed] });
     res.json({ ok: true, messageId: msg.id });

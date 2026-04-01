@@ -223,24 +223,50 @@
       if (!desc) { showToast('Description is required','warn'); return; }
 
       var isAnon = document.getElementById('sr-anon').checked;
+      var reportData = {
+        type: document.getElementById('sr-type').value,
+        severity: document.getElementById('sr-severity').value,
+        location: document.getElementById('sr-location').value.trim(),
+        aircraft: document.getElementById('sr-aircraft').value.trim(),
+        phase: document.getElementById('sr-phase').value,
+        description: desc,
+        lessons: document.getElementById('sr-lessons').value.trim(),
+        anonymous: isAnon,
+        authorUid: isAnon ? null : _uid,
+        authorName: isAnon ? 'Anonymous' : _userName,
+        status: 'open',
+        createdAt: window.serverTimestamp()
+      };
       try {
-        await window.db.collection('safety_reports').add({
-          type: document.getElementById('sr-type').value,
-          severity: document.getElementById('sr-severity').value,
-          location: document.getElementById('sr-location').value.trim(),
-          aircraft: document.getElementById('sr-aircraft').value.trim(),
-          phase: document.getElementById('sr-phase').value,
-          description: desc,
-          lessons: document.getElementById('sr-lessons').value.trim(),
-          anonymous: isAnon,
-          authorUid: isAnon ? null : _uid,
-          authorName: isAnon ? 'Anonymous' : _userName,
-          status: 'open',
-          createdAt: window.serverTimestamp()
-        });
+        var docRef = await window.db.collection('safety_reports').add(reportData);
         showToast('✓ Safety report submitted','success');
         toggleForm();
         loadReports();
+
+        /* ── Post to Discord staff safety-log ── */
+        try {
+          var cfgSnap = await window.db.collection('settings').doc('config').get();
+          var cfg = cfgSnap.exists ? cfgSnap.data() : {};
+          var botUrl = cfg.botApiUrl || cfg.discordBotUrl || '';
+          var secret = cfg.adminSecret || '';
+          if (botUrl) {
+            await fetch(botUrl.replace(/\/+$/, '') + '/safety-embed', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+              body: JSON.stringify({
+                type: reportData.type,
+                severity: reportData.severity,
+                location: reportData.location,
+                aircraft: reportData.aircraft,
+                phase: reportData.phase,
+                description: reportData.description,
+                lessons: reportData.lessons,
+                reporter: isAnon ? 'Anonymous' : _userName,
+                reportId: docRef.id
+              })
+            });
+          }
+        } catch(dc) { console.warn('Discord safety-log post failed:', dc); }
       } catch(e) { showToast('Error: ' + e.message,'error'); }
     }
 
