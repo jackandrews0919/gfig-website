@@ -428,6 +428,27 @@
           await dbSubmitMemberForm(type, data);
         }
         window.showToast && showToast('✓ Form submitted — staff will review shortly', 'success');
+
+        // Notify Discord staff channel (best-effort)
+        try {
+          var settings = window.getSettings ? await getSettings() : {};
+          var botUrl = (settings.botApiUrl || '').replace(/\/$/, '');
+          var secret = settings.botApiSecret || '';
+          if (botUrl) {
+            fetch(botUrl + '/notify-form', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+              body: JSON.stringify({
+                type: type === 'resignation' ? 'resignation' : type === 'calibration' ? 'calibration' : 'leave',
+                memberName: data.submittedByName || '—',
+                memberNumber: user?.memberNumber || '',
+                details: type === 'leave'       ? { 'From': data.fromDate, 'Return': data.toDate, 'Reason': data.reason }
+                       : type === 'resignation' ? { 'Reason': data.reason }
+                       : { 'Aircraft': data.aircraft, 'Date': data.preferredDate, 'Notes': data.notes }
+              })
+            }).catch(function() {});
+          }
+        } catch(e) { /* Discord notification is best-effort */ }
         // Clear inputs
         document.querySelectorAll('#mform-' + (type === 'resignation' ? 'resign' : type) + ' input, #mform-' + (type === 'resignation' ? 'resign' : type) + ' textarea').forEach(function(el) {
           if (el.type === 'checkbox') el.checked = false; else el.value = '';

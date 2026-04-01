@@ -10,7 +10,7 @@
    Deployment: Railway, Render, or Replit (all have free tiers)
    ================================================================ */
 
-const { Client, GatewayIntentBits, ChannelType, AuditLogEvent, Events } = require('discord.js');
+const { Client, GatewayIntentBits, ChannelType, AuditLogEvent, Events, PermissionsBitField } = require('discord.js');
 const express = require('express');
 const cors    = require('cors');
 
@@ -237,13 +237,57 @@ const GFIG_ROLES = [
   { name: 'Fleet Manager',       color: '#18FFFF', hoist: false },
   { name: 'Drone Operator',      color: '#76FF03', hoist: false },
   { name: 'Helicopter Pilot',    color: '#FFAB40', hoist: false },
+  { name: 'On LOA',              color: '#F44336', hoist: true  },
+  { name: 'Guest',               color: '#95A5A6', hoist: true  },
+  { name: 'Applicant',           color: '#E67E22', hoist: true  },
+  { name: 'Suspended',           color: '#555555', hoist: false },
   { name: 'GFIG Bot',            color: '#5865F2', hoist: false },
-  { name: 'Member',              color: '#777777', hoist: false }
+  { name: 'Member',              color: '#2ECC71', hoist: true  }
 ];
+
+/* ── Permission Profiles (applied to categories, inherited by child channels) ── */
+const P = PermissionsBitField.Flags;
+const PERM_PROFILES = {
+  info: [
+    { role: '@everyone', deny:  [P.ViewChannel] },
+    { role: 'Guest',     allow: [P.ViewChannel, P.ReadMessageHistory], deny: [P.SendMessages, P.AddReactions] },
+    { role: 'Applicant', allow: [P.ViewChannel, P.ReadMessageHistory], deny: [P.SendMessages, P.AddReactions] },
+    { role: 'On LOA',    allow: [P.ViewChannel, P.ReadMessageHistory], deny: [P.SendMessages] },
+    { role: 'Member',    allow: [P.ViewChannel, P.ReadMessageHistory], deny: [P.SendMessages] }
+  ],
+  ops: [
+    { role: '@everyone', deny:  [P.ViewChannel] },
+    { role: 'Member',    allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory, P.AddReactions, P.AttachFiles] }
+  ],
+  community: [
+    { role: '@everyone', deny:  [P.ViewChannel] },
+    { role: 'Guest',     allow: [P.ViewChannel, P.ReadMessageHistory], deny: [P.SendMessages, P.AddReactions] },
+    { role: 'Applicant', allow: [P.ViewChannel, P.ReadMessageHistory], deny: [P.SendMessages, P.AddReactions] },
+    { role: 'On LOA',    allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory, P.AddReactions, P.AttachFiles] },
+    { role: 'Member',    allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory, P.AddReactions, P.AttachFiles] }
+  ],
+  community_intro: [
+    { role: 'Guest',     allow: [P.SendMessages] },
+    { role: 'Applicant', allow: [P.SendMessages] }
+  ],
+  voice: [
+    { role: '@everyone', deny:  [P.ViewChannel, P.Connect] },
+    { role: 'Member',    allow: [P.ViewChannel, P.Connect, P.Speak] },
+    { role: 'On LOA',    allow: [P.ViewChannel, P.Connect, P.Speak] }
+  ],
+  staff: [
+    { role: '@everyone',        deny:  [P.ViewChannel] },
+    { role: 'Director',         allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory, P.ManageMessages] },
+    { role: 'Chief Inspector',  allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory] },
+    { role: 'Senior Inspector', allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory] },
+    { role: 'Flight Examiner',  allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory] },
+    { role: 'Training Officer', allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory] }
+  ]
+};
 
 const GFIG_CHANNELS = [
   /* ── INFORMATION ── */
-  { name: '📋 information',              type: 'category' },
+  { name: '📋 information',              type: 'category', perms: 'info' },
   { name: '👋-welcome',                  type: 'text',         cat: '📋 information',  topic: 'Welcome to the Global Flight Inspection Group. Read the rules before proceeding.' },
   { name: '📜-rules',                    type: 'text',         cat: '📋 information',  topic: 'Server rules and code of conduct for all GFIG members.' },
   { name: '📣-announcements',            type: 'announcement', cat: '📋 information',  topic: 'Official GFIG announcements — follow this channel for updates.' },
@@ -251,7 +295,7 @@ const GFIG_CHANNELS = [
   { name: '📇-staff-directory',          type: 'text',         cat: '📋 information',  topic: 'GFIG leadership, department heads, and contact information.' },
 
   /* ── OPERATIONS HQ ── */
-  { name: '✈ operations-hq',             type: 'category' },
+  { name: '✈ operations-hq',             type: 'category', perms: 'ops' },
   { name: '📋-mission-briefings',        type: 'text',         cat: '✈ operations-hq', topic: 'Auto-posted from GFIG portal — upcoming and active inspection missions.' },
   { name: '✅-completed-ops',             type: 'text',         cat: '✈ operations-hq', topic: 'Completed inspection reports — auto-posted when approved by staff.' },
   { name: '📊-leaderboard',              type: 'text',         cat: '✈ operations-hq', topic: 'Monthly inspector rankings and point standings.' },
@@ -259,7 +303,7 @@ const GFIG_CHANNELS = [
   { name: '📡-operational-validation',    type: 'text',         cat: '✈ operations-hq', topic: 'Navaids, ILS, and procedure validation discussion.' },
 
   /* ── SPECIALIST OPERATIONS ── */
-  { name: '🚁 specialist-ops',           type: 'category' },
+  { name: '🚁 specialist-ops',           type: 'category', perms: 'ops' },
   { name: '🚁-helicopter-aerial-media',  type: 'text',         cat: '🚁 specialist-ops', topic: 'Helicopter flight inspection and aerial media operations.' },
   { name: '🔍-surveillance-ops',         type: 'text',         cat: '🚁 specialist-ops', topic: 'Surveillance, monitoring, and observation flight operations.' },
   { name: '🇬🇧-uk-operations',           type: 'text',         cat: '🚁 specialist-ops', topic: 'UK-specific operations, airspace, and coordination.' },
@@ -267,14 +311,14 @@ const GFIG_CHANNELS = [
   { name: '🔧-calibration-flights',      type: 'text',         cat: '🚁 specialist-ops', topic: 'Instrument calibration and validation flight ops.' },
 
   /* ── FLEET & STANDARDS ── */
-  { name: '🛩 fleet-standards',           type: 'category' },
+  { name: '🛩 fleet-standards',           type: 'category', perms: 'ops' },
   { name: '🛩-fleet-management',          type: 'text',         cat: '🛩 fleet-standards',  topic: 'Fleet status, aircraft assignments, and maintenance tracking.' },
   { name: '✈-validation-fleet',           type: 'text',         cat: '🛩 fleet-standards',  topic: 'Operational validation fleet — certified inspection aircraft only.' },
   { name: '📈-performance-tracking',      type: 'text',         cat: '🛩 fleet-standards',  topic: 'KPIs, pass rates, and operational efficiency metrics.' },
   { name: '⚠-safety-reports',            type: 'text',         cat: '🛩 fleet-standards',  topic: 'Safety occurrence reports and hazard tracking.' },
 
   /* ── TRAINING DEPARTMENT ── */
-  { name: '🎓 training-dept',            type: 'category' },
+  { name: '🎓 training-dept',            type: 'category', perms: 'ops' },
   { name: '📢-training-announcements',   type: 'announcement', cat: '🎓 training-dept', topic: 'Training schedule, new courses, and department updates.' },
   { name: '📚-course-materials',         type: 'text',         cat: '🎓 training-dept', topic: 'SOPs, manuals, study guides, and reference documents.' },
   { name: '📝-checkride-schedule',       type: 'text',         cat: '🎓 training-dept', topic: 'Upcoming skill checks and examiner availability.' },
@@ -282,15 +326,15 @@ const GFIG_CHANNELS = [
   { name: '🧑‍🏫-mentor-chat',            type: 'text',         cat: '🎓 training-dept', topic: 'Private coordination between mentors and training officers.' },
 
   /* ── COMMUNITY ── */
-  { name: '💬 community',                type: 'category' },
-  { name: '👋-introductions',            type: 'text',         cat: '💬 community',    topic: 'Introduce yourself to the GFIG community!' },
+  { name: '💬 community',                type: 'category', perms: 'community' },
+  { name: '👋-introductions',            type: 'text',         cat: '💬 community',    topic: 'Introduce yourself to the GFIG community!', perms: 'community_intro' },
   { name: '💬-general',                  type: 'text',         cat: '💬 community',    topic: 'General chat for GFIG members.' },
   { name: '📸-screenshots',              type: 'text',         cat: '💬 community',    topic: 'Share your best cockpit and inspection screenshots.' },
   { name: '✈-fleet-spotting',            type: 'text',         cat: '💬 community',    topic: 'Real and virtual fleet photos.' },
   { name: '🎮-off-topic',                type: 'text',         cat: '💬 community',    topic: 'Non-aviation chat — keep it friendly.' },
 
   /* ── VOICE ── */
-  { name: '🔊 voice-channels',           type: 'category' },
+  { name: '🔊 voice-channels',           type: 'category', perms: 'voice' },
   { name: 'Operations Briefing',         type: 'voice',        cat: '🔊 voice-channels' },
   { name: 'General Voice',               type: 'voice',        cat: '🔊 voice-channels' },
   { name: 'ATC Practice',                type: 'voice',        cat: '🔊 voice-channels' },
@@ -298,10 +342,12 @@ const GFIG_CHANNELS = [
   { name: 'Specialist Ops',              type: 'voice',        cat: '🔊 voice-channels' },
 
   /* ── STAFF ── */
-  { name: '🔒 staff',                    type: 'category' },
+  { name: '🔒 staff',                    type: 'category', perms: 'staff' },
   { name: '🏢-director-office',          type: 'text',         cat: '🔒 staff',        topic: 'Director-level coordination and strategic planning.' },
   { name: '📋-admin-chat',               type: 'text',         cat: '🔒 staff',        topic: 'Staff-only coordination and moderation.' },
   { name: '👥-hr-management',            type: 'text',         cat: '🔒 staff',        topic: 'Member applications, promotions, and HR records.' },
+  { name: '📬-applications',             type: 'text',         cat: '🔒 staff',        topic: 'Incoming applications — auto-posted from the GFIG portal.' },
+  { name: '📋-loa-requests',             type: 'text',         cat: '🔒 staff',        topic: 'Leave of Absence requests — auto-posted when members submit LOA forms.' },
   { name: '🤖-bot-commands',             type: 'text',         cat: '🔒 staff',        topic: 'Bot command testing.' },
   { name: '📜-audit-log',                type: 'text',         cat: '🔒 staff',        topic: 'Auto-posted audit trail — message edits, deletes, member events.' }
 ];
@@ -327,7 +373,12 @@ app.post('/setup', auth, async (req, res) => {
     /* ② Channels & Categories */
     // Re-fetch so categories are in cache after creation
     await guild.channels.fetch();
+    await guild.roles.fetch();
     const catMap = {};
+
+    // Build role-name → ID map for permission overwrites
+    const roleMap = {};
+    guild.roles.cache.forEach(r => { roleMap[r.name] = r.id; });
 
     for (const c of GFIG_CHANNELS) {
       try {
@@ -348,6 +399,15 @@ app.post('/setup', auth, async (req, res) => {
         };
         if (c.cat && catMap[c.cat]) opts.parent = catMap[c.cat];
         if (c.topic) opts.topic = c.topic;
+
+        // Apply permission overwrites from profile
+        if (c.perms && PERM_PROFILES[c.perms]) {
+          opts.permissionOverwrites = PERM_PROFILES[c.perms].map(p => {
+            const id = p.role === '@everyone' ? guild.id : roleMap[p.role];
+            if (!id) return null;
+            return { id, allow: p.allow || [], deny: p.deny || [] };
+          }).filter(Boolean);
+        }
 
         const ch = await guild.channels.create(opts);
         if (c.type === 'category') catMap[c.name] = ch.id;
@@ -448,10 +508,20 @@ app.post('/sync-member', auth, async (req, res) => {
         log.push('err:Role "' + rank + '" not found — run Setup first');
       }
 
-      // Also ensure Member role is assigned
+      // Also ensure Member role is assigned and Guest removed
       const memberRole = guild.roles.cache.find(r => r.name === 'Member');
       if (memberRole && !member.roles.cache.has(memberRole.id)) {
         try { await member.roles.add(memberRole, 'Auto-assign Member role'); }
+        catch(e) { /* silent */ }
+      }
+      const guestRole = guild.roles.cache.find(r => r.name === 'Guest');
+      if (guestRole && member.roles.cache.has(guestRole.id)) {
+        try { await member.roles.remove(guestRole, 'Promoted from Guest to Member'); log.push('ok:Removed Guest role'); }
+        catch(e) { /* silent */ }
+      }
+      const applicantRole = guild.roles.cache.find(r => r.name === 'Applicant');
+      if (applicantRole && member.roles.cache.has(applicantRole.id)) {
+        try { await member.roles.remove(applicantRole, 'Application approved'); log.push('ok:Removed Applicant role'); }
         catch(e) { /* silent */ }
       }
     }
@@ -498,6 +568,88 @@ app.post('/sync-all', auth, async (req, res) => {
     }
 
     res.json({ ok: true, synced: log.filter(l => l.startsWith('ok:')).length, log });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── LOA Role Management ────────────────────────────────────── */
+
+app.post('/loa', auth, async (req, res) => {
+  try {
+    const guild = getGuild(res); if (!guild) return;
+    const { discordId, action } = req.body;  // action: 'add' | 'remove'
+    if (!discordId) return res.status(400).json({ error: 'discordId required' });
+    if (!['add', 'remove'].includes(action)) return res.status(400).json({ error: 'action must be add or remove' });
+
+    let member;
+    try { member = await guild.members.fetch(discordId); }
+    catch(e) { return res.status(404).json({ error: 'Member not found in server' }); }
+
+    await guild.roles.fetch();
+    const loaRole    = guild.roles.cache.find(r => r.name === 'On LOA');
+    const memberRole = guild.roles.cache.find(r => r.name === 'Member');
+    const log = [];
+
+    if (action === 'add') {
+      // Assign On LOA, remove Member (restricts access to read-only)
+      if (loaRole)    { try { await member.roles.add(loaRole, 'LOA approved'); log.push('ok:Added On LOA role'); } catch(e) { log.push('err:' + e.message); } }
+      if (memberRole) { try { await member.roles.remove(memberRole, 'LOA — pausing membership'); log.push('ok:Removed Member role'); } catch(e) { /* silent */ } }
+
+      // Post notification to LOA channel
+      const ch = guild.channels.cache.find(c => c.isTextBased() && c.name.includes('loa-requests'));
+      if (ch) {
+        ch.send({ embeds: [{ color: 0xF44336, title: '📋 Leave of Absence', description: `**${member.displayName}** has been placed on Leave of Absence.`, timestamp: new Date().toISOString() }] }).catch(() => {});
+      }
+    } else {
+      // Remove On LOA, restore Member
+      if (loaRole)    { try { await member.roles.remove(loaRole, 'LOA ended'); log.push('ok:Removed On LOA role'); } catch(e) { log.push('err:' + e.message); } }
+      if (memberRole) { try { await member.roles.add(memberRole, 'LOA ended — restoring membership'); log.push('ok:Restored Member role'); } catch(e) { /* silent */ } }
+
+      const ch = guild.channels.cache.find(c => c.isTextBased() && c.name.includes('loa-requests'));
+      if (ch) {
+        ch.send({ embeds: [{ color: 0x2ECC71, title: '✅ LOA Ended', description: `**${member.displayName}** has returned from Leave of Absence.`, timestamp: new Date().toISOString() }] }).catch(() => {});
+      }
+    }
+
+    auditPush({ type: 'role_change', user: member.user.tag, summary: `LOA ${action === 'add' ? 'started' : 'ended'} for **${member.user.tag}**` });
+    res.json({ ok: true, log });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── Notify: Post form submissions to staff channels ────────── */
+
+app.post('/notify-form', auth, async (req, res) => {
+  try {
+    const guild = getGuild(res); if (!guild) return;
+    const { type, memberName, memberNumber, details } = req.body;
+    if (!type) return res.status(400).json({ error: 'type required' });
+
+    const channelMap = {
+      leave:       'loa-requests',
+      resignation: 'hr-management',
+      calibration: 'hr-management',
+      application: 'applications'
+    };
+    const colorMap = { leave: 0xF44336, resignation: 0xFF5252, calibration: 0x40AAFF, application: 0xE67E22 };
+    const titleMap = { leave: '📋 LOA Request', resignation: '🚪 Resignation', calibration: '🔧 Calibration Request', application: '📬 New Application' };
+
+    const chName = channelMap[type] || 'hr-management';
+    const ch = guild.channels.cache.find(c => c.isTextBased() && c.name.includes(chName));
+    if (!ch) return res.json({ ok: true, posted: false, reason: 'Channel not found' });
+
+    const fields = [];
+    if (memberName)   fields.push({ name: 'Member', value: memberName, inline: true });
+    if (memberNumber) fields.push({ name: 'ID', value: memberNumber, inline: true });
+    if (details)      Object.entries(details).forEach(([k, v]) => { if (v) fields.push({ name: k, value: String(v).substring(0, 1024), inline: true }); });
+
+    await ch.send({ embeds: [{
+      color: colorMap[type] || 0x5865F2,
+      title: titleMap[type] || '📋 Form Submission',
+      fields,
+      footer: { text: 'GFIG Portal' },
+      timestamp: new Date().toISOString()
+    }] });
+
+    res.json({ ok: true, posted: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -685,14 +837,37 @@ client.on(Events.ChannelDelete, (ch) => {
   });
 });
 
-/* Audit: Member Join */
-client.on(Events.GuildMemberAdd, (member) => {
+/* Audit: Member Join — auto-assign Guest role */
+client.on(Events.GuildMemberAdd, async (member) => {
   if (member.guild.id !== GUILD_ID) return;
   auditPush({
     type:    'member_join',
     user:    member.user.tag,
     summary: `**${member.user.tag}** joined the server`
   });
+
+  // Auto-assign Guest role
+  try {
+    const guestRole = member.guild.roles.cache.find(r => r.name === 'Guest');
+    if (guestRole) {
+      await member.roles.add(guestRole, 'Auto-assign Guest on join');
+    }
+  } catch(e) { console.warn('Failed to assign Guest role:', e.message); }
+
+  // Welcome message in #welcome channel
+  try {
+    const welcomeCh = member.guild.channels.cache.find(c => c.isTextBased() && c.name.includes('welcome'));
+    if (welcomeCh) {
+      await welcomeCh.send({ embeds: [{
+        color: 0x2ECC71,
+        title: '👋 Welcome to GFIG!',
+        description: `Welcome **${member.user.username}**! You've been given the **Guest** role.\n\nTo become a full member, visit our website and submit an application at **gfig.org/join**.\n\nFeel free to browse our community channels and introduce yourself in <#${member.guild.channels.cache.find(c => c.name.includes('introductions'))?.id || 'introductions'}>!`,
+        thumbnail: { url: member.user.displayAvatarURL({ size: 128 }) },
+        footer: { text: 'Global Flight Inspection Group' },
+        timestamp: new Date().toISOString()
+      }] });
+    }
+  } catch(e) { console.warn('Failed to send welcome message:', e.message); }
 });
 
 /* Audit: Member Leave */
