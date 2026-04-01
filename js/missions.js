@@ -157,22 +157,57 @@ function confirmClaim() {
 }
 
 function claimMission(id) {
-  // Triggered from card button directly (without opening modal)
-  const card = document.querySelector(`[onclick*="${id}"]`)?.closest('.mission-card');
-  if (!card) {
-    confirmClaim();
-    return;
+  const user = gfigAuth.getUser();
+  if (!user) { showToast('You must be logged in to claim a mission.', 'error'); return; }
+
+  /* Optimistically update UI */
+  const card = [...document.querySelectorAll('.mission-card')]
+    .find(c => c.querySelector('.mission-id')?.textContent === id);
+  if (card) {
+    const btn   = card.querySelector('.btn-primary');
+    const badge = card.querySelector('.badge-available');
+    if (btn)   { btn.textContent = 'Claiming…'; btn.disabled = true; }
+    if (badge) { badge.className = 'badge badge-active'; badge.textContent = 'In Progress'; }
   }
-  const claimBtn = card.querySelector('.btn-primary');
-  const badge = card.querySelector('.badge-available');
-  if (claimBtn) { claimBtn.textContent = '✓ Claimed'; claimBtn.disabled = true; claimBtn.className = 'btn btn-sm btn-success'; claimBtn.style.cursor = 'default'; }
-  if (badge) { badge.className = 'badge badge-active'; badge.textContent = 'In Progress'; }
-  showToast(`✓ Mission ${id} claimed! Mission brief posted to #mission-briefing on Discord.`, 'success');
+
+  dbClaimMission(id, user).then(ok => {
+    if (ok) {
+      showToast(`✓ Mission ${id} claimed! Brief posted to #mission-briefing on Discord.`, 'success');
+      if (card) {
+        const btn = card.querySelector('.btn-primary, .btn-success');
+        if (btn) { btn.textContent = '✓ Claimed'; btn.className = 'btn btn-sm btn-success'; btn.style.cursor = 'default'; }
+      }
+    } else {
+      /* Revert UI on failure */
+      if (card) {
+        const btn   = card.querySelector('.btn-success, .btn-primary');
+        const badge = card.querySelector('.badge-active');
+        if (btn)   { btn.textContent = 'Claim Mission'; btn.className = 'btn btn-sm btn-primary'; btn.disabled = false; }
+        if (badge) { badge.className = 'badge badge-available'; badge.textContent = 'Available'; }
+      }
+    }
+  });
+}
+
+// ── Confirm claim from modal ─────────────────────────────────────
+function confirmClaim() {
+  const { id, dep, arr, type } = currentMissionData;
+  closeMissionModal();
+  claimMission(id);
+  /* Card UI revert handled inside claimMission */
+  document.querySelectorAll('.mission-card').forEach(card => {
+    if (card.querySelector('.mission-id')?.textContent === id) {
+      const btn   = card.querySelector('.btn-primary');
+      const badge = card.querySelector('.badge-available');
+      if (btn)   { btn.textContent = 'Claiming…'; btn.disabled = true; btn.className = 'btn btn-sm btn-success'; }
+      if (badge) { badge.className = 'badge badge-active'; badge.textContent = 'In Progress'; }
+    }
+  });
 }
 
 // ── Load More ────────────────────────────────────────────────────
 function loadMoreMissions() {
-  showToast('Loading additional missions… (full backend required for live data)', 'info');
+  showToast('Loading additional missions…', 'info');
 }
 
 // ── Wire up filters ──────────────────────────────────────────────
@@ -193,5 +228,86 @@ document.addEventListener('DOMContentLoaded', () => {
   // Close on Escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeMissionModal();
+  });
+});
+
+/* ── Dynamic mission loading from Firestore ─────────────────────
+   When Firebase is configured, replace static HTML cards with live
+   data from the missions collection. Falls back to static HTML.    */
+document.addEventListener('gfig:authready', () => {
+  if (!window.db) {
+    applyFilters(); // count static cards
+    return;
+  }
+
+  const grid = document.getElementById('mission-grid');
+  if (!grid) return;
+
+  /* Show loading state */
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);font-family:var(--font-head);font-size:0.8rem;letter-spacing:0.1em;">LOADING MISSIONS…</div>';
+
+  dbGetMissions().then(missions => {
+    if (!missions || !missions.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);">No active missions at this time.</div>';
+      return;
+    }
+
+    grid.innerHTML = '';
+    missions.forEach(m => {
+      if (m.status === 'expired') return;
+      const isActive = m.status === 'active';
+      const priorityClass = m.priority === 'Urgent' ? 'badge-urgent' : m.priority === 'Priority' ? 'badge-priority' : 'badge-routine';
+      const statusClass   = isActive ? 'badge-active' : 'badge-available';
+      const statusLabel   = isActive ? 'In Progress' : 'Available';
+      const btnHtml = isActive
+        ? `<button class="btn btn-sm btn-secondary" disabled>Claimed</button>`
+        : `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); claimMission('${m.id}')">Claim Mission</button>`;
+
+      const typeKey = (m.type || '').toLowerCase()
+        .replace(/\s+/g,'').replace('calibration','').replace('check','').replace('validation','').replace('survey','survey').replace('approach','approach').replace('procedure','procedure');
+      const dataType = m.dataType || (m.type || '').toLowerCase().split(' ')[0];
+
+      const card = document.createElement('div');
+      card.className = 'mission-card';
+      card.dataset.region   = (m.region || '').toLowerCase().replace(/\s+/g,'');
+      card.dataset.type     = dataType;
+      card.dataset.priority = (m.priority || 'routine').toLowerCase();
+      card.dataset.status   = m.status || 'available';
+      card.onclick = () => openMissionModal(m.id, m.dep, m.arr, m.type, m.priority, m.aircraft, m.region, m.brief || '');
+      card.innerHTML = `
+        <div class="mission-card-header">
+          <div>
+            <div class="mission-id">${m.id}</div>
+            <div class="mission-route">${m.dep} <span class="mission-route-arrow">→</span> ${m.arr}</div>
+          </div>
+          <span class="badge ${priorityClass}">${m.priority || 'Routine'}</span>
+        </div>
+        <div class="text-sm text-sub">${m.type || '—'}</div>
+        <div class="mission-details">
+          <div><div class="mission-detail-label">Aircraft</div><div class="mission-detail-val font-mono">${m.aircraft || '—'}</div></div>
+          <div><div class="mission-detail-label">Region</div><div class="mission-detail-val">${m.region || '—'}</div></div>
+          <div><div class="mission-detail-label">Est. Time</div><div class="mission-detail-val">${m.estTime || '—'}</div></div>
+          <div><div class="mission-detail-label">Points</div><div class="mission-detail-val text-pass">+${m.points || 120} pts</div></div>
+        </div>
+        <div class="mission-card-footer">
+          <span class="badge ${statusClass}">${statusLabel}${isActive && m.claimedByName ? ' · ' + m.claimedByName : ''}</span>
+          ${btnHtml}
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    // Update header count
+    const available = missions.filter(m => m.status === 'available').length;
+    const active    = missions.filter(m => m.status === 'active').length;
+    const liveEl    = document.querySelector('.live-dot');
+    if (liveEl) liveEl.textContent = `${available} Available`;
+    const activeBadge = document.querySelector('.badge-active:not(.mission-card .badge-active)');
+    if (activeBadge && activeBadge.textContent.includes('In Progress')) activeBadge.textContent = `${active} In Progress`;
+
+    applyFilters();
+  }).catch(e => {
+    console.error('Mission load error:', e);
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--fail);">Error loading missions. Please refresh.</div>';
   });
 });

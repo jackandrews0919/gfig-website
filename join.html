@@ -12,6 +12,11 @@
   <meta name="theme-color" content="#0b1f3a">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
   <!-- EmailJS SDK — configure keys in Admin Panel > Settings -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
@@ -542,37 +547,69 @@
       /* Generate application reference */
       const ref = 'GFIG-APP-' + String(Math.floor(1000 + Math.random() * 9000));
 
-      /* ── 1. Discord webhook — notify admins ── */
-      const webhookUrl = localStorage.getItem('gfig_wh_applications');
-      if (webhookUrl) {
+      /* ── 1. Save application to Firestore + notify admins ── */
+      if (window.dbSubmitApplication) {
         try {
-          await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              username: 'GFIG Applications',
-              embeds: [{
-                title: '🆕 New Application — ' + ref,
-                color: 0xff6a00,
-                fields: [
-                  { name: 'Name',        value: name,                   inline: true  },
-                  { name: 'Email',       value: email,                  inline: true  },
-                  { name: 'Discord',     value: discord,                inline: true  },
-                  { name: 'VATSIM CID',  value: vatsim  || '—',         inline: true  },
-                  { name: 'IVAO VID',    value: ivao    || '—',         inline: true  },
-                  { name: 'Simulator',   value: sim,                    inline: true  },
-                  { name: 'Experience',  value: exp,                    inline: true  },
-                  { name: 'Hours',       value: hours,                  inline: true  },
-                  { name: 'Source',      value: source  || '—',         inline: true  },
-                  { name: 'Application', value: reason.substring(0, 1000), inline: false }
-                ],
-                footer:    { text: 'GFIG Applications System · ' + ref },
-                timestamp: new Date().toISOString()
-              }]
-            })
-          });
-        } catch (e) {
-          console.warn('Applications webhook failed:', e);
+          await dbSubmitApplication({ ref, name, email, discord, vatsim, ivao, sim, experience: exp, hours, reason, source });
+        } catch(saveErr) {
+          console.warn('Application Firestore save failed:', saveErr);
+          /* Fallback: direct webhook */
+          const webhookUrl = localStorage.getItem('gfig_wh_applications');
+          if (webhookUrl) {
+            try {
+              await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  username: 'GFIG Applications',
+                  embeds: [{ title: '🆕 New Application — ' + ref, color: 0xff6a00,
+                    fields: [
+                      { name:'Name', value:name, inline:true }, { name:'Email', value:email, inline:true },
+                      { name:'Discord', value:discord, inline:true }, { name:'VATSIM CID', value:vatsim||'—', inline:true },
+                      { name:'IVAO VID', value:ivao||'—', inline:true }, { name:'Simulator', value:sim, inline:true },
+                      { name:'Experience', value:exp, inline:true }, { name:'Hours', value:hours, inline:true },
+                      { name:'Source', value:source||'—', inline:true }, { name:'Application', value:reason.substring(0, 1000), inline:false }
+                    ],
+                    footer:{ text:'GFIG Applications System · ' + ref }, timestamp: new Date().toISOString()
+                  }]
+                })
+              });
+            } catch(e) { console.warn('Webhook fallback failed:', e); }
+          }
+        }
+      } else {
+        /* Demo mode — direct localStorage webhook */
+        const webhookUrl = localStorage.getItem('gfig_wh_applications');
+        if (webhookUrl) {
+          try {
+            await fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                username: 'GFIG Applications',
+                embeds: [{
+                  title: '🆕 New Application — ' + ref,
+                  color: 0xff6a00,
+                  fields: [
+                    { name: 'Name',        value: name,                   inline: true  },
+                    { name: 'Email',       value: email,                  inline: true  },
+                    { name: 'Discord',     value: discord,                inline: true  },
+                    { name: 'VATSIM CID',  value: vatsim  || '—',         inline: true  },
+                    { name: 'IVAO VID',    value: ivao    || '—',         inline: true  },
+                    { name: 'Simulator',   value: sim,                    inline: true  },
+                    { name: 'Experience',  value: exp,                    inline: true  },
+                    { name: 'Hours',       value: hours,                  inline: true  },
+                    { name: 'Source',      value: source  || '—',         inline: true  },
+                    { name: 'Application', value: reason.substring(0, 1000), inline: false }
+                  ],
+                  footer:    { text: 'GFIG Applications System · ' + ref },
+                  timestamp: new Date().toISOString()
+                }]
+              })
+            });
+          } catch (e) {
+            console.warn('Applications webhook failed:', e);
+          }
         }
       }
 

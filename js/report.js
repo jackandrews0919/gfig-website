@@ -5,10 +5,12 @@
 
 let currentStep = 1;
 
+/* missionData is populated dynamically from Firestore (when configured)
+   or falls back to this static seed for demo mode. */
 const missionData = {
-  'GFI-2026-0285': { route: 'EGKK → EIDW', type: 'ILS Calibration', aircraft: 'A320', callsign: 'GFIG42I', region: 'Europe', priority: 'Priority' },
-  'GFI-2026-0283': { route: 'EGCC → EGGD', type: 'VOR Check',        aircraft: 'B737', callsign: 'GFIG42V', region: 'Europe', priority: 'Routine' },
-  'GFI-2026-0281': { route: 'EDDF → EDDM', type: 'Procedure Validation', aircraft: 'A320', callsign: 'GFIG42P', region: 'Europe', priority: 'Routine' },
+  'GFI-2026-0285': { route: 'EGKK → EIDW', type: 'ILS Calibration',     aircraft: 'King Air B200',  callsign: 'GFIG42I', region: 'Europe', priority: 'Priority' },
+  'GFI-2026-0283': { route: 'EGCC → EGGD', type: 'VOR Check',            aircraft: 'King Air B200',  callsign: 'GFIG42V', region: 'Europe', priority: 'Routine' },
+  'GFI-2026-0281': { route: 'EDDF → EDDM', type: 'Procedure Validation', aircraft: 'Falcon 20',      callsign: 'GFIG42P', region: 'Europe', priority: 'Routine' },
 };
 
 // ── Step navigation ──────────────────────────────────────────────
@@ -166,7 +168,7 @@ function buildReview() {
 }
 
 // ── Submit report ────────────────────────────────────────────────
-function submitReport(e) {
+async function submitReport(e) {
   e.preventDefault();
   if (!validateStep(3)) return;
 
@@ -174,12 +176,77 @@ function submitReport(e) {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting…';
 
-  // Simulate submission delay
-  setTimeout(() => {
+  const missionId = document.getElementById('mission-select')?.value;
+  const data      = missionData[missionId] || {};
+  const result    = document.querySelector('input[name="result"]:checked')?.value;
+
+  const reportPayload = {
+    missionId,
+    missionRoute:  data.route    || '—',
+    missionType:   data.type     || '—',
+    aircraft:      data.aircraft || '—',
+    region:        data.region   || '—',
+    flightDate:    document.getElementById('flight-date')?.value  || '',
+    flightTime:    document.getElementById('flight-time')?.value  || '',
+    blockOff:      document.getElementById('block-off')?.value    || '',
+    blockOn:       document.getElementById('block-on')?.value     || '',
+    cruiseAlt:     document.getElementById('cruise-alt')?.value   || '',
+    airspeed:      document.getElementById('airspeed')?.value     || '',
+    atcContact:    document.getElementById('atc-contact')?.value  || '',
+    network:       document.getElementById('network')?.value      || '',
+    result,
+    observations:  document.getElementById('observations')?.value || '',
+    narrative:     document.getElementById('narrative')?.value    || '',
+    failAction:    document.getElementById('fail-action')?.value  || ''
+  };
+
+  try {
+    await dbSubmitReport(reportPayload);
     document.getElementById('report-form-wrap').classList.add('hidden');
     const banner = document.getElementById('success-banner');
     banner.classList.remove('hidden');
     banner.scrollIntoView({ behavior: 'smooth' });
-    showToast('✓ Report submitted! Posted to #inspection-reports on Discord.', 'success');
-  }, 1400);
+    showToast('✓ Report submitted — posted to #inspection-reports on Discord.', 'success');
+  } catch (err) {
+    console.error('Report submit error:', err);
+    showToast('Error submitting report. Please try again.', 'error');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Report';
+  }
 }
+
+/* ── Populate mission dropdown from Firestore ────────────────────
+   Fires once auth is ready. Loads only missions claimed by the
+   current user with status 'active'. Falls back to static options. */
+document.addEventListener('gfig:authready', async (e) => {
+  const user = e.detail;
+  if (!window.db || !user?.uid || user._isDemo) return; // use static options in demo
+
+  const sel = document.getElementById('mission-select');
+  if (!sel) return;
+
+  try {
+    const missions = await dbGetMyMissions(user.uid);
+    if (!missions || !missions.length) return; // keep static options
+
+    sel.innerHTML = '<option value="">— Select a mission to file report for —</option>';
+    missions.forEach(m => {
+      if (m.status !== 'active') return;
+      /* Cache in missionData for populateMissionData() */
+      missionData[m.id] = {
+        route:    `${m.dep} → ${m.arr}`,
+        type:     m.type,
+        aircraft: m.aircraft,
+        callsign: user.callsign || '',
+        region:   m.region,
+        priority: m.priority
+      };
+      const opt = document.createElement('option');
+      opt.value       = m.id;
+      opt.textContent = `${m.id} — ${m.dep} → ${m.arr} — ${m.type}`;
+      sel.appendChild(opt);
+    });
+  } catch (err) {
+    console.warn('Could not load missions for report form:', err.message);
+  }
+});

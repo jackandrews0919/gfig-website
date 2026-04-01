@@ -12,6 +12,11 @@
   <meta name="theme-color" content="#0b1f3a">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
 </head>
 <body>
   <script src="js/auth.js"></script>
@@ -69,48 +74,48 @@
 
       <!-- Profile Hero -->
       <div class="profile-hero">
-        <div class="profile-avatar">JH</div>
+        <div class="profile-avatar" id="profile-avatar">JH</div>
         <div class="profile-info">
-          <div class="profile-name">James Harrison</div>
-          <div class="profile-callsign">GFIG-INS-0042 &nbsp;|&nbsp; Callsign: GFIG42</div>
+          <div class="profile-name" id="profile-name">James Harrison</div>
+          <div class="profile-callsign" id="profile-callsign">GFIG-INS-0042 &nbsp;|&nbsp; Callsign: GFIG42</div>
           <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
-            <span class="rank-badge rank-senior">Senior Inspector</span>
+            <span class="rank-badge rank-senior" id="profile-rank-badge">Senior Inspector</span>
             <span class="badge badge-active">● Online</span>
           </div>
           <div class="profile-meta">
-            <div class="profile-meta-item">📅 Joined March 2024</div>
-            <div class="profile-meta-item">🌍 Region: Europe</div>
-            <div class="profile-meta-item">🖥 Network: VATSIM</div>
-            <div class="profile-meta-item">⭐ 4,820 Inspector Points</div>
+            <div class="profile-meta-item" id="meta-joined">📅 Joined March 2024</div>
+            <div class="profile-meta-item" id="meta-region">🌍 Region: Europe</div>
+            <div class="profile-meta-item" id="meta-network">🖥 Network: VATSIM</div>
+            <div class="profile-meta-item" id="meta-points">⭐ 4,820 Inspector Points</div>
           </div>
         </div>
         <div style="text-align:right; flex-shrink:0;">
           <div style="font-family:var(--font-head); font-size:0.65rem; color:var(--text-muted); letter-spacing:0.12em; margin-bottom:8px;">RANK PROGRESS</div>
           <div style="font-size:0.8rem; color:var(--text-sub); margin-bottom:6px;">Senior → <span class="text-orange font-bold">Chief Inspector</span></div>
           <div class="prog-wrap" style="width:180px;">
-            <div class="prog-bar" style="width:80%;"></div>
+            <div class="prog-bar" id="profile-prog-bar" style="width:80%;"></div>
           </div>
-          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px; font-family:var(--font-mono);">4,820 / 6,000 pts</div>
-          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">1,180 pts to next rank</div>
+          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px; font-family:var(--font-mono);" id="profile-pts-text">4,820 / 6,000 pts</div>
+          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;" id="profile-pts-remaining">1,180 pts to next rank</div>
         </div>
       </div>
 
       <!-- Stats Row -->
       <div class="profile-stats mb-32">
         <div class="profile-stat">
-          <div class="profile-stat-value">142</div>
+          <div class="profile-stat-value" id="stat-missions">142</div>
           <div class="profile-stat-label">Total Missions</div>
         </div>
         <div class="profile-stat">
-          <div class="profile-stat-value" style="color:var(--pass);">96%</div>
+          <div class="profile-stat-value" id="stat-passrate" style="color:var(--pass);">96%</div>
           <div class="profile-stat-label">Pass Rate</div>
         </div>
         <div class="profile-stat">
-          <div class="profile-stat-value" style="color:var(--orange);">1,246h</div>
+          <div class="profile-stat-value" id="stat-hours" style="color:var(--orange);">1,246h</div>
           <div class="profile-stat-label">Flight Hours</div>
         </div>
         <div class="profile-stat">
-          <div class="profile-stat-value">4,820</div>
+          <div class="profile-stat-value" id="stat-points">4,820</div>
           <div class="profile-stat-label">Inspector Points</div>
         </div>
       </div>
@@ -231,7 +236,7 @@
                 <th>Points</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="history-tbody">
               <tr>
                 <td class="td-mono">GFI-2026-0284</td>
                 <td class="text-sm text-sub">30 Mar 2026</td>
@@ -547,6 +552,110 @@
     function editProfile() {
       alert('Profile editing will be available in the next update. To change your callsign or timezone, please use the #support channel on Discord.');
     }
+
+    /* ── Rank thresholds ── */
+    const RANKS = [
+      { name:'Trainee Inspector',  min:0,     max:500   },
+      { name:'Junior Inspector',   min:500,   max:1500  },
+      { name:'Inspector',          min:1500,  max:3000  },
+      { name:'Senior Inspector',   min:3000,  max:6000  },
+      { name:'Chief Inspector',    min:6000,  max:10000 },
+      { name:'Director',           min:10000, max:10000 }
+    ];
+    function getRankInfo(pts) {
+      for (let i = 0; i < RANKS.length - 1; i++) {
+        if (pts < RANKS[i + 1].min) {
+          const next = RANKS[i + 1];
+          return { rank: RANKS[i].name, next: next.name, pct: Math.min(100, Math.round((pts - RANKS[i].min) / (next.min - RANKS[i].min) * 100)), remaining: next.min - pts, nextMin: next.min };
+        }
+      }
+      return { rank:'Director', next: null, pct: 100, remaining: 0, nextMin: pts };
+    }
+
+    /* ── Populate profile from Firestore user data ── */
+    document.addEventListener('gfig:authready', async function(e) {
+      const user = e.detail;
+      if (!user) return;
+
+      /* Basic identity */
+      const av = document.getElementById('profile-avatar');
+      const nm = document.getElementById('profile-name');
+      const cs = document.getElementById('profile-callsign');
+      if (av) av.textContent = user.avatar || (user.name || 'XX').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      if (nm) nm.textContent = user.name || 'Inspector';
+      if (cs) cs.textContent = (user.callsign || '—') + '\u00a0|\u00a0Callsign: ' + (user.callsign || '—');
+
+      /* Meta row */
+      const joinedEl = document.getElementById('meta-joined');
+      const regionEl = document.getElementById('meta-region');
+      const netEl    = document.getElementById('meta-network');
+      const ptsMetaEl= document.getElementById('meta-points');
+      if (joinedEl && user.joinedDisplay) joinedEl.textContent = '📅 Joined ' + user.joinedDisplay;
+      if (regionEl && user.region)        regionEl.textContent  = '🌍 Region: ' + user.region;
+      if (netEl    && user.network)       netEl.textContent     = '🖥 Network: ' + user.network;
+      if (ptsMetaEl) ptsMetaEl.textContent = '⭐ ' + ((user.points || 0).toLocaleString()) + ' Inspector Points';
+
+      /* Stats row */
+      const smEl  = document.getElementById('stat-missions');
+      const sprEl = document.getElementById('stat-passrate');
+      const shEl  = document.getElementById('stat-hours');
+      const spEl  = document.getElementById('stat-points');
+      if (smEl)  smEl.textContent  = user.totalMissions || 0;
+      if (sprEl) sprEl.textContent = (user.passRate != null ? user.passRate + '%' : '—');
+      if (shEl)  shEl.textContent  = (user.flightHours  != null ? user.flightHours.toLocaleString() + 'h' : '—');
+      if (spEl)  spEl.textContent  = (user.points || 0).toLocaleString();
+
+      /* Rank progress */
+      const pts  = user.points || 0;
+      const info = getRankInfo(pts);
+      const badge = document.getElementById('profile-rank-badge');
+      if (badge) {
+        badge.textContent = info.rank;
+        badge.className = 'rank-badge';
+      }
+      const progBar = document.getElementById('profile-prog-bar');
+      if (progBar) progBar.style.width = info.pct + '%';
+      const ptsTxt = document.getElementById('profile-pts-text');
+      if (ptsTxt) ptsTxt.textContent = pts.toLocaleString() + ' / ' + (info.nextMin || pts).toLocaleString() + ' pts';
+      const ptsRem = document.getElementById('profile-pts-remaining');
+      if (ptsRem) ptsRem.textContent = info.next ? info.remaining.toLocaleString() + ' pts to next rank' : 'Max rank achieved';
+
+      /* Nav info */
+      const navAvEl = document.querySelector('.nav-avatar');
+      const navNmEl = document.querySelector('.nav-pilot-name');
+      const navRkEl = document.querySelector('.nav-pilot-rank');
+      if (navAvEl) navAvEl.textContent = user.avatar || (user.name || 'XX').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      if (navNmEl) navNmEl.textContent = user.name  || 'Inspector';
+      if (navRkEl) navRkEl.textContent = info.rank  || 'Inspector';
+
+      /* Mission history from Firestore */
+      if (window.dbGetReports) {
+        try {
+          const reports = await dbGetReports({ submittedBy: user.uid });
+          if (reports && reports.length) {
+            const tbody = document.getElementById('history-tbody');
+            if (tbody) {
+              tbody.innerHTML = reports.map(function(r) {
+                const ts = r.createdAt && r.createdAt.toDate ? r.createdAt.toDate() : new Date(r.createdAt || Date.now());
+                const dateStr = ts.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+                const vc = r.verdict === 'PASS' ? 'badge-pass' : r.verdict === 'MONITOR' ? 'badge-monitor' : 'badge-fail';
+                const vl = r.verdict === 'PASS' ? '✓ Pass' : r.verdict === 'MONITOR' ? '◉ Monitor' : '✗ Fail';
+                const ptsCls = r.verdict === 'PASS' ? 'text-pass font-bold' : r.verdict === 'MONITOR' ? 'text-monitor font-bold' : 'text-fail font-bold';
+                return '<tr>'
+                  + '<td class="td-mono">' + (r.missionId || r.id || '—') + '</td>'
+                  + '<td class="text-sm text-sub">' + dateStr + '</td>'
+                  + '<td><span class="td-route">' + (r.departure || '—') + ' <span class="td-route-arrow">→</span> ' + (r.location || r.icao || '—') + '</span></td>'
+                  + '<td>' + (r.type || r.missionType || '—') + '</td>'
+                  + '<td class="td-mono">' + (r.aircraft || '—') + '</td>'
+                  + '<td><span class="badge ' + vc + '">' + vl + '</span></td>'
+                  + '<td class="' + ptsCls + '">+' + (r.pointsAwarded || r.points || 0) + '</td>'
+                  + '</tr>';
+              }).join('');
+            }
+          }
+        } catch(e) { console.warn('History load error:', e); }
+      }
+    });
   </script>
 </body>
 </html>

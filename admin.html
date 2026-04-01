@@ -8,6 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
   <style>
     body { overflow: hidden; }
     /* ── Admin Shell ───────────────────────────────────── */
@@ -470,32 +475,32 @@
         <div class="admin-metrics">
           <div class="metric-card">
             <div class="metric-label">TOTAL MEMBERS</div>
-            <div class="metric-value blue">184</div>
+            <div class="metric-value blue" id="ov-members">184</div>
             <div class="metric-sub">↑ 7 this week</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">ACTIVE MISSIONS</div>
-            <div class="metric-value orange">12</div>
+            <div class="metric-value orange" id="ov-missions">12</div>
             <div class="metric-sub">3 claimed today</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">REPORTS PENDING</div>
-            <div class="metric-value yellow">3</div>
+            <div class="metric-value yellow" id="ov-reports-pending">3</div>
             <div class="metric-sub">Awaiting review</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">FLIGHTS THIS MONTH</div>
-            <div class="metric-value green">247</div>
+            <div class="metric-value green" id="ov-flights">247</div>
             <div class="metric-sub">↑ 14% vs last month</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">ACTIVE NOTAMS</div>
-            <div class="metric-value orange">5</div>
+            <div class="metric-value orange" id="ov-notams">5</div>
             <div class="metric-sub">1 expires today</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">PASS RATE</div>
-            <div class="metric-value green">96%</div>
+            <div class="metric-value green" id="ov-passrate">96%</div>
             <div class="metric-sub">30-day average</div>
           </div>
         </div>
@@ -508,7 +513,7 @@
         </div>
 
         <div class="admin-grid-2">
-          <div class="activity-feed">
+          <div class="activity-feed" id="overview-activity-feed">
             <div class="activity-feed-head">RECENT ACTIVITY</div>
             <div class="activity-item"><div class="activity-dot" style="background:var(--pass)"></div><div><div>CPT Harrison submitted ILS report — EGLL RWY 27R</div><div class="activity-time">14 min ago</div></div></div>
             <div class="activity-item"><div class="activity-dot" style="background:var(--blue)"></div><div><div>New member joined: FO Chen — Europe Region</div><div class="activity-time">1 hr ago</div></div></div>
@@ -522,7 +527,7 @@
             <div class="admin-table-head"><div class="admin-table-title">TOP INSPECTORS THIS MONTH</div></div>
             <table class="admin-table">
               <thead><tr><th>#</th><th>INSPECTOR</th><th>FLIGHTS</th><th>PTS</th></tr></thead>
-              <tbody>
+              <tbody id="overview-leaderboard-tbody">
                 <tr><td style="color:var(--orange);font-weight:700">1</td><td>CPT Harrison</td><td>18</td><td style="font-family:var(--font-mono);color:var(--pass)">2,940</td></tr>
                 <tr><td>2</td><td>FO Martinez</td><td>14</td><td style="font-family:var(--font-mono)">1,820</td></tr>
                 <tr><td>3</td><td>CPT Okonkwo</td><td>12</td><td style="font-family:var(--font-mono)">1,560</td></tr>
@@ -574,15 +579,15 @@
           <div class="admin-form-grid">
             <div class="admin-form-group">
               <label class="admin-form-label">ICAO</label>
-              <input class="admin-input" type="text" placeholder="e.g. EGLL">
+              <input class="admin-input" id="mission-icao" type="text" placeholder="e.g. EGLL">
             </div>
             <div class="admin-form-group">
               <label class="admin-form-label">RUNWAY / NAVAID</label>
-              <input class="admin-input" type="text" placeholder="e.g. RWY 27R ILS">
+              <input class="admin-input" id="mission-runway" type="text" placeholder="e.g. RWY 27R ILS">
             </div>
             <div class="admin-form-group">
               <label class="admin-form-label">MISSION CLASS</label>
-              <select class="admin-select">
+              <select class="admin-select" id="mission-class">
                 <option>Class A — ILS Calibration (King Air / King Air 350ER)</option>
                 <option>Class B — VOR / NDB / Survey (King Air)</option>
                 <option>Class C — RNAV / Approach (Falcon 20 / Learjet)</option>
@@ -668,7 +673,7 @@
             </div>
             <div class="admin-form-group">
               <label class="admin-form-label">OPERATING REGION</label>
-              <select class="admin-select">
+              <select class="admin-select" id="mission-region">
                 <option>Europe</option>
                 <option>North America</option>
                 <option>Asia-Pacific</option>
@@ -680,11 +685,11 @@
             </div>
             <div class="admin-form-group">
               <label class="admin-form-label">POINTS</label>
-              <input class="admin-input" type="number" placeholder="e.g. 120">
+              <input class="admin-input" id="mission-points" type="number" placeholder="e.g. 120">
             </div>
             <div class="admin-form-group">
               <label class="admin-form-label">PRIORITY</label>
-              <select class="admin-select">
+              <select class="admin-select" id="mission-priority">
                 <option>Standard</option>
                 <option>High Priority</option>
                 <option>Urgent — ATC Hold</option>
@@ -693,9 +698,9 @@
           </div>
           <div class="admin-form-group" style="margin-bottom:16px">
             <label class="admin-form-label">BRIEFING / NOTES</label>
-            <textarea class="admin-textarea" placeholder="Mission notes, special requirements, reference documents…"></textarea>
+            <textarea class="admin-textarea" id="mission-notes" placeholder="Mission notes, special requirements, reference documents…"></textarea>
           </div>
-          <button class="btn btn-primary" onclick="toast('Mission created successfully')">Create Mission</button>
+          <button class="btn btn-primary" onclick="createMission()">Create Mission</button>
           <button class="btn" style="margin-left:10px;background:none;border:1px solid var(--border);color:var(--text-sub);" onclick="toggleCreateMission()">Cancel</button>
         </div>
 
@@ -703,7 +708,7 @@
           <div class="admin-table-head"><div class="admin-table-title">ACTIVE MISSIONS</div></div>
           <table class="admin-table">
             <thead><tr><th>ID</th><th>LOCATION</th><th>TYPE</th><th>REGION</th><th>CLAIMED BY</th><th>STATUS</th><th></th></tr></thead>
-            <tbody>
+            <tbody id="missions-admin-tbody">
               <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0092</td><td>EGLL RWY 27L</td><td>ILS Calibration</td><td>Europe</td><td>—</td><td><span class="status-badge badge-active">Available</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
               <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0091</td><td>KJFK RWY 13R</td><td>RNAV/RNP</td><td>North America</td><td>CPT Harrison</td><td><span class="status-badge badge-pending">Claimed</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
               <tr><td style="font-family:var(--font-mono);color:var(--text-muted)">GF-2025-0090</td><td>CYVR VOR YVR</td><td>VOR Check</td><td>North America</td><td>—</td><td><span class="status-badge badge-active">Available</span></td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger">Expire</button></td></tr>
@@ -723,7 +728,7 @@
           <div class="admin-table-head"><div class="admin-table-title">PENDING REVIEW (3)</div></div>
           <table class="admin-table">
             <thead><tr><th>REF</th><th>SUBMITTED BY</th><th>LOCATION</th><th>TYPE</th><th>VERDICT</th><th>SUBMITTED</th><th></th></tr></thead>
-            <tbody>
+            <tbody id="reports-admin-tbody">
               <tr>
                 <td style="font-family:var(--font-mono);color:var(--text-muted)">RPT-2025-0311</td>
                 <td>CPT Harrison</td>
@@ -804,14 +809,14 @@
             <label class="admin-form-label">CONTENT</label>
             <textarea class="admin-textarea" placeholder="Full NOTAM text. Use standard NOTAM formatting where applicable." id="notam-content"></textarea>
           </div>
-          <button class="btn btn-primary" onclick="toast('NOTAM published to member portal')">Publish NOTAM</button>
+          <button class="btn btn-primary" onclick="publishNotam()">Publish NOTAM</button>
         </div>
 
         <div class="admin-table-wrap">
           <div class="admin-table-head"><div class="admin-table-title">ACTIVE NOTAMS</div></div>
           <table class="admin-table">
             <thead><tr><th>ID</th><th>TYPE</th><th>TITLE</th><th>ICAO</th><th>ISSUED</th><th>EXPIRES</th><th></th></tr></thead>
-            <tbody>
+            <tbody id="notams-admin-tbody">
               <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-047</td><td><span class="notam-type notam-maint">MAINT</span></td><td>CYYZ ILS RWY 06L maintenance suspension</td><td>CYYZ</td><td>22 Jun</td><td>26 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
               <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-046</td><td><span class="notam-type notam-ops">OPS</span></td><td>KJFK East Complex approaches paused pending re-survey</td><td>KJFK</td><td>20 Jun</td><td>30 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
               <tr><td style="font-family:var(--font-mono);color:var(--orange)">GF-2025-045</td><td><span class="notam-type notam-trng">TRNG</span></td><td>Europe recurrency training week</td><td>EGNX</td><td>17 Jun</td><td>24 Jun</td><td><button class="tbl-action-btn">Edit</button><button class="tbl-action-btn danger" onclick="toast('NOTAM expired')">Expire</button></td></tr>
@@ -923,28 +928,28 @@
               <div class="settings-row-title">Announcement Banner</div>
               <div class="settings-row-desc">Show a notice banner at the top of all member pages.</div>
             </div>
-            <label class="toggle"><input type="checkbox" id="toggle-banner"><span class="toggle-slider"></span></label>
+            <label class="toggle"><input type="checkbox" id="toggle-banner" onchange="savePortalControls()"><span class="toggle-slider"></span></label>
           </div>
           <div class="settings-row">
             <div class="settings-row-info">
               <div class="settings-row-title">Open Registration</div>
               <div class="settings-row-desc">Allow new members to join the GFIG portal. Disable during events or maintenance.</div>
             </div>
-            <label class="toggle"><input type="checkbox" checked id="toggle-reg"><span class="toggle-slider"></span></label>
+            <label class="toggle"><input type="checkbox" checked id="toggle-reg" onchange="savePortalControls()"><span class="toggle-slider"></span></label>
           </div>
           <div class="settings-row">
             <div class="settings-row-info">
               <div class="settings-row-title">Maintenance Mode</div>
               <div class="settings-row-desc">Redirect all member pages to a maintenance notice. Admin access remains active.</div>
             </div>
-            <label class="toggle"><input type="checkbox" id="toggle-maintenance"><span class="toggle-slider"></span></label>
+            <label class="toggle"><input type="checkbox" id="toggle-maintenance" onchange="savePortalControls()"><span class="toggle-slider"></span></label>
           </div>
           <div class="settings-row">
             <div class="settings-row-info">
               <div class="settings-row-title">Show Public Stats on Landing Page</div>
               <div class="settings-row-desc">Display total flights / active members counters on the public home page.</div>
             </div>
-            <label class="toggle"><input type="checkbox" checked id="toggle-stats"><span class="toggle-slider"></span></label>
+            <label class="toggle"><input type="checkbox" checked id="toggle-stats" onchange="savePortalControls()"><span class="toggle-slider"></span></label>
           </div>
         </div>
 
@@ -954,7 +959,7 @@
             <label class="admin-form-label">BANNER MESSAGE</label>
             <input class="admin-input" type="text" id="banner-text" placeholder="e.g. ⚠ ILS maintenance at CYYZ RWY 06L. See NOTAM GF-2025-047.">
           </div>
-          <button class="btn btn-primary" onclick="toast('Banner settings saved')">Save Banner</button>
+          <button class="btn btn-primary" onclick="saveBanner()">Save Banner</button>
         </div>
 
         <div class="admin-form">
@@ -995,7 +1000,7 @@
 
   <script src="js/app.js"></script>
   <script>
-    /* ── Apply user info to sidebar ── */
+    /* ── Apply user info to sidebar (sync fallback before authready) ── */
     (function () {
       const user = gfigAuth.getUser();
       if (!user) return;
@@ -1029,27 +1034,295 @@
     }
 
     /* ── Toast ── */
-    function toast(msg) {
+    function toast(msg, dur) {
       const t = document.getElementById('toast');
       t.textContent = msg;
       t.classList.add('visible');
-      setTimeout(() => t.classList.remove('visible'), 3000);
+      setTimeout(() => t.classList.remove('visible'), dur || 3000);
+    }
+
+    /* ── Create Mission ── */
+    async function createMission() {
+      const icao     = (document.getElementById('mission-icao').value    || '').trim().toUpperCase();
+      const runway   = (document.getElementById('mission-runway').value  || '').trim().toUpperCase();
+      const cls      = document.getElementById('mission-class').value;
+      const region   = document.getElementById('mission-region').value;
+      const points   = parseInt(document.getElementById('mission-points').value, 10) || 120;
+      const priority = document.getElementById('mission-priority').value;
+      const notes    = (document.getElementById('mission-notes').value   || '').trim();
+      if (!icao || !runway) { toast('ICAO and Runway/Navaid are required'); return; }
+      const missionData = {
+        icao, runway,
+        title: icao + ' ' + runway,
+        type: (cls.split('—')[1] || cls).trim().split('(')[0].trim(),
+        classCode: cls.charAt(6),   // 'A', 'B', …
+        region, points, priority, notes,
+        status: 'available'
+      };
+      try {
+        if (window.dbCreateMission) {
+          await dbCreateMission(missionData);
+          toast('✓ Mission created and posted to member portal');
+          document.getElementById('mission-icao').value   = '';
+          document.getElementById('mission-runway').value = '';
+          document.getElementById('mission-notes').value  = '';
+          document.getElementById('mission-points').value = '';
+          toggleCreateMission();
+          loadMissionsAdmin();
+        } else {
+          toast('Demo mode — mission not persisted');
+        }
+      } catch (e) { toast('Error: ' + e.message); }
+    }
+
+    /* ── Publish NOTAM ── */
+    async function publishNotam() {
+      const user    = gfigAuth.getUser();
+      const id      = (document.getElementById('notam-id').value      || '').trim().toUpperCase();
+      const type    = document.getElementById('notam-type').value;
+      const icao    = (document.getElementById('notam-icao').value    || '').trim().toUpperCase();
+      const expires = document.getElementById('notam-expires').value;
+      const title   = (document.getElementById('notam-title').value   || '').trim();
+      const content = (document.getElementById('notam-content').value || '').trim();
+      if (!id || !title || !content) { toast('ID, title, and content are required'); return; }
+      try {
+        if (window.dbCreateNotam) {
+          await dbCreateNotam({ id, type, icao, expires, title, content }, user);
+          toast('✓ NOTAM published to member portal');
+          ['notam-id','notam-icao','notam-expires','notam-title','notam-content'].forEach(f => {
+            document.getElementById(f).value = '';
+          });
+          loadNotamsAdmin();
+        } else {
+          toast('Demo mode — NOTAM not persisted');
+        }
+      } catch (e) { toast('Error: ' + e.message); }
+    }
+
+    /* ── Expire Mission ── */
+    async function expireMission(id) {
+      if (!window.dbExpireMission) { toast('Demo mode'); return; }
+      try { await dbExpireMission(id); toast('Mission expired'); loadMissionsAdmin(); }
+      catch (e) { toast('Error: ' + e.message); }
+    }
+
+    /* ── Expire NOTAM ── */
+    async function expireNotam(id) {
+      if (!window.dbExpireNotam) { toast('Demo mode'); return; }
+      try { await dbExpireNotam(id); toast('NOTAM expired'); loadNotamsAdmin(); }
+      catch (e) { toast('Error: ' + e.message); }
+    }
+
+    /* ── Review Report ── */
+    async function reviewReport(reportId, action) {
+      if (!window.dbReviewReport) { toast('Demo mode'); return; }
+      try {
+        await dbReviewReport(reportId, action);
+        toast(action === 'approve' ? '✓ Report approved' : '⚑ Report flagged for re-inspection');
+        loadReportsAdmin();
+      } catch (e) { toast('Error: ' + e.message); }
+    }
+
+    /* ── Helpers ── */
+    function _relTime(ts) {
+      const d = ts && ts.toDate ? ts.toDate() : new Date(ts || Date.now());
+      const m = Math.round((Date.now() - d.getTime()) / 60000);
+      return m < 60 ? m + ' min ago' : m < 1440 ? Math.floor(m / 60) + ' hr ago' : Math.floor(m / 1440) + ' d ago';
+    }
+
+    /* ── Load: Overview ── */
+    async function loadOverviewAdmin() {
+      if (!window.GFIG_FIREBASE_READY) return;
+      try {
+        const [missions, reports, notams, members, activity, leaders] = await Promise.allSettled([
+          dbGetMissions(), dbGetReports({ status: 'pending' }), dbGetNotams(),
+          dbGetMembers(), dbGetActivity(8), dbGetLeaderboard(5)
+        ]);
+
+        if (missions.value) {
+          const active = missions.value.filter(m => m.status === 'available' || m.status === 'claimed').length;
+          const el = document.getElementById('ov-missions');
+          if (el) el.textContent = active;
+        }
+        if (reports.value) {
+          const el = document.getElementById('ov-reports-pending');
+          if (el) el.textContent = reports.value.length;
+          const badge = document.querySelector('.admin-nav-item:nth-child(4) .admin-badge-count');
+          if (badge) badge.textContent = reports.value.length;
+        }
+        if (notams.value) {
+          const el = document.getElementById('ov-notams');
+          if (el) el.textContent = notams.value.filter(n => !n.expired).length;
+        }
+        if (members.value) {
+          const el = document.getElementById('ov-members');
+          if (el) el.textContent = members.value.length;
+          const badge = document.querySelector('.admin-nav-item:nth-child(2) .admin-badge-count');
+          if (badge) badge.textContent = members.value.length;
+        }
+
+        /* Activity feed */
+        if (activity.value && activity.value.length) {
+          const feed = document.getElementById('overview-activity-feed');
+          if (feed) {
+            feed.querySelectorAll('.activity-item').forEach(i => i.remove());
+            const dotClr = { mission:'var(--pass)', report:'var(--pass)', join:'var(--blue)', notam:'var(--orange)', system:'var(--monitor)' };
+            activity.value.forEach(item => {
+              const div = document.createElement('div');
+              div.className = 'activity-item';
+              const c = dotClr[item.type] || 'var(--blue)';
+              div.innerHTML = '<div class="activity-dot" style="background:' + c + '"></div>'
+                + '<div><div>' + (item.text || '') + '</div><div class="activity-time">' + _relTime(item.createdAt) + '</div></div>';
+              feed.appendChild(div);
+            });
+          }
+        }
+
+        /* Leaderboard */
+        if (leaders.value && leaders.value.length) {
+          const tbody = document.getElementById('overview-leaderboard-tbody');
+          if (tbody) {
+            tbody.innerHTML = leaders.value.map(function(m, i) {
+              return '<tr>'
+                + '<td style="color:' + (i === 0 ? 'var(--orange)' : 'var(--text-sub)') + ';font-weight:' + (i === 0 ? '700' : '400') + '">' + (i + 1) + '</td>'
+                + '<td>' + (m.name || m.callsign || 'Unknown') + '</td>'
+                + '<td>' + (m.totalMissions || 0) + '</td>'
+                + '<td style="font-family:var(--font-mono);color:' + (i === 0 ? 'var(--pass)' : '') + '">' + ((m.points || 0).toLocaleString()) + '</td>'
+                + '</tr>';
+            }).join('');
+          }
+        }
+      } catch(e) { console.warn('Admin overview load error:', e); }
+    }
+
+    /* ── Load: Members ── */
+    async function loadMembersAdmin() {
+      if (!window.dbGetMembers) return;
+      try {
+        const members = await dbGetMembers();
+        if (!members || !members.length) return;
+        const tbody = document.getElementById('members-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = members.map(function(m) {
+          return '<tr>'
+            + '<td style="font-family:var(--font-mono);color:var(--orange)">' + (m.callsign || '—') + '</td>'
+            + '<td>' + (m.name || '—') + '</td>'
+            + '<td><span class="rank-badge">' + (m.rank || 'Member') + '</span></td>'
+            + '<td>' + (m.region || '—') + '</td>'
+            + '<td>' + (m.totalMissions || 0) + '</td>'
+            + '<td>' + (m.joinedDisplay || '—') + '</td>'
+            + '<td><span class="status-badge badge-active">Active</span></td>'
+            + '<td><button class="tbl-action-btn">Edit</button></td>'
+            + '</tr>';
+        }).join('');
+        const titleEl = document.querySelector('#sec-members .admin-table-title');
+        if (titleEl) titleEl.innerHTML = 'ALL MEMBERS <span style="color:var(--text-muted);font-weight:400;font-family:var(--font-body)">(' + members.length + ')</span>';
+      } catch(e) { console.warn('Members load error:', e); }
+    }
+
+    /* ── Load: Missions ── */
+    async function loadMissionsAdmin() {
+      if (!window.dbGetMissions) return;
+      try {
+        const missions = await dbGetMissions();
+        const tbody = document.getElementById('missions-admin-tbody');
+        if (!tbody) return;
+        if (!missions || !missions.length) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">No missions found</td></tr>';
+          return;
+        }
+        tbody.innerHTML = missions.map(function(m) {
+          const sc = m.status === 'available' ? 'badge-active' : m.status === 'claimed' ? 'badge-pending' : 'badge-expired';
+          const sl = m.status === 'available' ? 'Available'   : m.status === 'claimed' ? 'Claimed'      : 'Completed';
+          return '<tr>'
+            + '<td style="font-family:var(--font-mono);color:var(--text-muted)">' + (m.id || '—') + '</td>'
+            + '<td>' + (m.title || m.icao || '—') + '</td>'
+            + '<td>' + (m.type || '—') + '</td>'
+            + '<td>' + (m.region || 'Global') + '</td>'
+            + '<td>' + (m.claimedByName || '—') + '</td>'
+            + '<td><span class="status-badge ' + sc + '">' + sl + '</span></td>'
+            + '<td><button class="tbl-action-btn">Edit</button>'
+            + '<button class="tbl-action-btn danger" onclick="expireMission(\'' + m.id + '\')">Expire</button></td>'
+            + '</tr>';
+        }).join('');
+      } catch(e) { console.warn('Missions admin load error:', e); }
+    }
+
+    /* ── Load: Reports ── */
+    async function loadReportsAdmin() {
+      if (!window.dbGetReports) return;
+      try {
+        const reports = await dbGetReports({ status: 'pending' });
+        const tbody = document.getElementById('reports-admin-tbody');
+        if (!tbody) return;
+        const headEl = document.querySelector('#sec-reports .admin-table-title');
+        if (headEl) headEl.textContent = 'PENDING REVIEW (' + (reports ? reports.length : 0) + ')';
+        if (!reports || !reports.length) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">No pending reports</td></tr>';
+          return;
+        }
+        tbody.innerHTML = reports.map(function(r) {
+          const vc = r.verdict === 'PASS' ? 'badge-active' : r.verdict === 'MONITOR' ? 'badge-reserve' : 'badge-expired';
+          return '<tr>'
+            + '<td style="font-family:var(--font-mono);color:var(--text-muted)">' + (r.id || '—') + '</td>'
+            + '<td>' + (r.submittedByName || r.submittedBy || '—') + '</td>'
+            + '<td>' + (r.location || '—') + '</td>'
+            + '<td>' + (r.type || r.missionType || '—') + '</td>'
+            + '<td><span class="status-badge ' + vc + '">' + (r.verdict || '—') + '</span></td>'
+            + '<td style="color:var(--text-muted);font-size:0.78rem">' + _relTime(r.createdAt) + '</td>'
+            + '<td>'
+            + '<button class="tbl-action-btn success" onclick="reviewReport(\'' + r.id + '\',\'approve\')">✓ Approve</button>'
+            + '<button class="tbl-action-btn danger"  onclick="reviewReport(\'' + r.id + '\',\'flag\')">⚑ Flag</button>'
+            + '</td></tr>';
+        }).join('');
+      } catch(e) { console.warn('Reports admin load error:', e); }
+    }
+
+    /* ── Load: NOTAMs ── */
+    async function loadNotamsAdmin() {
+      if (!window.dbGetNotams) return;
+      try {
+        const notams = await dbGetNotams();
+        const tbody = document.getElementById('notams-admin-tbody');
+        if (!tbody) return;
+        if (!notams || !notams.length) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">No active NOTAMs</td></tr>';
+          return;
+        }
+        const tl = { OPERATIONAL:'OPS', MAINTENANCE:'MAINT', AIRSPACE:'AIRSP', TRAINING:'TRNG', SYSTEM:'SYS' };
+        const tc = { OPERATIONAL:'notam-ops', MAINTENANCE:'notam-maint', AIRSPACE:'notam-ops', TRAINING:'notam-trng', SYSTEM:'notam-sys' };
+        tbody.innerHTML = notams.filter(n => !n.expired).map(function(n) {
+          return '<tr>'
+            + '<td style="font-family:var(--font-mono);color:var(--orange)">' + (n.id || '—') + '</td>'
+            + '<td><span class="notam-type ' + (tc[n.type] || 'notam-ops') + '">' + (tl[n.type] || n.type) + '</span></td>'
+            + '<td>' + (n.title || '—') + '</td>'
+            + '<td>' + (n.icao || '—') + '</td>'
+            + '<td>' + (n.issuedDisplay || '—') + '</td>'
+            + '<td>' + (n.expiresDisplay || n.expires || '—') + '</td>'
+            + '<td><button class="tbl-action-btn">Edit</button>'
+            + '<button class="tbl-action-btn danger" onclick="expireNotam(\'' + n.id + '\')">Expire</button></td>'
+            + '</tr>';
+        }).join('');
+      } catch(e) { console.warn('NOTAMs admin load error:', e); }
     }
 
     /* ── Discord Webhooks ── */
-    function saveWebhook(inputId, storageKey) {
-      const val = document.getElementById(inputId).value.trim();
+    async function saveWebhook(inputId, storageKey) {
+      const val = (document.getElementById(inputId).value || '').trim();
       if (!val) { toast('Please enter a webhook URL first'); return; }
       if (!val.startsWith('https://discord.com/api/webhooks/')) {
         toast('Invalid webhook URL — must start with https://discord.com/api/webhooks/');
         return;
       }
       localStorage.setItem('gfig_' + storageKey, val);
-      toast('Webhook URL saved');
+      if (window.dbSaveSettings) {
+        try { await dbSaveSettings({ [storageKey]: val }); } catch(e) {}
+      }
+      toast('✓ Webhook URL saved');
     }
 
     async function testWebhook(inputId, channelName) {
-      const url = document.getElementById(inputId).value.trim();
+      const url = (document.getElementById(inputId).value || '').trim();
       if (!url) { toast('Enter a webhook URL first'); return; }
       if (!url.startsWith('https://discord.com/api/webhooks/')) {
         toast('Invalid webhook URL');
@@ -1064,7 +1337,7 @@
             embeds: [{
               color: 0xff6a00,
               title: '🛠 Webhook Test',
-              description: `Connection verified for **#${channelName}**. GFIG Admin Panel is online.`,
+              description: 'Connection verified for **#' + channelName + '**. GFIG Admin Panel is online.',
               footer: { text: 'Global Flight Inspection Group Virtual' },
               timestamp: new Date().toISOString()
             }]
@@ -1077,75 +1350,133 @@
     }
 
     async function sendAnnouncement() {
-      const url = localStorage.getItem('gfig_wh_announce');
-      if (!url) { toast('Save a webhook URL for #announcements first'); return; }
-      const title = document.getElementById('ann-title').value.trim();
-      const body  = document.getElementById('ann-body').value.trim();
+      const title = (document.getElementById('ann-title').value || '').trim();
+      const body  = (document.getElementById('ann-body').value  || '').trim();
       if (!title || !body) { toast('Enter a title and message body'); return; }
       try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: 'GFIG Ops',
-            embeds: [{
-              color: 0xff6a00,
-              title: title,
-              description: body,
-              footer: { text: 'Global Flight Inspection Group Virtual' },
-              timestamp: new Date().toISOString()
-            }]
-          })
-        });
-        if (res.ok) {
-          toast('✓ Announcement sent to Discord');
-          document.getElementById('ann-title').value = '';
-          document.getElementById('ann-body').value = '';
+        if (window.dbSendAnnouncement) {
+          await dbSendAnnouncement(title, body);
         } else {
-          toast('✗ Discord error — check the webhook URL');
+          const url = localStorage.getItem('gfig_wh_announce');
+          if (!url) { toast('Save a webhook URL for #announcements first'); return; }
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: 'GFIG Ops',
+              embeds: [{
+                color: 0xff6a00, title: title, description: body,
+                footer: { text: 'Global Flight Inspection Group Virtual' },
+                timestamp: new Date().toISOString()
+              }]
+            })
+          });
+          if (!res.ok) { toast('✗ Discord error — check the webhook URL'); return; }
         }
-      } catch {
-        toast('✗ Failed to reach Discord');
-      }
+        toast('✓ Announcement sent to Discord');
+        document.getElementById('ann-title').value = '';
+        document.getElementById('ann-body').value  = '';
+      } catch { toast('✗ Failed to reach Discord'); }
     }
 
     /* ── EmailJS config ── */
-    function saveEmailJS() {
-      const pub  = document.getElementById('ejs-public-key').value.trim();
-      const svc  = document.getElementById('ejs-service-id').value.trim();
-      const tmpl = document.getElementById('ejs-template-id').value.trim();
+    async function saveEmailJS() {
+      const pub  = (document.getElementById('ejs-public-key').value  || '').trim();
+      const svc  = (document.getElementById('ejs-service-id').value  || '').trim();
+      const tmpl = (document.getElementById('ejs-template-id').value || '').trim();
       if (!pub || !svc || !tmpl) { toast('Please fill in all three EmailJS fields'); return; }
       localStorage.setItem('gfig_ejs_public_key',  pub);
       localStorage.setItem('gfig_ejs_service_id',  svc);
       localStorage.setItem('gfig_ejs_template_id', tmpl);
+      if (window.dbSaveSettings) {
+        try { await dbSaveSettings({ ejsPublicKey: pub, ejsServiceId: svc, ejsTemplateId: tmpl }); } catch(e) {}
+      }
       toast('✓ EmailJS credentials saved');
     }
 
-    /* ── Restore saved webhook URLs ── */
-    (function restoreWebhooks() {
-      const map = {
-        'wh-applications': 'gfig_wh_applications',
-        'wh-completed':    'gfig_wh_completed',
-        'wh-notams':       'gfig_wh_notams',
-        'wh-announce':     'gfig_wh_announce'
+    /* ── Save Banner ── */
+    async function saveBanner() {
+      const active = document.getElementById('toggle-banner').checked;
+      const text   = (document.getElementById('banner-text').value || '').trim();
+      localStorage.setItem('gfig_banner_active', active ? '1' : '0');
+      localStorage.setItem('gfig_banner_text', text);
+      if (window.dbSaveSettings) {
+        try { await dbSaveSettings({ bannerActive: active, bannerText: text }); } catch(e) {}
+      }
+      toast('✓ Banner settings saved');
+    }
+
+    /* ── Save Portal Controls (called by toggle onchange) ── */
+    async function savePortalControls() {
+      const reg   = document.getElementById('toggle-reg').checked;
+      const maint = document.getElementById('toggle-maintenance').checked;
+      const stats = document.getElementById('toggle-stats') ? document.getElementById('toggle-stats').checked : true;
+      if (window.dbSaveSettings) {
+        try { await dbSaveSettings({ openRegistration: reg, maintenanceMode: maint, showPublicStats: stats }); } catch(e) {}
+      }
+      toast('✓ Portal settings saved');
+    }
+
+    /* ── Restore saved settings on load ── */
+    async function restoreSettings() {
+      let cfg = {};
+      if (window.getSettings) {
+        try { cfg = await getSettings() || {}; } catch(e) {}
+      }
+      const whMap = {
+        'wh-applications': cfg.wh_applications || localStorage.getItem('gfig_wh_applications') || '',
+        'wh-completed':    cfg.wh_completed    || localStorage.getItem('gfig_wh_completed')    || '',
+        'wh-notams':       cfg.wh_notams       || localStorage.getItem('gfig_wh_notams')       || '',
+        'wh-announce':     cfg.wh_announce     || localStorage.getItem('gfig_wh_announce')     || ''
       };
-      Object.entries(map).forEach(([id, key]) => {
-        const el  = document.getElementById(id);
-        const val = localStorage.getItem(key);
+      Object.entries(whMap).forEach(function([id, val]) {
+        const el = document.getElementById(id);
         if (el && val) el.value = val;
       });
-      /* Restore EmailJS fields */
       const ejsMap = {
-        'ejs-public-key':  'gfig_ejs_public_key',
-        'ejs-service-id':  'gfig_ejs_service_id',
-        'ejs-template-id': 'gfig_ejs_template_id'
+        'ejs-public-key':  cfg.ejsPublicKey  || localStorage.getItem('gfig_ejs_public_key')  || '',
+        'ejs-service-id':  cfg.ejsServiceId  || localStorage.getItem('gfig_ejs_service_id')  || '',
+        'ejs-template-id': cfg.ejsTemplateId || localStorage.getItem('gfig_ejs_template_id') || ''
       };
-      Object.entries(ejsMap).forEach(([id, key]) => {
-        const el  = document.getElementById(id);
-        const val = localStorage.getItem(key);
+      Object.entries(ejsMap).forEach(function([id, val]) {
+        const el = document.getElementById(id);
         if (el && val) el.value = val;
       });
-    })();
+      if (cfg.bannerActive !== undefined) {
+        const el = document.getElementById('toggle-banner');
+        if (el) el.checked = cfg.bannerActive;
+      }
+      if (cfg.bannerText) {
+        const el = document.getElementById('banner-text');
+        if (el) el.value = cfg.bannerText;
+      }
+      if (cfg.openRegistration !== undefined) {
+        const el = document.getElementById('toggle-reg');
+        if (el) el.checked = cfg.openRegistration;
+      }
+      if (cfg.maintenanceMode !== undefined) {
+        const el = document.getElementById('toggle-maintenance');
+        if (el) el.checked = cfg.maintenanceMode;
+      }
+    }
+    restoreSettings();
+
+    /* ── Auth ready — load live data from Firestore ── */
+    document.addEventListener('gfig:authready', async function(e) {
+      const user = e.detail;
+      const av = document.getElementById('admin-avatar');
+      const nm = document.getElementById('admin-name');
+      if (av && user) av.textContent = user.avatar || 'AD';
+      if (nm && user) nm.textContent = user.name  || 'Admin';
+      if (!window.GFIG_FIREBASE_READY) return;
+      await Promise.allSettled([
+        loadOverviewAdmin(),
+        loadMembersAdmin(),
+        loadMissionsAdmin(),
+        loadReportsAdmin(),
+        loadNotamsAdmin()
+      ]);
+    });
   </script>
 </body>
 </html>

@@ -12,6 +12,11 @@
   <meta name="theme-color" content="#0b1f3a">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
   <style>
     .notam-summary {
       display: grid;
@@ -209,19 +214,19 @@
       <!-- Summary Stats -->
       <div class="notam-summary">
         <div class="notam-stat critical">
-          <div class="notam-stat-num">2</div>
+          <div class="notam-stat-num" id="stat-critical">2</div>
           <div class="notam-stat-label">Critical</div>
         </div>
         <div class="notam-stat advisory">
-          <div class="notam-stat-num">4</div>
+          <div class="notam-stat-num" id="stat-advisory">4</div>
           <div class="notam-stat-label">Advisory</div>
         </div>
         <div class="notam-stat info">
-          <div class="notam-stat-num">5</div>
+          <div class="notam-stat-num" id="stat-info">5</div>
           <div class="notam-stat-label">Informational</div>
         </div>
         <div class="notam-stat total">
-          <div class="notam-stat-num">11</div>
+          <div class="notam-stat-num" id="stat-total">11</div>
           <div class="notam-stat-label">Total Active</div>
         </div>
       </div>
@@ -555,6 +560,60 @@
         if (typeof showToast === 'function') showToast('NOTAM ID copied: ' + id, 'success');
       });
     }
+
+    /* ── Load NOTAMs from Firestore when available ── */
+    document.addEventListener('gfig:authready', async function() {
+      if (!window.dbGetNotams) return;
+      try {
+        const notams = await dbGetNotams();
+        if (!notams || !notams.length) return;
+        const active = notams.filter(n => !n.expired);
+        if (!active.length) return;
+
+        /* Severity mapping from Firestore NOTAM type */
+        const sevMap  = { AIRSPACE:'critical', OPERATIONAL:'advisory', MAINTENANCE:'advisory', TRAINING:'info', SYSTEM:'info' };
+        const typeMap = { AIRSPACE:'airspace', OPERATIONAL:'ops', MAINTENANCE:'maintenance', TRAINING:'event', SYSTEM:'ops' };
+        const sevLabel= { critical:'CRITICAL', advisory:'ADVISORY', info:'INFORMATIONAL' };
+
+        const list = document.getElementById('notam-list');
+        if (!list) return;
+        list.innerHTML = active.map(function(n) {
+          const sev  = sevMap[n.type]  || 'advisory';
+          const type = typeMap[n.type] || 'ops';
+          const nid  = n.id || n.docId || 'GFIG-N-???';
+          const ssev = sevLabel[sev] || 'ADVISORY';
+          return '<div class="notam-card ' + sev + '" data-sev="' + sev + '" data-region="global" data-type="' + type + '">'
+            + '<div class="notam-header" onclick="toggleNotam(this)">'
+            + '<span class="notam-sev">' + ssev + '</span>'
+            + '<span class="notam-id">' + nid + '</span>'
+            + '<span class="notam-title-txt">' + (n.title || '') + '</span>'
+            + '<div class="notam-meta-row">'
+            + '<span>' + (n.icao || 'Global') + '</span>'
+            + '<span>' + (n.type || '') + '</span>'
+            + '<span>Expires: ' + (n.expires || '—') + '</span>'
+            + '</div>'
+            + '<span class="notam-chevron">▼</span>'
+            + '</div>'
+            + '<div class="notam-body">'
+            + '<div class="notam-text">' + (n.content || '') + '</div>'
+            + '<div class="notam-actions">'
+            + '<button class="btn btn-secondary" style="font-size:0.8rem;padding:7px 14px;" onclick="copyNotam(\'' + nid + '\')">⎘ Copy NOTAM ID</button>'
+            + '</div></div></div>';
+        }).join('');
+
+        /* Update stat counters */
+        const counts = { critical: 0, advisory: 0, info: 0 };
+        active.forEach(function(n) { const s = sevMap[n.type] || 'advisory'; counts[s]++; });
+        const sc = document.getElementById('stat-critical'); if (sc) sc.textContent = counts.critical;
+        const sa = document.getElementById('stat-advisory'); if (sa) sa.textContent = counts.advisory;
+        const si = document.getElementById('stat-info');     if (si) si.textContent = counts.info;
+        const st = document.getElementById('stat-total');    if (st) st.textContent = active.length;
+
+        /* Update last-updated timestamp */
+        const upd = document.getElementById('notam-updated');
+        if (upd) upd.textContent = new Date().toISOString().slice(0,16).replace('T',' ') + 'Z';
+      } catch(e) { console.warn('NOTAM load error:', e); }
+    });
   </script>
 </body>
 </html>
