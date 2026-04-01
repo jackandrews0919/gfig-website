@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Schedule — GFIG</title>
-  <meta name="description" content="GFIG Flight Schedule — Browse and book scheduled flights.">
+  <title>Inspection Schedule — GFIG</title>
+  <meta name="description" content="GFIG Inspection Schedule — Scheduled flight check & calibration missions.">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="logo.png" type="image/png">
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -67,23 +67,31 @@
     <div class="container">
       <div class="page-header">
         <div>
-          <h1>Flight Schedule</h1>
-          <p>Browse and book GFIG scheduled flights</p>
+          <h1>Inspection Schedule</h1>
+          <p>Scheduled calibration flights, navaid checks & approach validations</p>
         </div>
         <div style="display:flex;gap:10px;align-items:center;">
-          <span class="badge badge-active" id="sched-count">0 Flights</span>
+          <span class="badge badge-active" id="sched-count">0 Missions</span>
         </div>
       </div>
 
       <div class="card">
         <div class="sched-filters">
           <select id="filter-hub" onchange="applyFilters()">
-            <option value="">All Hubs</option>
-            <option value="EGLL">EGLL — London Heathrow</option>
-            <option value="KJFK">KJFK — New York JFK</option>
-            <option value="OMDB">OMDB — Dubai</option>
-            <option value="WSSS">WSSS — Singapore Changi</option>
-            <option value="YSSY">YSSY — Sydney</option>
+            <option value="">All Regions</option>
+            <option value="EUR">Europe</option>
+            <option value="NAM">North America</option>
+            <option value="MDE">Middle East & Africa</option>
+            <option value="APAC">Asia-Pacific</option>
+          </select>
+          <select id="filter-type" onchange="applyFilters()">
+            <option value="">All Inspection Types</option>
+            <option value="ILS">ILS Calibration</option>
+            <option value="VOR">VOR/DME Check</option>
+            <option value="RNAV">RNAV/GPS Validation</option>
+            <option value="LIGHT">Lighting Inspection</option>
+            <option value="RADAR">Radar Calibration</option>
+            <option value="FULL">Full Facility Check</option>
           </select>
           <select id="filter-day" onchange="applyFilters()">
             <option value="">All Days</option>
@@ -94,7 +102,7 @@
         </div>
 
         <div class="sched-row header">
-          <div>Flight #</div><div>Dep</div><div>Arr</div><div>Days of Op</div><div>Aircraft</div><div>ETD (UTC)</div><div>Duration</div><div></div>
+          <div>Mission #</div><div>Base</div><div>Target</div><div>Days of Op</div><div>Aircraft</div><div>ETD (UTC)</div><div>Type</div><div></div>
         </div>
         <div id="schedule-list">
           <div style="text-align:center;color:var(--text-muted);padding:40px;font-size:0.82rem;">Loading schedule…</div>
@@ -104,7 +112,7 @@
       <!-- My Bookings -->
       <div class="card" style="margin-top:24px;">
         <div class="card-header">
-          <span class="card-title">My Booked Flights</span>
+          <span class="card-title">My Assigned Inspections</span>
           <span class="badge badge-pass" id="bookings-count">0</span>
         </div>
         <div id="my-bookings">
@@ -133,26 +141,33 @@
     function esc(s) { var d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
 
     var DEFAULT_SCHEDULE = [
-      { flightNum:'GFI-001', dep:'EGLL', arr:'KJFK', days:[1,2,3,4,5], aircraft:'B777-300ER', etd:'08:00', duration:'7h 30m', hub:'EGLL' },
-      { flightNum:'GFI-002', dep:'KJFK', arr:'EGLL', days:[1,2,3,4,5], aircraft:'B777-300ER', etd:'19:00', duration:'6h 45m', hub:'KJFK' },
-      { flightNum:'GFI-010', dep:'EGLL', arr:'LFPG', days:[1,2,3,4,5,6,0], aircraft:'A320neo', etd:'06:30', duration:'1h 15m', hub:'EGLL' },
-      { flightNum:'GFI-011', dep:'LFPG', arr:'EGLL', days:[1,2,3,4,5,6,0], aircraft:'A320neo', etd:'09:00', duration:'1h 10m', hub:'EGLL' },
-      { flightNum:'GFI-020', dep:'EGLL', arr:'OMDB', days:[1,3,5,0], aircraft:'A350-900', etd:'21:00', duration:'6h 50m', hub:'EGLL' },
-      { flightNum:'GFI-021', dep:'OMDB', arr:'EGLL', days:[2,4,6,1], aircraft:'A350-900', etd:'02:30', duration:'7h 20m', hub:'OMDB' },
-      { flightNum:'GFI-030', dep:'OMDB', arr:'WSSS', days:[1,2,4,6], aircraft:'B787-9', etd:'03:00', duration:'7h 10m', hub:'OMDB' },
-      { flightNum:'GFI-031', dep:'WSSS', arr:'OMDB', days:[2,3,5,0], aircraft:'B787-9', etd:'23:50', duration:'7h 25m', hub:'WSSS' },
-      { flightNum:'GFI-040', dep:'KJFK', arr:'KLAX', days:[1,2,3,4,5,6,0], aircraft:'B737-800', etd:'07:00', duration:'5h 30m', hub:'KJFK' },
-      { flightNum:'GFI-041', dep:'KLAX', arr:'KJFK', days:[1,2,3,4,5,6,0], aircraft:'B737-800', etd:'15:00', duration:'4h 50m', hub:'KJFK' },
-      { flightNum:'GFI-050', dep:'WSSS', arr:'YSSY', days:[2,4,6], aircraft:'A350-900', etd:'22:00', duration:'7h 45m', hub:'WSSS' },
-      { flightNum:'GFI-051', dep:'YSSY', arr:'WSSS', days:[3,5,0], aircraft:'A350-900', etd:'08:00', duration:'8h 05m', hub:'YSSY' },
-      { flightNum:'GFI-060', dep:'EGLL', arr:'EDDF', days:[1,2,3,4,5], aircraft:'A319', etd:'10:00', duration:'1h 35m', hub:'EGLL' },
-      { flightNum:'GFI-061', dep:'EDDF', arr:'EGLL', days:[1,2,3,4,5], aircraft:'A319', etd:'13:00', duration:'1h 30m', hub:'EGLL' },
-      { flightNum:'GFI-070', dep:'OMDB', arr:'VABB', days:[1,3,5], aircraft:'B737 MAX', etd:'08:30', duration:'3h 20m', hub:'OMDB' },
-      { flightNum:'GFI-071', dep:'VABB', arr:'OMDB', days:[1,3,5], aircraft:'B737 MAX', etd:'14:00', duration:'3h 05m', hub:'OMDB' },
-      { flightNum:'GFI-080', dep:'KJFK', arr:'KMIA', days:[1,2,3,4,5,6,0], aircraft:'A321neo', etd:'12:00', duration:'3h 00m', hub:'KJFK' },
-      { flightNum:'GFI-081', dep:'KMIA', arr:'KJFK', days:[1,2,3,4,5,6,0], aircraft:'A321neo', etd:'17:00', duration:'2h 50m', hub:'KJFK' },
-      { flightNum:'GFI-090', dep:'YSSY', arr:'NZAA', days:[2,5,0], aircraft:'B787-9', etd:'07:30', duration:'3h 10m', hub:'YSSY' },
-      { flightNum:'GFI-091', dep:'NZAA', arr:'YSSY', days:[3,6,1], aircraft:'B787-9', etd:'12:00', duration:'3h 30m', hub:'YSSY' }
+      // Europe — ILS & Navaid calibration
+      { flightNum:'GFI-C101', dep:'EGLL', arr:'EGLL', days:[1,3,5], aircraft:'King Air 350i', etd:'06:00', inspType:'ILS', label:'ILS CAT III Calibration', hub:'EUR' },
+      { flightNum:'GFI-C102', dep:'EGLL', arr:'EGSS', days:[2,4], aircraft:'Citation CJ4', etd:'07:30', inspType:'VOR', label:'VOR/DME Verification', hub:'EUR' },
+      { flightNum:'GFI-C103', dep:'LFPG', arr:'LFPG', days:[1,2,3,4,5], aircraft:'King Air 350i', etd:'05:30', inspType:'ILS', label:'ILS CAT II Recertification', hub:'EUR' },
+      { flightNum:'GFI-C104', dep:'EDDF', arr:'EDDM', days:[2,4,6], aircraft:'Falcon 20', etd:'08:00', inspType:'VOR', label:'Multi-site VOR Check', hub:'EUR' },
+      { flightNum:'GFI-C105', dep:'EHAM', arr:'EHAM', days:[1,5], aircraft:'King Air 350i', etd:'04:00', inspType:'LIGHT', label:'PAPI/ALS Lighting Inspection', hub:'EUR' },
+      { flightNum:'GFI-C106', dep:'LEMD', arr:'LEBL', days:[3,6], aircraft:'Citation CJ4', etd:'09:00', inspType:'RNAV', label:'RNAV GNSS Approach Validation', hub:'EUR' },
+      { flightNum:'GFI-C107', dep:'LIRF', arr:'LIRF', days:[2,4], aircraft:'King Air 350i', etd:'05:00', inspType:'ILS', label:'ILS GP/LOC Alignment Check', hub:'EUR' },
+      { flightNum:'GFI-C108', dep:'ENGM', arr:'ENZV', days:[1,3], aircraft:'Falcon 20', etd:'07:00', inspType:'FULL', label:'Full Facility Inspection', hub:'EUR' },
+      // North America — Navaid & radar calibration
+      { flightNum:'GFI-C201', dep:'KJFK', arr:'KJFK', days:[1,2,3,4,5], aircraft:'King Air 350i', etd:'05:00', inspType:'ILS', label:'ILS CAT III Flight Check', hub:'NAM' },
+      { flightNum:'GFI-C202', dep:'KORD', arr:'KORD', days:[2,4,6], aircraft:'Citation CJ4', etd:'06:00', inspType:'RADAR', label:'ASR/PAR Radar Calibration', hub:'NAM' },
+      { flightNum:'GFI-C203', dep:'KLAX', arr:'KSFO', days:[1,3,5], aircraft:'King Air 350i', etd:'07:00', inspType:'VOR', label:'Coastal VOR/VORTAC Check', hub:'NAM' },
+      { flightNum:'GFI-C204', dep:'KATL', arr:'KATL', days:[2,5], aircraft:'Citation CJ4', etd:'04:30', inspType:'ILS', label:'ILS CAT I Periodic Check', hub:'NAM' },
+      { flightNum:'GFI-C205', dep:'KDFW', arr:'KIAH', days:[1,4], aircraft:'King Air 350i', etd:'08:00', inspType:'RNAV', label:'RNAV STAR/SID Validation', hub:'NAM' },
+      { flightNum:'GFI-C206', dep:'CYYZ', arr:'CYUL', days:[3,6], aircraft:'Falcon 20', etd:'06:30', inspType:'FULL', label:'Full NAV Facility Audit', hub:'NAM' },
+      // Middle East & Africa
+      { flightNum:'GFI-C301', dep:'OMDB', arr:'OMDB', days:[0,2,4], aircraft:'King Air 350i', etd:'03:00', inspType:'ILS', label:'ILS CAT III Calibration', hub:'MDE' },
+      { flightNum:'GFI-C302', dep:'OEJN', arr:'OERK', days:[1,3,5], aircraft:'Citation CJ4', etd:'04:00', inspType:'VOR', label:'Desert VOR Corridor Check', hub:'MDE' },
+      { flightNum:'GFI-C303', dep:'FAOR', arr:'FACT', days:[2,5], aircraft:'King Air 350i', etd:'05:30', inspType:'RNAV', label:'GNSS Approach Commissioning', hub:'MDE' },
+      { flightNum:'GFI-C304', dep:'HECA', arr:'HECA', days:[1,4], aircraft:'Falcon 20', etd:'02:30', inspType:'LIGHT', label:'Runway Lighting Standards Check', hub:'MDE' },
+      // Asia-Pacific
+      { flightNum:'GFI-C401', dep:'WSSS', arr:'WSSS', days:[1,3,5], aircraft:'King Air 350i', etd:'04:00', inspType:'ILS', label:'ILS CAT II Calibration', hub:'APAC' },
+      { flightNum:'GFI-C402', dep:'RJTT', arr:'RJAA', days:[2,4,6], aircraft:'Citation CJ4', etd:'05:00', inspType:'RADAR', label:'ARSR Radar Flight Check', hub:'APAC' },
+      { flightNum:'GFI-C403', dep:'YSSY', arr:'YSSY', days:[1,4], aircraft:'King Air 350i', etd:'03:30', inspType:'ILS', label:'ILS CAT III Recertification', hub:'APAC' },
+      { flightNum:'GFI-C404', dep:'VHHH', arr:'VHHH', days:[2,5], aircraft:'King Air 350i', etd:'04:30', inspType:'FULL', label:'Full Facility Inspection', hub:'APAC' },
+      { flightNum:'GFI-C405', dep:'NZAA', arr:'NZWN', days:[3,6], aircraft:'Citation CJ4', etd:'06:00', inspType:'VOR', label:'Oceanic VOR/NDB Verification', hub:'APAC' }
     ];
 
     var dayNames = ['S','M','T','W','T','F','S'];
@@ -187,17 +202,19 @@
       var day = document.getElementById('filter-day').value;
       var search = document.getElementById('filter-search').value.toLowerCase();
 
+      var itype = document.getElementById('filter-type') ? document.getElementById('filter-type').value : '';
       var filtered = _schedule.filter(function(f) {
-        if (hub && f.hub !== hub && f.dep !== hub) return false;
+        if (hub && f.hub !== hub) return false;
+        if (itype && f.inspType !== itype) return false;
         if (day && f.days.indexOf(parseInt(day)) === -1) return false;
-        if (search && (f.flightNum + f.dep + f.arr + f.aircraft).toLowerCase().indexOf(search) === -1) return false;
+        if (search && (f.flightNum + f.dep + f.arr + f.aircraft + (f.label||'')).toLowerCase().indexOf(search) === -1) return false;
         return true;
       });
 
-      document.getElementById('sched-count').textContent = filtered.length + ' Flights';
+      document.getElementById('sched-count').textContent = filtered.length + ' Missions';
       var el = document.getElementById('schedule-list');
       if (!filtered.length) {
-        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:0.82rem;">No flights match your filters</div>';
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:0.82rem;">No inspection missions match your filters</div>';
         return;
       }
 
@@ -214,17 +231,17 @@
           + '<div class="days">' + daysHtml + '</div>'
           + '<div style="font-size:0.78rem;color:var(--text-sub);">' + esc(f.aircraft) + '</div>'
           + '<div style="font-family:var(--font-mono);font-size:0.8rem;">' + esc(f.etd) + 'Z</div>'
-          + '<div style="font-size:0.78rem;color:var(--text-muted);">' + esc(f.duration) + '</div>'
+          + '<div style="font-size:0.72rem;"><span style="padding:2px 7px;border-radius:6px;background:rgba(0,119,255,0.1);color:var(--blue-light);font-weight:600;">' + esc(f.inspType||'—') + '</span></div>'
           + '<div>' + (booked
-            ? '<span class="booked-badge">✓ Booked</span>'
-            : '<button class="btn btn-primary book-btn" onclick="bookFlight(\'' + esc(f.flightNum) + '\')">Book</button>')
+            ? '<span class="booked-badge">✓ Assigned</span>'
+            : '<button class="btn btn-primary book-btn" onclick="bookFlight(\'' + esc(f.flightNum) + '\')">Assign Me</button>')
           + '</div></div>';
       }).join('');
     }
 
     async function bookFlight(flightNum) {
-      if (!_uid || !window.db) { showToast('Sign in to book flights', 'warn'); return; }
-      if (_myBookings[flightNum]) { showToast('Already booked', 'info'); return; }
+      if (!_uid || !window.db) { showToast('Sign in to accept inspections', 'warn'); return; }
+      if (_myBookings[flightNum]) { showToast('Already assigned', 'info'); return; }
       var flight = _schedule.find(function(f) { return f.flightNum === flightNum; });
       if (!flight) return;
 
@@ -237,7 +254,7 @@
           bookedAt: window.serverTimestamp()
         });
         _myBookings[flightNum] = { id: ref.id, flightNum: flightNum, dep: flight.dep, arr: flight.arr, aircraft: flight.aircraft, etd: flight.etd };
-        showToast('✓ Booked ' + flightNum, 'success');
+        showToast('✓ Assigned to ' + flightNum, 'success');
         applyFilters();
         renderBookings();
       } catch(e) { showToast('Booking error: ' + e.message, 'error'); }
@@ -248,7 +265,7 @@
       try {
         await window.db.collection('flight_bookings').doc(_myBookings[flightNum].id).delete();
         delete _myBookings[flightNum];
-        showToast('Booking cancelled', 'info');
+        showToast('Assignment removed', 'info');
         applyFilters();
         renderBookings();
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
@@ -259,14 +276,14 @@
       var entries = Object.values(_myBookings);
       document.getElementById('bookings-count').textContent = entries.length;
       if (!entries.length) {
-        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">No bookings yet — browse the schedule above and click Book</div>';
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:0.82rem;">No assignments yet — browse the inspection schedule above and click Assign Me</div>';
         return;
       }
       el.innerHTML = entries.map(function(b) {
         return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg-secondary);border-radius:var(--r-md);margin-bottom:6px;">'
           + '<div style="font-family:var(--font-mono);font-weight:700;color:var(--blue-light);width:90px;">' + esc(b.flightNum) + '</div>'
           + '<div style="flex:1;font-size:0.82rem;">' + esc(b.dep) + ' → ' + esc(b.arr) + ' <span style="color:var(--text-muted);">· ' + esc(b.aircraft) + ' · ' + esc(b.etd) + 'Z</span></div>'
-          + '<button class="btn btn-sm btn-secondary" onclick="cancelBooking(\'' + esc(b.flightNum) + '\')" style="font-size:0.72rem;">Cancel</button>'
+          + '<button class="btn btn-sm btn-secondary" onclick="cancelBooking(\'' + esc(b.flightNum) + '\')" style="font-size:0.72rem;">Remove</button>'
           + '</div>';
       }).join('');
     }

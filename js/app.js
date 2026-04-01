@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { href:'stats.html',             label:'📊 Statistics' },
     { href:'livemap.html',           label:'📡 Live Map' },
     { href:'tours.html',             label:'🧭 Tours' },
-    { href:'schedule.html',          label:'🕐 Schedule' },
+    { href:'schedule.html',          label:'🕐 Inspection Schedule' },
     { href:'typeratings.html',       label:'📜 Type Ratings' },
     { href:'awards.html',            label:'🥇 Awards' },
     { href:'landings.html',          label:'🛬 Landings' },
