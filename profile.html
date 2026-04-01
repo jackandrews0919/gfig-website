@@ -431,7 +431,11 @@
       const cs = document.getElementById('profile-callsign');
       if (av) av.textContent = user.avatar || (user.name || 'XX').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
       if (nm) nm.textContent = user.name || 'Inspector';
-      if (cs) cs.textContent = (user.uid_display || user.callsign || '—') + '\u00a0|\u00a0Callsign: ' + (user.callsign || '—');
+      if (cs) {
+        var memberNum = user.memberNumber || '';
+        var callsign  = user.callsign || '—';
+        cs.textContent = (memberNum ? memberNum : '—') + '\u00a0|\u00a0Callsign: ' + callsign;
+      }
 
       /* Meta row */
       const joinedEl = document.getElementById('meta-joined');

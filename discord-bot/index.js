@@ -226,38 +226,84 @@ app.post('/messages', auth, async (req, res) => {
 /* ── Full GFIG Server Setup ─────────────────────────────────── */
 
 const GFIG_ROLES = [
-  { name: 'Director',          color: '#FF6A00', hoist: true,  permissions: '8' },
-  { name: 'Chief Inspector',   color: '#FF6A00', hoist: true  },
-  { name: 'Senior Inspector',  color: '#40AAFF', hoist: true  },
-  { name: 'Inspector',         color: '#00E676', hoist: true  },
-  { name: 'Junior Inspector',  color: '#FFD700', hoist: true  },
-  { name: 'Trainee Inspector', color: '#AAAAAA', hoist: true  },
-  { name: 'GFIG Bot',          color: '#5865F2', hoist: false },
-  { name: 'Member',            color: '#777777', hoist: false }
+  { name: 'Director',            color: '#FF6A00', hoist: true,  permissions: '8' },
+  { name: 'Chief Inspector',     color: '#FF6A00', hoist: true  },
+  { name: 'Senior Inspector',    color: '#40AAFF', hoist: true  },
+  { name: 'Inspector',           color: '#00E676', hoist: true  },
+  { name: 'Junior Inspector',    color: '#FFD700', hoist: true  },
+  { name: 'Trainee Inspector',   color: '#AAAAAA', hoist: true  },
+  { name: 'Flight Examiner',     color: '#E040FB', hoist: true  },
+  { name: 'Training Officer',    color: '#FF80AB', hoist: true  },
+  { name: 'Fleet Manager',       color: '#18FFFF', hoist: false },
+  { name: 'Drone Operator',      color: '#76FF03', hoist: false },
+  { name: 'Helicopter Pilot',    color: '#FFAB40', hoist: false },
+  { name: 'GFIG Bot',            color: '#5865F2', hoist: false },
+  { name: 'Member',              color: '#777777', hoist: false }
 ];
 
 const GFIG_CHANNELS = [
-  { name: '📋 information',        type: 'category' },
-  { name: '👋 welcome',            type: 'text',         cat: '📋 information',  topic: 'Welcome to GFIG Virtual. Read the rules before proceeding.' },
-  { name: '📜 rules',              type: 'text',         cat: '📋 information',  topic: 'Server rules and code of conduct.' },
-  { name: '📣 announcements',      type: 'announcement', cat: '📋 information',  topic: 'Official GFIG announcements — all members follow this channel.' },
-  { name: '⚠-notams',             type: 'announcement', cat: '📋 information',  topic: 'Active NOTAMs and flight inspection advisories from the GFIG portal.' },
-  { name: '✈ operations',          type: 'category' },
-  { name: '📋 mission-briefings',  type: 'text',         cat: '✈ operations',    topic: 'Upcoming and active GFIG missions. Auto-posted from the portal.' },
-  { name: '✅ completed-ops',       type: 'text',         cat: '✈ operations',    topic: 'Completed inspection reports — auto-posted when approved.' },
-  { name: '📊 leaderboard',        type: 'text',         cat: '✈ operations',    topic: 'Monthly inspector rankings and point standings.' },
-  { name: '💬 community',          type: 'category' },
-  { name: '💬 general',            type: 'text',         cat: '💬 community',    topic: 'General chat for GFIG members.' },
-  { name: '📸 screenshots',        type: 'text',         cat: '💬 community',    topic: 'Share your best cockpit and inspection screenshots.' },
-  { name: '✈ fleet-spotting',      type: 'text',         cat: '💬 community',    topic: 'GFIG fleet photos and spotting.' },
-  { name: '🔊 voice',              type: 'category' },
-  { name: 'Operations Briefing',   type: 'voice',        cat: '🔊 voice' },
-  { name: 'General Voice',         type: 'voice',        cat: '🔊 voice' },
-  { name: 'ATC Practice',          type: 'voice',        cat: '🔊 voice' },
-  { name: '🔒 staff',              type: 'category' },
-  { name: '📋 admin-chat',         type: 'text',         cat: '🔒 staff',        topic: 'Staff-only coordination.' },
-  { name: '🤖 bot-commands',       type: 'text',         cat: '🔒 staff',        topic: 'Bot command testing.' },
-  { name: '📜 audit-log',          type: 'text',         cat: '🔒 staff',        topic: 'Auto-posted audit trail — message edits, deletes, member events.' }
+  /* ── INFORMATION ── */
+  { name: '📋 information',              type: 'category' },
+  { name: '👋-welcome',                  type: 'text',         cat: '📋 information',  topic: 'Welcome to the Global Flight Inspection Group. Read the rules before proceeding.' },
+  { name: '📜-rules',                    type: 'text',         cat: '📋 information',  topic: 'Server rules and code of conduct for all GFIG members.' },
+  { name: '📣-announcements',            type: 'announcement', cat: '📋 information',  topic: 'Official GFIG announcements — follow this channel for updates.' },
+  { name: '⚠-notams',                   type: 'announcement', cat: '📋 information',  topic: 'Active NOTAMs and flight inspection advisories from the GFIG portal.' },
+  { name: '📇-staff-directory',          type: 'text',         cat: '📋 information',  topic: 'GFIG leadership, department heads, and contact information.' },
+
+  /* ── OPERATIONS HQ ── */
+  { name: '✈ operations-hq',             type: 'category' },
+  { name: '📋-mission-briefings',        type: 'text',         cat: '✈ operations-hq', topic: 'Auto-posted from GFIG portal — upcoming and active inspection missions.' },
+  { name: '✅-completed-ops',             type: 'text',         cat: '✈ operations-hq', topic: 'Completed inspection reports — auto-posted when approved by staff.' },
+  { name: '📊-leaderboard',              type: 'text',         cat: '✈ operations-hq', topic: 'Monthly inspector rankings and point standings.' },
+  { name: '🗂-flight-dispatch',           type: 'text',         cat: '✈ operations-hq', topic: 'Flight plans, route coordination, and dispatch notes.' },
+  { name: '📡-operational-validation',    type: 'text',         cat: '✈ operations-hq', topic: 'Navaids, ILS, and procedure validation discussion.' },
+
+  /* ── SPECIALIST OPERATIONS ── */
+  { name: '🚁 specialist-ops',           type: 'category' },
+  { name: '🚁-helicopter-aerial-media',  type: 'text',         cat: '🚁 specialist-ops', topic: 'Helicopter flight inspection and aerial media operations.' },
+  { name: '🔍-surveillance-ops',         type: 'text',         cat: '🚁 specialist-ops', topic: 'Surveillance, monitoring, and observation flight operations.' },
+  { name: '🇬🇧-uk-operations',           type: 'text',         cat: '🚁 specialist-ops', topic: 'UK-specific operations, airspace, and coordination.' },
+  { name: '🤖-drone-inspections',        type: 'text',         cat: '🚁 specialist-ops', topic: 'UAS/drone-based inspection missions and procedures.' },
+  { name: '🔧-calibration-flights',      type: 'text',         cat: '🚁 specialist-ops', topic: 'Instrument calibration and validation flight ops.' },
+
+  /* ── FLEET & STANDARDS ── */
+  { name: '🛩 fleet-standards',           type: 'category' },
+  { name: '🛩-fleet-management',          type: 'text',         cat: '🛩 fleet-standards',  topic: 'Fleet status, aircraft assignments, and maintenance tracking.' },
+  { name: '✈-validation-fleet',           type: 'text',         cat: '🛩 fleet-standards',  topic: 'Operational validation fleet — certified inspection aircraft only.' },
+  { name: '📈-performance-tracking',      type: 'text',         cat: '🛩 fleet-standards',  topic: 'KPIs, pass rates, and operational efficiency metrics.' },
+  { name: '⚠-safety-reports',            type: 'text',         cat: '🛩 fleet-standards',  topic: 'Safety occurrence reports and hazard tracking.' },
+
+  /* ── TRAINING DEPARTMENT ── */
+  { name: '🎓 training-dept',            type: 'category' },
+  { name: '📢-training-announcements',   type: 'announcement', cat: '🎓 training-dept', topic: 'Training schedule, new courses, and department updates.' },
+  { name: '📚-course-materials',         type: 'text',         cat: '🎓 training-dept', topic: 'SOPs, manuals, study guides, and reference documents.' },
+  { name: '📝-checkride-schedule',       type: 'text',         cat: '🎓 training-dept', topic: 'Upcoming skill checks and examiner availability.' },
+  { name: '📊-trainee-progress',         type: 'text',         cat: '🎓 training-dept', topic: 'Trainee milestones, notes, and progress tracking.' },
+  { name: '🧑‍🏫-mentor-chat',            type: 'text',         cat: '🎓 training-dept', topic: 'Private coordination between mentors and training officers.' },
+
+  /* ── COMMUNITY ── */
+  { name: '💬 community',                type: 'category' },
+  { name: '👋-introductions',            type: 'text',         cat: '💬 community',    topic: 'Introduce yourself to the GFIG community!' },
+  { name: '💬-general',                  type: 'text',         cat: '💬 community',    topic: 'General chat for GFIG members.' },
+  { name: '📸-screenshots',              type: 'text',         cat: '💬 community',    topic: 'Share your best cockpit and inspection screenshots.' },
+  { name: '✈-fleet-spotting',            type: 'text',         cat: '💬 community',    topic: 'Real and virtual fleet photos.' },
+  { name: '🎮-off-topic',                type: 'text',         cat: '💬 community',    topic: 'Non-aviation chat — keep it friendly.' },
+
+  /* ── VOICE ── */
+  { name: '🔊 voice-channels',           type: 'category' },
+  { name: 'Operations Briefing',         type: 'voice',        cat: '🔊 voice-channels' },
+  { name: 'General Voice',               type: 'voice',        cat: '🔊 voice-channels' },
+  { name: 'ATC Practice',                type: 'voice',        cat: '🔊 voice-channels' },
+  { name: 'Training Room',               type: 'voice',        cat: '🔊 voice-channels' },
+  { name: 'Specialist Ops',              type: 'voice',        cat: '🔊 voice-channels' },
+
+  /* ── STAFF ── */
+  { name: '🔒 staff',                    type: 'category' },
+  { name: '🏢-director-office',          type: 'text',         cat: '🔒 staff',        topic: 'Director-level coordination and strategic planning.' },
+  { name: '📋-admin-chat',               type: 'text',         cat: '🔒 staff',        topic: 'Staff-only coordination and moderation.' },
+  { name: '👥-hr-management',            type: 'text',         cat: '🔒 staff',        topic: 'Member applications, promotions, and HR records.' },
+  { name: '🤖-bot-commands',             type: 'text',         cat: '🔒 staff',        topic: 'Bot command testing.' },
+  { name: '📜-audit-log',                type: 'text',         cat: '🔒 staff',        topic: 'Auto-posted audit trail — message edits, deletes, member events.' }
 ];
 
 app.post('/setup', auth, async (req, res) => {
@@ -352,6 +398,106 @@ app.delete('/members/:memberId/roles/:roleId', auth, async (req, res) => {
     if (!member) return res.status(404).json({ error: 'Member not found' });
     await member.roles.remove(req.params.roleId, 'Removed via GFIG Admin Panel');
     res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── Member Sync: Website → Discord (rank + nickname) ───────── */
+
+app.post('/sync-member', auth, async (req, res) => {
+  try {
+    const guild = getGuild(res); if (!guild) return;
+    const { discordId, name, memberNumber, rank } = req.body;
+    if (!discordId) return res.status(400).json({ error: 'discordId is required' });
+
+    // Fetch the member
+    let member;
+    try { member = await guild.members.fetch(discordId); }
+    catch(e) { return res.status(404).json({ error: 'Discord user not found in server. They must join the server first.' }); }
+
+    const log = [];
+
+    // Set nickname to "Name | GFIG-XXXX"
+    if (name && memberNumber) {
+      const nick = name + ' | ' + memberNumber;
+      try {
+        await member.setNickname(nick, 'Synced from GFIG Portal');
+        log.push('ok:Nickname set to: ' + nick);
+      } catch(e) { log.push('err:Cannot set nickname: ' + e.message); }
+    }
+
+    // Assign rank role (remove old rank roles first)
+    if (rank) {
+      const rankNames = ['Director', 'Chief Inspector', 'Senior Inspector', 'Inspector',
+                         'Junior Inspector', 'Trainee Inspector', 'Flight Examiner', 'Training Officer'];
+      await guild.roles.fetch();
+
+      // Remove existing rank roles
+      const currentRankRoles = [...member.roles.cache.values()]
+        .filter(r => rankNames.includes(r.name));
+      for (const r of currentRankRoles) {
+        try { await member.roles.remove(r, 'Rank sync from GFIG Portal'); log.push('ok:Removed old role: ' + r.name); }
+        catch(e) { log.push('err:Failed to remove ' + r.name); }
+      }
+
+      // Add new rank role
+      const newRole = guild.roles.cache.find(r => r.name === rank);
+      if (newRole) {
+        try { await member.roles.add(newRole, 'Rank sync from GFIG Portal'); log.push('ok:Assigned role: ' + rank); }
+        catch(e) { log.push('err:Failed to assign ' + rank + ': ' + e.message); }
+      } else {
+        log.push('err:Role "' + rank + '" not found — run Setup first');
+      }
+
+      // Also ensure Member role is assigned
+      const memberRole = guild.roles.cache.find(r => r.name === 'Member');
+      if (memberRole && !member.roles.cache.has(memberRole.id)) {
+        try { await member.roles.add(memberRole, 'Auto-assign Member role'); }
+        catch(e) { /* silent */ }
+      }
+    }
+
+    res.json({ ok: true, log, nickname: member.nickname });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── Bulk Sync: Sync all linked members ─────────────────────── */
+
+app.post('/sync-all', auth, async (req, res) => {
+  try {
+    const guild = getGuild(res); if (!guild) return;
+    const { members } = req.body; // Array of { discordId, name, memberNumber, rank }
+    if (!members || !members.length) return res.status(400).json({ error: 'members array required' });
+
+    await guild.roles.fetch();
+    const rankNames = ['Director', 'Chief Inspector', 'Senior Inspector', 'Inspector',
+                       'Junior Inspector', 'Trainee Inspector', 'Flight Examiner', 'Training Officer'];
+    const log = [];
+
+    for (const m of members) {
+      if (!m.discordId) { log.push('skip:No Discord ID for ' + (m.name || '?')); continue; }
+      try {
+        const member = await guild.members.fetch(m.discordId).catch(() => null);
+        if (!member) { log.push('skip:' + (m.name || m.discordId) + ' not in server'); continue; }
+
+        // Nickname
+        if (m.name && m.memberNumber) {
+          const nick = m.name + ' | ' + m.memberNumber;
+          try { await member.setNickname(nick, 'Bulk sync'); } catch(e) { /* silent */ }
+        }
+
+        // Roles
+        if (m.rank) {
+          const toRemove = [...member.roles.cache.values()].filter(r => rankNames.includes(r.name));
+          for (const r of toRemove) { try { await member.roles.remove(r); } catch(e) { /* */ } }
+          const newRole = guild.roles.cache.find(r => r.name === m.rank);
+          if (newRole) { try { await member.roles.add(newRole); } catch(e) { /* */ } }
+        }
+
+        log.push('ok:Synced ' + (m.name || m.discordId));
+      } catch(e) { log.push('err:Failed ' + (m.name || m.discordId) + ': ' + e.message); }
+    }
+
+    res.json({ ok: true, synced: log.filter(l => l.startsWith('ok:')).length, log });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

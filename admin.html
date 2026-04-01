@@ -1315,29 +1315,41 @@
                     <div><span style="color:#00E676">●</span> Inspector</div>
                     <div><span style="color:#FFD700">●</span> Junior Inspector</div>
                     <div><span style="color:#AAAAAA">●</span> Trainee Inspector</div>
+                    <div><span style="color:#E040FB">●</span> Flight Examiner</div>
+                    <div><span style="color:#FF80AB">●</span> Training Officer</div>
+                    <div><span style="color:#18FFFF">●</span> Fleet Manager</div>
+                    <div><span style="color:#76FF03">●</span> Drone Operator</div>
+                    <div><span style="color:#FFAB40">●</span> Helicopter Pilot</div>
                     <div><span style="color:#5865F2">●</span> GFIG Bot</div>
                     <div><span style="color:#777">●</span> Member</div>
                   </div>
                 </div>
                 <div style="flex:2;min-width:240px;">
-                  <div style="font-family:var(--font-head);font-size:0.7rem;letter-spacing:.1em;color:var(--text-sub);margin-bottom:10px;">CHANNELS</div>
+                  <div style="font-family:var(--font-head);font-size:0.7rem;letter-spacing:.1em;color:var(--text-sub);margin-bottom:10px;">CHANNELS (8 categories · 35+ channels)</div>
                   <div style="font-size:0.78rem;line-height:1.95;font-family:var(--font-mono);">
                     <div style="color:var(--orange);">📋 INFORMATION</div>
-                    <div style="padding-left:12px;color:var(--text-sub);"># welcome &middot; # rules &middot; 📣 announcements &middot; ⚠ notams</div>
-                    <div style="color:var(--orange);margin-top:6px;">✈ OPERATIONS</div>
-                    <div style="padding-left:12px;color:var(--text-sub);"># mission-briefings &middot; # completed-ops &middot; # leaderboard</div>
+                    <div style="padding-left:12px;color:var(--text-sub);"># welcome · # rules · 📣 announcements · ⚠ notams · # staff-directory</div>
+                    <div style="color:var(--orange);margin-top:6px;">✈ OPERATIONS HQ</div>
+                    <div style="padding-left:12px;color:var(--text-sub);"># mission-briefings · # completed-ops · # leaderboard · # flight-dispatch · # op-validation</div>
+                    <div style="color:var(--orange);margin-top:6px;">🚁 SPECIALIST OPS</div>
+                    <div style="padding-left:12px;color:var(--text-sub);"># helicopter-aerial · # surveillance · # uk-ops · # drone-inspections · # calibration</div>
+                    <div style="color:var(--orange);margin-top:6px;">🛩 FLEET &amp; STANDARDS</div>
+                    <div style="padding-left:12px;color:var(--text-sub);"># fleet-mgmt · # validation-fleet · # performance · # safety-reports</div>
+                    <div style="color:var(--orange);margin-top:6px;">🎓 TRAINING DEPT</div>
+                    <div style="padding-left:12px;color:var(--text-sub);">📢 training-announcements · # course-materials · # checkrides · # trainee-progress · # mentor-chat</div>
                     <div style="color:var(--orange);margin-top:6px;">💬 COMMUNITY</div>
-                    <div style="padding-left:12px;color:var(--text-sub);"># general &middot; # screenshots &middot; # fleet-spotting</div>
+                    <div style="padding-left:12px;color:var(--text-sub);"># introductions · # general · # screenshots · # fleet-spotting · # off-topic</div>
                     <div style="color:var(--orange);margin-top:6px;">🔊 VOICE</div>
-                    <div style="padding-left:12px;color:var(--text-sub);">🔊 Operations Briefing &middot; 🔊 General Voice &middot; 🔊 ATC Practice</div>
+                    <div style="padding-left:12px;color:var(--text-sub);">🔊 Ops Briefing · General · ATC Practice · Training Room · Specialist Ops</div>
                     <div style="color:var(--orange);margin-top:6px;">🔒 STAFF</div>
-                    <div style="padding-left:12px;color:var(--text-sub);"># admin-chat &middot; # bot-commands &middot; # audit-log</div>
+                    <div style="padding-left:12px;color:var(--text-sub);"># director-office · # admin-chat · # hr-management · # bot-commands · # audit-log</div>
                   </div>
                 </div>
               </div>
-              <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
                 <button class="btn btn-primary" onclick="dcRunFullSetup()" id="dc-setup-btn">⚡ Run Full GFIG Setup</button>
                 <button class="btn btn-secondary" style="border-color:var(--danger);color:var(--danger);" onclick="dcDeleteAllChannels()">🗑 Delete All Channels &amp; Rebuild</button>
+                <button class="btn btn-secondary" onclick="dcSyncAllMembers()" id="dc-syncall-btn">🔄 Sync All Members to Discord</button>
               </div>
               <div class="setup-log" id="dc-setup-log"></div>
             </div>
@@ -1446,6 +1458,8 @@
             <option>Senior Inspector</option>
             <option>Chief Inspector</option>
             <option>Director</option>
+            <option>Flight Examiner</option>
+            <option>Training Officer</option>
           </select>
         </div>
         <div class="admin-form-group">
@@ -1474,6 +1488,10 @@
             <option value="false">No</option>
             <option value="true">Yes</option>
           </select>
+        </div>
+        <div class="admin-form-group">
+          <label class="admin-form-label">DISCORD USER ID <span style="color:var(--text-muted);font-size:0.7rem;font-family:var(--font-body);letter-spacing:0">(right-click user → Copy User ID)</span></label>
+          <input id="mem-edit-discordId" class="admin-input" type="text" placeholder="e.g. 123456789012345678" style="font-family:var(--font-mono);">
         </div>
       </div>
       <div class="mem-modal-footer">
@@ -1842,6 +1860,7 @@
       document.getElementById('mem-edit-region').value   = m.region   || 'Global';
       document.getElementById('mem-edit-status').value   = m.status   || 'active';
       document.getElementById('mem-edit-admin').value    = m.isAdmin  ? 'true' : 'false';
+      document.getElementById('mem-edit-discordId').value = m.discordId || '';
       document.getElementById('mem-edit-overlay').classList.remove('hidden');
     }
 
@@ -1853,11 +1872,12 @@
     async function saveMemberEdit() {
       if (!_editMemberUid) return;
       const data = {
-        name:     (document.getElementById('mem-edit-name').value || '').trim(),
-        rank:     document.getElementById('mem-edit-rank').value,
-        region:   document.getElementById('mem-edit-region').value,
-        status:   document.getElementById('mem-edit-status').value,
-        isAdmin:  document.getElementById('mem-edit-admin').value === 'true'
+        name:      (document.getElementById('mem-edit-name').value || '').trim(),
+        rank:       document.getElementById('mem-edit-rank').value,
+        region:     document.getElementById('mem-edit-region').value,
+        status:     document.getElementById('mem-edit-status').value,
+        isAdmin:    document.getElementById('mem-edit-admin').value === 'true',
+        discordId: (document.getElementById('mem-edit-discordId').value || '').trim()
       };
       if (!data.name) { toast('Name is required'); return; }
       const btn = document.querySelector('.mem-modal-save');
@@ -1869,6 +1889,20 @@
         // Update local cache so re-render is correct
         const idx = _membersCache.findIndex(function(x) { return x.id === _editMemberUid; });
         if (idx > -1) Object.assign(_membersCache[idx], data);
+
+        // Sync to Discord if discordId is set
+        if (data.discordId) {
+          var memberNumber = _membersCache[idx]?.memberNumber || '';
+          dcApi('POST', '/sync-member', {
+            discordId:    data.discordId,
+            name:         data.name,
+            memberNumber: memberNumber,
+            rank:         data.rank
+          }).then(function(res) {
+            if (res && res.ok) toast('Discord synced: ' + (res.nickname || data.name));
+          }).catch(function() { /* silent — Discord sync is best-effort */ });
+        }
+
         closeEditMember();
         await loadMembersAdmin();
         toast('Member updated');
@@ -2533,6 +2567,51 @@
       } catch(e) {
         appendLog('✗ Error: ' + e.message, 'err');
         toast('Error: ' + e.message);
+      }
+    }
+
+    /* ── Sync All Members to Discord ── */
+
+    async function dcSyncAllMembers() {
+      if (!_membersCache || !_membersCache.length) { toast('Load members first'); return; }
+      var linked = _membersCache.filter(function(m) { return m.discordId; });
+      if (!linked.length) { toast('No members have a Discord ID linked. Edit members to add their Discord ID.'); return; }
+      if (!confirm('Sync ' + linked.length + ' linked member(s) to Discord?\n\nThis will update their nicknames to "Name | GFIG-XXXX" and assign rank roles.')) return;
+
+      var btn = document.getElementById('dc-syncall-btn');
+      var log = document.getElementById('dc-setup-log');
+      if (btn) { btn.textContent = '⏳ Syncing…'; btn.disabled = true; }
+      if (log) { log.innerHTML = ''; log.classList.add('visible'); }
+
+      function appendLog(text, cls) {
+        if (!log) return;
+        var line = document.createElement('div');
+        line.className = 'setup-log-line ' + (cls || '');
+        line.textContent = text;
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      appendLog('Syncing ' + linked.length + ' members to Discord…', '');
+      try {
+        var payload = linked.map(function(m) {
+          return { discordId: m.discordId, name: m.name, memberNumber: m.memberNumber || '', rank: m.rank || 'Member' };
+        });
+        var result = await dcApi('POST', '/sync-all', { members: payload });
+        if (result && result.log) {
+          result.log.forEach(function(l) {
+            var parts = l.split(':');
+            appendLog(parts.slice(1).join(':').trim() || l, parts[0] === 'ok' ? 'ok' : parts[0] === 'err' ? 'err' : 'skip');
+          });
+        }
+        appendLog('', '');
+        appendLog('✓ Synced ' + (result?.synced || 0) + ' members', 'ok');
+        toast('✓ Discord sync complete');
+      } catch(e) {
+        appendLog('✗ Error: ' + e.message, 'err');
+        toast('Sync error: ' + e.message);
+      } finally {
+        if (btn) { btn.textContent = '🔄 Sync All Members to Discord'; btn.disabled = false; }
       }
     }
 
