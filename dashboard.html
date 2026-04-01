@@ -372,6 +372,10 @@
               <div class="quick-action-icon">✈</div>
               <div><div class="quick-action-title">Fleet</div><div class="quick-action-desc">Aircraft registry</div></div>
             </a>
+            <a href="atis.html" class="quick-action">
+              <div class="quick-action-icon">📡</div>
+              <div><div class="quick-action-title">ATIS / Tools</div><div class="quick-action-desc">ATIS, squawk & callsign</div></div>
+            </a>
             <a href="documents.html" class="quick-action">
               <div class="quick-action-icon">📁</div>
               <div><div class="quick-action-title">Documents</div><div class="quick-action-desc">SOPs & manuals</div></div>
@@ -394,6 +398,65 @@
             <div class="card-title mb-16">📋 Pilot Currency</div>
             <div id="currency-list" style="display:flex;flex-direction:column;gap:10px;">
               <div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.82rem;">Loading currency…</div>
+            </div>
+          </div>
+
+          <!-- Flight Hours Chart -->
+          <div class="card" style="margin-top:24px;">
+            <div class="card-header">
+              <span class="card-title">📊 Flight Hours</span>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-sm btn-secondary" id="hrs-btn-week" onclick="switchHoursView('week')" style="font-size:0.68rem;padding:3px 8px;">Week</button>
+                <button class="btn btn-sm btn-secondary" id="hrs-btn-month" onclick="switchHoursView('month')" style="font-size:0.68rem;padding:3px 8px;background:var(--active-bg);color:var(--active);">Month</button>
+              </div>
+            </div>
+            <div id="hours-chart" style="padding:8px 0;">
+              <div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.82rem;">Loading flight hours…</div>
+            </div>
+          </div>
+
+          <!-- Activity Heatmap -->
+          <div class="card" style="margin-top:24px;">
+            <div class="card-header">
+              <span class="card-title">🟩 Activity Heatmap</span>
+              <span class="text-xs text-sub">Last 26 weeks</span>
+            </div>
+            <div id="heatmap-container" style="padding:8px 0;overflow-x:auto;">
+              <div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.82rem;">Loading activity…</div>
+            </div>
+            <div id="heatmap-legend" style="display:flex;align-items:center;gap:6px;justify-content:flex-end;padding:4px 0;font-size:0.65rem;color:var(--text-muted);">
+              Less
+              <div style="width:10px;height:10px;background:var(--bg-secondary);border-radius:2px;border:1px solid var(--border);"></div>
+              <div style="width:10px;height:10px;background:rgba(0,230,118,0.2);border-radius:2px;"></div>
+              <div style="width:10px;height:10px;background:rgba(0,230,118,0.45);border-radius:2px;"></div>
+              <div style="width:10px;height:10px;background:rgba(0,230,118,0.7);border-radius:2px;"></div>
+              <div style="width:10px;height:10px;background:#00e676;border-radius:2px;"></div>
+              More
+            </div>
+          </div>
+
+          <!-- VA ACARS Integration -->
+          <div class="card" style="margin-top:24px;">
+            <div class="card-title mb-16">📡 VA ACARS Integration</div>
+            <p style="font-size:0.78rem;color:var(--text-sub);margin-bottom:12px;">Connect with popular ACARS clients for flight tracking on VATSIM/IVAO.</p>
+            <a href="https://vpilot.rosscarlson.dev/" target="_blank" rel="noopener" class="quick-action" style="text-decoration:none;">
+              <div class="quick-action-icon">🖥</div>
+              <div><div class="quick-action-title">vPilot</div><div class="quick-action-desc">VATSIM pilot client for MSFS</div></div>
+            </a>
+            <a href="https://beta.xpilot-project.org/" target="_blank" rel="noopener" class="quick-action" style="text-decoration:none;">
+              <div class="quick-action-icon">✈</div>
+              <div><div class="quick-action-title">xPilot</div><div class="quick-action-desc">VATSIM pilot client for X-Plane</div></div>
+            </a>
+            <a href="https://swift-project.org/" target="_blank" rel="noopener" class="quick-action" style="text-decoration:none;">
+              <div class="quick-action-icon">🔄</div>
+              <div><div class="quick-action-title">swift</div><div class="quick-action-desc">Multi-sim pilot client</div></div>
+            </a>
+            <a href="https://ivao.aero/softdev/altitude/" target="_blank" rel="noopener" class="quick-action" style="text-decoration:none;">
+              <div class="quick-action-icon">🌐</div>
+              <div><div class="quick-action-title">Altitude (IVAO)</div><div class="quick-action-desc">IVAO pilot client</div></div>
+            </a>
+            <div style="margin-top:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:var(--r-md);font-size:0.72rem;color:var(--text-sub);">
+              <strong style="color:var(--text);">Tip:</strong> Log your network flights in the <a href="logbook.html" style="color:var(--blue-light);">Logbook</a> and select the network (VATSIM/IVAO) to track your online hours.
             </div>
           </div>
 
@@ -601,6 +664,29 @@
           currencyItem('Last Flight', daysSinceLast < 999 ? daysSinceLast + ' days ago' : 'No flights', daysSinceLast < 14 ? 'current' : daysSinceLast < 30 ? 'due-soon' : 'expired'),
           currencyItem('Annual Hours', hours365.toFixed(1) + 'h logged', hours365 >= 10 ? 'current' : hours365 >= 5 ? 'due-soon' : 'expired')
         ];
+
+        // Medical expiry & BFR from user profile
+        try {
+          var user = window.gfigAuth && gfigAuth.getUser ? gfigAuth.getUser() : null;
+          if (user) {
+            var userDoc = await window.db.collection('users').doc(user.uid).get();
+            var ud = userDoc.exists ? userDoc.data() : {};
+            if (ud.medicalExpiry) {
+              var medDate = new Date(ud.medicalExpiry).getTime();
+              var daysUntil = Math.floor((medDate - now) / 86400000);
+              var medStatus = daysUntil > 60 ? 'current' : daysUntil > 0 ? 'due-soon' : 'expired';
+              items.push(currencyItem('Medical Certificate', daysUntil > 0 ? 'Expires in ' + daysUntil + ' days' : 'EXPIRED ' + Math.abs(daysUntil) + ' days ago', medStatus));
+            }
+            if (ud.bfrDate) {
+              var bfrDate = new Date(ud.bfrDate).getTime();
+              var bfrExpiry = bfrDate + (365 * 2 * 86400000); // BFR valid 24 months
+              var bfrDays = Math.floor((bfrExpiry - now) / 86400000);
+              var bfrStatus = bfrDays > 90 ? 'current' : bfrDays > 0 ? 'due-soon' : 'expired';
+              items.push(currencyItem('Biennial Flight Review', bfrDays > 0 ? 'Due in ' + bfrDays + ' days' : 'OVERDUE ' + Math.abs(bfrDays) + ' days', bfrStatus));
+            }
+          }
+        } catch(ex) { /* silent — profile fields optional */ }
+
         el.innerHTML = items.join('');
       } catch(e) {
         el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.82rem;">Error loading currency</div>';
@@ -616,5 +702,145 @@
         + '<div><div style="font-size:0.78rem;font-weight:600;">' + label + '</div><div style="font-size:0.7rem;color:var(--text-sub);">' + value + '</div></div>'
         + '<span style="font-size:0.6rem;font-weight:700;letter-spacing:0.08em;color:' + c + ';">' + l + '</span></div>';
     }
+  </script>
+
+  <script>
+    /* ── Flight Hours Bar Chart ── */
+    var _hoursView = 'month';
+    var _logEntries = [];
+
+    async function loadFlightHours(uid) {
+      if (!window.dbGetLogEntries) return;
+      try {
+        _logEntries = await dbGetLogEntries(uid);
+        renderHoursChart();
+      } catch(e) { document.getElementById('hours-chart').innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.82rem;">Error loading hours</div>'; }
+    }
+
+    function switchHoursView(view) {
+      _hoursView = view;
+      document.getElementById('hrs-btn-week').style.background = view==='week'?'var(--active-bg)':'';
+      document.getElementById('hrs-btn-week').style.color = view==='week'?'var(--active)':'';
+      document.getElementById('hrs-btn-month').style.background = view==='month'?'var(--active-bg)':'';
+      document.getElementById('hrs-btn-month').style.color = view==='month'?'var(--active)':'';
+      renderHoursChart();
+    }
+
+    function renderHoursChart() {
+      var el = document.getElementById('hours-chart');
+      if (!_logEntries.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.82rem;">No logbook entries yet</div>'; return; }
+
+      var buckets = {};
+      var labels = [];
+      var now = new Date();
+
+      if (_hoursView === 'week') {
+        // Last 8 weeks
+        for (var w = 7; w >= 0; w--) {
+          var d = new Date(now); d.setDate(d.getDate() - w * 7);
+          var key = d.toISOString().substring(0,10).replace(/-/g,'').substring(0,6) + 'W' + Math.ceil(d.getDate()/7);
+          var wLabel = 'W-' + w;
+          if (w === 0) wLabel = 'This';
+          labels.push({ key: 'w' + w, label: wLabel });
+          buckets['w' + w] = 0;
+        }
+        _logEntries.forEach(function(e) {
+          if (!e.date) return;
+          var ed = new Date(e.date);
+          var diffDays = Math.floor((now - ed) / 86400000);
+          var weekIdx = Math.floor(diffDays / 7);
+          if (weekIdx >= 0 && weekIdx <= 7) buckets['w' + weekIdx] += (parseFloat(e.blockTime) || 0);
+        });
+        labels.reverse();
+      } else {
+        // Last 6 months
+        for (var m = 5; m >= 0; m--) {
+          var d = new Date(now.getFullYear(), now.getMonth() - m, 1);
+          var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+          var mNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          labels.push({ key: key, label: mNames[d.getMonth()] });
+          buckets[key] = 0;
+        }
+        _logEntries.forEach(function(e) {
+          if (!e.date) return;
+          var key = e.date.substring(0,7); // YYYY-MM
+          if (buckets[key] !== undefined) buckets[key] += (parseFloat(e.blockTime) || 0);
+        });
+      }
+
+      var max = Math.max.apply(null, labels.map(function(l) { return buckets[l.key]; })) || 1;
+      var html = '<div style="display:flex;align-items:flex-end;gap:4px;height:100px;padding:4px 0;">';
+      labels.forEach(function(l) {
+        var val = buckets[l.key] || 0;
+        var pct = Math.max(val / max * 100, 2);
+        var tooltip = val.toFixed(1) + 'h';
+        html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;" title="' + tooltip + '">'
+          + '<div style="font-size:0.6rem;color:var(--text-sub);">' + val.toFixed(1) + '</div>'
+          + '<div style="width:100%;height:' + pct + '%;background:linear-gradient(180deg,var(--blue),var(--blue-light));border-radius:3px 3px 0 0;min-height:2px;transition:height 0.3s;"></div>'
+          + '<div style="font-size:0.6rem;color:var(--text-muted);margin-top:2px;">' + l.label + '</div>'
+          + '</div>';
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    /* ── Activity Heatmap ── */
+    function renderHeatmap(entries) {
+      var el = document.getElementById('heatmap-container');
+      if (!entries || !entries.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.82rem;">No flight data for heatmap</div>'; return; }
+
+      // Count flights per day for last 26 weeks (182 days)
+      var counts = {};
+      var now = new Date();
+      entries.forEach(function(e) {
+        if (!e.date) return;
+        var key = e.date.substring(0,10);
+        counts[key] = (counts[key] || 0) + 1;
+      });
+
+      var maxCount = 0;
+      Object.values(counts).forEach(function(v) { if (v > maxCount) maxCount = v; });
+      if (maxCount === 0) maxCount = 1;
+
+      // Build grid: 26 weeks × 7 days
+      var weeks = 26;
+      var startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - (weeks * 7) + 1);
+      // Align to Sunday
+      startDate.setDate(startDate.getDate() - startDate.getDay());
+
+      var html = '<div style="display:grid;grid-template-columns:repeat(' + weeks + ',1fr);gap:2px;">';
+      for (var w = 0; w < weeks; w++) {
+        for (var d = 0; d < 7; d++) {
+          var date = new Date(startDate);
+          date.setDate(date.getDate() + w * 7 + d);
+          var key = date.toISOString().substring(0,10);
+          var count = counts[key] || 0;
+          var intensity = count / maxCount;
+          var bg;
+          if (count === 0) bg = 'var(--bg-secondary)';
+          else if (intensity < 0.25) bg = 'rgba(0,230,118,0.2)';
+          else if (intensity < 0.5) bg = 'rgba(0,230,118,0.45)';
+          else if (intensity < 0.75) bg = 'rgba(0,230,118,0.7)';
+          else bg = '#00e676';
+
+          var border = count === 0 ? 'border:1px solid var(--border);' : '';
+          html += '<div style="width:100%;aspect-ratio:1;background:' + bg + ';border-radius:2px;' + border + '" title="' + key + ': ' + count + ' flight(s)"></div>';
+        }
+      }
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    // Hook into authready to load hours + heatmap
+    document.addEventListener('gfig:authready', function(e) {
+      if (e.detail) {
+        loadFlightHours(e.detail.uid);
+        // Load heatmap from same log entries
+        if (window.dbGetLogEntries) {
+          dbGetLogEntries(e.detail.uid).then(function(entries) { renderHeatmap(entries); });
+        }
+      }
+    });
   </script>
 </html>

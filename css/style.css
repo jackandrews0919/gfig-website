@@ -56,6 +56,31 @@
   --t: 0.2s ease;
 }
 
+/* ── Light Theme ────────────────────────────────────────────── */
+:root.light {
+  --bg-primary:    #eef2f7;
+  --bg-secondary:  #e2e8f0;
+  --bg-card:       #ffffff;
+  --bg-card-alt:   #f7f9fc;
+  --bg-hover:      #dde4ed;
+  --border:        #cbd5e1;
+  --border-light:  #94a3b8;
+
+  --blue:          #0066dd;
+  --blue-light:    #2277ee;
+  --blue-glow:     rgba(0, 102, 221, 0.15);
+
+  --text:          #1a2332;
+  --text-sub:      #475569;
+  --text-muted:    #94a3b8;
+
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --glow:   0 0 20px rgba(0, 102, 221, 0.08);
+}
+:root.light .navbar {
+  background: rgba(255, 255, 255, 0.92);
+}
+
 /* ── Reset ──────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }

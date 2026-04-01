@@ -137,6 +137,17 @@
         </div>
       </div>
 
+      <!-- Favourite Routes -->
+      <div class="dispatch-card" id="fav-routes-panel" style="margin-bottom:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <h3 style="font-family:var(--font-head);font-size:0.82rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin:0;">⭐ FAVOURITE ROUTES</h3>
+          <button class="btn btn-secondary" onclick="saveCurrentRoute()" style="font-size:0.75rem;padding:4px 10px;">+ Save Current</button>
+        </div>
+        <div id="fav-routes-list" style="display:flex;flex-direction:column;gap:6px;">
+          <div style="text-align:center;color:var(--text-muted);padding:12px;font-size:0.78rem;">Loading saved routes…</div>
+        </div>
+      </div>
+
       <!-- Result -->
       <div class="dispatch-result" id="dispatch-result">
         <div class="dispatch-result-header">
@@ -439,6 +450,59 @@
         _simbriefData = null;
       }
     }
+
+    /* ── Favourite Routes ─────────────────────────────────────── */
+    async function loadFavRoutes() {
+      if (!_currentUser || !window.dbGetFavouriteRoutes) return;
+      var el = document.getElementById('fav-routes-list');
+      try {
+        var routes = await dbGetFavouriteRoutes(_currentUser.uid);
+        if (!routes.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:12px;font-size:0.78rem;">No saved routes — generate a flight plan and click "Save Current"</div>'; return; }
+        el.innerHTML = routes.map(function(r) {
+          return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:8px;cursor:pointer;" onclick="loadFavRoute(\'' + esc(r.departure) + '\',\'' + esc(r.arrival) + '\',\'' + esc(r.alternate||'') + '\',\'' + esc(r.route||'') + '\',\'' + esc(r.flightLevel||'') + '\',\'' + esc(r.aircraft||'') + '\')">'
+            + '<div style="flex:1;"><div style="font-family:var(--font-head);font-size:0.82rem;font-weight:600;letter-spacing:0.08em;">' + esc(r.departure) + ' → ' + esc(r.arrival) + '</div>'
+            + '<div style="font-size:0.7rem;color:var(--text-sub);">' + esc(r.name||'') + (r.aircraft?' · '+esc(r.aircraft):'') + '</div></div>'
+            + '<button class="btn btn-secondary" onclick="event.stopPropagation();deleteFavRoute(\'' + r.id + '\')" style="font-size:0.7rem;padding:3px 8px;">✕</button></div>';
+        }).join('');
+      } catch(e) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:12px;font-size:0.78rem;">Error loading routes</div>'; }
+    }
+
+    async function saveCurrentRoute() {
+      if (!_currentUser) { showToast('Sign in to save routes', 'warn'); return; }
+      var dep = (document.getElementById('d-dep').value||'').trim().toUpperCase();
+      var arr = (document.getElementById('d-arr').value||'').trim().toUpperCase();
+      if (!dep || !arr) { showToast('Enter departure and arrival first', 'warn'); return; }
+      await dbSaveFavouriteRoute(_currentUser.uid, {
+        departure: dep, arrival: arr,
+        alternate: (document.getElementById('d-alt').value||'').trim().toUpperCase(),
+        route: (document.getElementById('d-route').value||'').trim().toUpperCase(),
+        flightLevel: document.getElementById('d-fl').value||'',
+        aircraft: document.getElementById('d-ac').value||''
+      });
+      showToast('Route saved!', 'success');
+      loadFavRoutes();
+    }
+
+    function loadFavRoute(dep, arr, alt, route, fl, ac) {
+      document.getElementById('d-dep').value = dep;
+      document.getElementById('d-arr').value = arr;
+      document.getElementById('d-alt').value = alt;
+      document.getElementById('d-route').value = route;
+      if (fl) document.getElementById('d-fl').value = fl;
+      if (ac) { var sel = document.getElementById('d-ac'); for (var i=0;i<sel.options.length;i++) { if(sel.options[i].value===ac){sel.value=ac;break;} } }
+      showToast('Route loaded — click Generate to create OFP', 'info');
+    }
+
+    async function deleteFavRoute(id) {
+      await dbDeleteFavouriteRoute(id);
+      showToast('Route removed', 'info');
+      loadFavRoutes();
+    }
+
+    // Load saved routes on auth ready
+    document.addEventListener('gfig:authready', function(e) {
+      if (e.detail) { loadFavRoutes(); }
+    });
   </script>
 </body>
 </html>

@@ -1249,6 +1249,7 @@
           <div class="dc-tab-bar">
             <button class="dc-tab active" onclick="dcShowTab('roles',     this)">👑 Roles</button>
             <button class="dc-tab"        onclick="dcShowTab('channels',  this)">📂 Channels</button>
+            <button class="dc-tab"        onclick="dcShowTab('content',   this)">📝 Channel Content</button>
             <button class="dc-tab"        onclick="dcShowTab('broadcast', this)">📢 Broadcast</button>
             <button class="dc-tab"        onclick="dcShowTab('audit',     this)">📜 Audit Log</button>
             <button class="dc-tab"        onclick="dcShowTab('setup',     this)">⚡ Server Setup</button>
@@ -1337,6 +1338,130 @@
                 <div id="dc-channels-list" style="max-height:500px;overflow-y:auto;">
                   <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.82rem;">Connect to load channels</div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── CHANNEL CONTENT ── -->
+          <div class="dc-tab-panel" id="dc-panel-content">
+            <div style="font-size:0.82rem;color:var(--text-sub);margin-bottom:18px;line-height:1.6;">
+              Edit and publish persistent content to your Discord information channels. Content is saved to Firestore and can be republished at any time. The bot will post rich embeds to each channel.
+            </div>
+
+            <!-- Welcome Channel -->
+            <div class="admin-form" style="margin-bottom:18px;">
+              <div class="admin-form-title">👋 WELCOME MESSAGE</div>
+              <div class="admin-form-group" style="margin-bottom:10px;">
+                <label class="admin-form-label">TITLE</label>
+                <input class="admin-input" type="text" id="cc-welcome-title" placeholder="Welcome to GFIG!" value="👋 Welcome to GFIG!">
+              </div>
+              <div class="admin-form-group" style="margin-bottom:10px;">
+                <label class="admin-form-label">MESSAGE <span style="color:var(--text-muted);font-weight:normal">(Discord markdown)</span></label>
+                <textarea class="admin-textarea" id="cc-welcome-body" rows="5" placeholder="Welcome text…">Welcome to the **Global Flight Inspection Group** Discord server!
+
+We're a virtual airline dedicated to realistic flight inspection operations worldwide.
+
+**Getting Started:**
+• Visit our website to apply: **https://jackandrews0919.github.io/gfig-website/join.html**
+• Read the rules in #📋-rules
+• Once approved, you'll receive your member rank and access to all channels
+
+Have questions? Ask in our community channels!</textarea>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button class="btn btn-primary" onclick="publishChannelContent('welcome')" style="font-size:0.82rem;">📤 Publish to #👋-welcome</button>
+                <button class="btn btn-secondary" onclick="saveChannelDraft('welcome')" style="font-size:0.82rem;">💾 Save Draft</button>
+                <span id="cc-welcome-status" style="font-size:0.72rem;color:var(--text-muted);"></span>
+              </div>
+            </div>
+
+            <!-- Rules Channel -->
+            <div class="admin-form" style="margin-bottom:18px;">
+              <div class="admin-form-title">📋 RULES</div>
+              <div class="admin-form-group" style="margin-bottom:10px;">
+                <label class="admin-form-label">TITLE</label>
+                <input class="admin-input" type="text" id="cc-rules-title" placeholder="Server Rules" value="📋 GFIG Server Rules">
+              </div>
+              <div class="admin-form-group" style="margin-bottom:10px;">
+                <label class="admin-form-label">MESSAGE</label>
+                <textarea class="admin-textarea" id="cc-rules-body" rows="8" placeholder="Rules text…">**1.** Be respectful to all members at all times.
+**2.** No spam, self-promotion, or NSFW content.
+**3.** Use channels for their intended purpose.
+**4.** English is the primary language for all official channels.
+**5.** Follow all GFIG SOPs during operations.
+**6.** Do not impersonate staff or other members.
+**7.** No sharing of pirated software or content.
+**8.** Staff decisions are final. Appeals can be submitted via the website.
+**9.** Have fun and enjoy virtual aviation! ✈️
+
+*Violations may result in warnings, muting, or removal from the server.*</textarea>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button class="btn btn-primary" onclick="publishChannelContent('rules')" style="font-size:0.82rem;">📤 Publish to #📋-rules</button>
+                <button class="btn btn-secondary" onclick="saveChannelDraft('rules')" style="font-size:0.82rem;">💾 Save Draft</button>
+                <span id="cc-rules-status" style="font-size:0.72rem;color:var(--text-muted);"></span>
+              </div>
+            </div>
+
+            <!-- Staff Directory Channel -->
+            <div class="admin-form" style="margin-bottom:18px;">
+              <div class="admin-form-title">🗂 STAFF DIRECTORY</div>
+              <div class="admin-form-group" style="margin-bottom:10px;">
+                <label class="admin-form-label">TITLE</label>
+                <input class="admin-input" type="text" id="cc-staff-title" placeholder="Staff Directory" value="🗂 GFIG Staff Directory">
+              </div>
+              <div class="admin-form-group" style="margin-bottom:10px;">
+                <label class="admin-form-label">MESSAGE</label>
+                <textarea class="admin-textarea" id="cc-staff-body" rows="6" placeholder="Staff directory text…">**Leadership**
+• Director — *TBD*
+• Deputy Director — *TBD*
+
+**Staff Team**
+• HR Manager — *TBD*
+• Training Lead — *TBD*
+• Events Coordinator — *TBD*
+• NOTAM Manager — *TBD*
+
+*Want to join the staff team? Speak to a Director or apply via the website.*</textarea>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button class="btn btn-primary" onclick="publishChannelContent('staff')" style="font-size:0.82rem;">📤 Publish to #🗂-staff-directory</button>
+                <button class="btn btn-secondary" onclick="saveChannelDraft('staff')" style="font-size:0.82rem;">💾 Save Draft</button>
+                <span id="cc-staff-status" style="font-size:0.72rem;color:var(--text-muted);"></span>
+              </div>
+            </div>
+
+            <!-- Announcements -->
+            <div class="admin-form" style="margin-bottom:18px;">
+              <div class="admin-form-title">📣 ANNOUNCEMENT</div>
+              <div class="admin-form-group" style="margin-bottom:10px;">
+                <label class="admin-form-label">TITLE</label>
+                <input class="admin-input" type="text" id="cc-announce-title" placeholder="Announcement title">
+              </div>
+              <div class="admin-form-group" style="margin-bottom:10px;">
+                <label class="admin-form-label">MESSAGE</label>
+                <textarea class="admin-textarea" id="cc-announce-body" rows="4" placeholder="Announcement body…"></textarea>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button class="btn btn-primary" onclick="publishChannelContent('announcements')" style="font-size:0.82rem;">📤 Publish to #📣-announcements</button>
+                <span id="cc-announce-status" style="font-size:0.72rem;color:var(--text-muted);"></span>
+              </div>
+            </div>
+
+            <!-- NOTAMs -->
+            <div class="admin-form">
+              <div class="admin-form-title">⚠ NOTAM</div>
+              <div class="admin-form-group" style="margin-bottom:10px;">
+                <label class="admin-form-label">TITLE</label>
+                <input class="admin-input" type="text" id="cc-notam-title" placeholder="NOTAM title">
+              </div>
+              <div class="admin-form-group" style="margin-bottom:10px;">
+                <label class="admin-form-label">MESSAGE</label>
+                <textarea class="admin-textarea" id="cc-notam-body" rows="4" placeholder="NOTAM content…"></textarea>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button class="btn btn-primary" onclick="publishChannelContent('notams')" style="font-size:0.82rem;">📤 Publish to #⚠-notams</button>
+                <span id="cc-notam-status" style="font-size:0.72rem;color:var(--text-muted);"></span>
               </div>
             </div>
           </div>
@@ -2881,6 +3006,104 @@
         }).join('');
       } catch(e) {
         list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger);font-size:0.82rem;">Error: ' + e.message + '</div>';
+      }
+    }
+
+    /* ── Channel Content Management ── */
+
+    var _channelContentCache = null;
+    var CHANNEL_MAP = {
+      welcome:       { channel: '👋-welcome',         color: 0x2ECC71 },
+      rules:         { channel: '📋-rules',            color: 0xFFD700 },
+      staff:         { channel: '🗂-staff-directory',   color: 0x40AAFF },
+      announcements: { channel: '📣-announcements',    color: 0xFF6A00 },
+      notams:        { channel: '⚠-notams',            color: 0xED4245 }
+    };
+
+    async function loadChannelContent() {
+      if (_channelContentCache) return _channelContentCache;
+      try {
+        var data = window.dbGetChannelContent ? await dbGetChannelContent() : {};
+        _channelContentCache = data;
+        // Populate form fields from saved drafts
+        ['welcome', 'rules', 'staff', 'announce', 'notam'].forEach(function(key) {
+          var dbKey = key === 'announce' ? 'announcements' : key === 'notam' ? 'notams' : key;
+          var saved = data[dbKey];
+          if (saved) {
+            var titleEl = document.getElementById('cc-' + key + '-title');
+            var bodyEl = document.getElementById('cc-' + key + '-body');
+            if (titleEl && saved.title) titleEl.value = saved.title;
+            if (bodyEl && saved.body) bodyEl.value = saved.body;
+          }
+        });
+        return data;
+      } catch(e) { return {}; }
+    }
+    // Load channel content when Discord tab is shown
+    var _ccLoaded = false;
+    var _origDcShowTab = dcShowTab;
+    dcShowTab = function(tab, btn) {
+      _origDcShowTab(tab, btn);
+      if (tab === 'content' && !_ccLoaded) { _ccLoaded = true; loadChannelContent(); }
+    };
+
+    async function saveChannelDraft(key) {
+      var dbKey = key === 'announce' ? 'announcements' : key === 'notam' ? 'notams' : key;
+      var formKey = key === 'announcements' ? 'announce' : key === 'notams' ? 'notam' : key;
+      var title = (document.getElementById('cc-' + formKey + '-title')?.value || '').trim();
+      var body = (document.getElementById('cc-' + formKey + '-body')?.value || '').trim();
+      if (!title && !body) { toast('Enter a title or message first'); return; }
+      try {
+        await dbSaveChannelContent(dbKey, { title: title, body: body });
+        _channelContentCache = null;
+        var statusEl = document.getElementById('cc-' + formKey + '-status');
+        if (statusEl) statusEl.textContent = '✓ Draft saved';
+        toast('✓ Draft saved to Firestore');
+      } catch(e) { toast('Save error: ' + e.message); }
+    }
+
+    async function publishChannelContent(key) {
+      var formKey = key === 'announcements' ? 'announce' : key === 'notams' ? 'notam' : key;
+      var title = (document.getElementById('cc-' + formKey + '-title')?.value || '').trim();
+      var body = (document.getElementById('cc-' + formKey + '-body')?.value || '').trim();
+      if (!title && !body) { toast('Enter a title or message first'); return; }
+
+      var channelInfo = CHANNEL_MAP[key];
+      if (!channelInfo) { toast('Unknown channel key: ' + key); return; }
+
+      var statusEl = document.getElementById('cc-' + formKey + '-status');
+      if (statusEl) statusEl.textContent = 'Publishing…';
+
+      try {
+        // Save draft first
+        var dbKey = key;
+        await dbSaveChannelContent(dbKey, { title: title, body: body });
+        _channelContentCache = null;
+
+        // Get saved messageId for this channel (for editing)
+        var data = await dbGetChannelContent();
+        var savedMsgId = data[dbKey]?.messageId || null;
+
+        // Post to Discord via bot
+        var result = await dcApi('POST', '/channel-message', {
+          channelName: channelInfo.channel,
+          title: title,
+          description: body,
+          color: channelInfo.color,
+          messageId: savedMsgId
+        });
+
+        if (result && result.messageId) {
+          // Save the message ID for future edits
+          await dbSaveChannelContent(dbKey, { title: title, body: body, messageId: result.messageId });
+          _channelContentCache = null;
+        }
+
+        if (statusEl) statusEl.textContent = '✓ Published to #' + channelInfo.channel;
+        toast('✓ Published to #' + channelInfo.channel);
+      } catch(e) {
+        if (statusEl) statusEl.textContent = '✗ ' + e.message;
+        toast('Publish error: ' + e.message);
       }
     }
 

@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { href:'pireps.html',       label:'📡 PIREPs' },
     { href:'dispatch.html',     label:'📋 Dispatch' },
     { href:'weather.html',      label:'🌤 Weather' },
+    { href:'atis.html',         label:'📡 ATIS / Tools' },
     { href:'fleet.html',        label:'✈ Fleet' },
     { href:'map.html',          label:'🗺 Route Map' },
     { href:'achievements.html', label:'🏆 Achievements' },
@@ -150,3 +151,28 @@ function showToast(message, type = 'info') {
   document.body.appendChild(toast);
   setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 4000);
 }
+
+// ── Dark / Light Theme Toggle ───────────────────────────────────
+(function() {
+  // Apply saved theme immediately
+  var saved = localStorage.getItem('gfig-theme');
+  if (saved === 'light') document.documentElement.classList.add('light');
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Insert toggle button into nav-actions (before first child)
+    var actions = document.querySelector('.nav-actions');
+    if (!actions) return;
+    var btn = document.createElement('button');
+    btn.id = 'theme-toggle';
+    btn.title = 'Toggle Dark/Light Theme';
+    btn.style.cssText = 'padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.9rem;cursor:pointer;font-family:inherit;line-height:1;';
+    btn.textContent = document.documentElement.classList.contains('light') ? '🌙' : '☀';
+    btn.onclick = function() {
+      document.documentElement.classList.toggle('light');
+      var isLight = document.documentElement.classList.contains('light');
+      localStorage.setItem('gfig-theme', isLight ? 'light' : 'dark');
+      btn.textContent = isLight ? '🌙' : '☀';
+    };
+    actions.insertBefore(btn, actions.firstChild);
+  });
+})();

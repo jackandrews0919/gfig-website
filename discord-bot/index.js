@@ -1219,6 +1219,115 @@ app.post('/dm/bulk', auth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+/* ═══════════════════════════════════════════════════════════════
+   DISCORD CHANNEL CONTENT MANAGEMENT
+   Post/update rich embeds to information channels (welcome, rules,
+   staff-directory, announcements, notams)
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * POST /channel-message — Post or update a rich embed in a named channel
+ * Body: { channelName, title, description, color?, fields?, footer?, messageId? }
+ * If messageId is provided, edits that message; otherwise sends a new one.
+ * Returns: { ok, messageId }
+ */
+app.post('/channel-message', auth, async (req, res) => {
+  try {
+    const { channelName, title, description, color, fields, footer, messageId } = req.body;
+    if (!channelName) return res.status(400).json({ error: 'channelName is required' });
+    if (!title && !description) return res.status(400).json({ error: 'title or description is required' });
+
+    const guild = client.guilds.cache.get(GUILD_ID);
+    if (!guild) return res.status(500).json({ error: 'Guild not found' });
+
+    // Find channel by name (supports emoji prefixed names like 👋-welcome)
+    const channel = guild.channels.cache.find(c =>
+      c.isTextBased() && (
+        c.name === channelName ||
+        c.name.includes(channelName) ||
+        c.name.replace(/[^\w-]/g, '') === channelName.replace(/[^\w-]/g, '')
+      )
+    );
+    if (!channel) return res.status(404).json({ error: `Channel "${channelName}" not found` });
+
+    const embed = {
+      color: color || 0x0077FF,
+      title: (title || '').substring(0, 256),
+      description: (description || '').substring(0, 4096),
+      footer: { text: footer || 'Global Flight Inspection Group', iconURL: 'https://jackandrews0919.github.io/gfig-website/logo.png' },
+      timestamp: new Date().toISOString()
+    };
+
+    if (fields && Array.isArray(fields)) {
+      embed.fields = fields.slice(0, 25).map(f => ({
+        name: String(f.name || '').substring(0, 256),
+        value: String(f.value || '').substring(0, 1024),
+        inline: !!f.inline
+      }));
+    }
+
+    let msg;
+    if (messageId) {
+      // Try to edit existing message
+      try {
+        msg = await channel.messages.fetch(messageId);
+        await msg.edit({ embeds: [embed] });
+      } catch(e) {
+        // Message not found — send new one
+        msg = await channel.send({ embeds: [embed] });
+      }
+    } else {
+      msg = await channel.send({ embeds: [embed] });
+    }
+
+    auditPush({
+      type: 'channel_message',
+      channel: '#' + channel.name,
+      summary: `Channel content ${messageId ? 'updated' : 'posted'} in **#${channel.name}**: ${title || '(no title)'}`
+    });
+
+    res.json({ ok: true, messageId: msg.id, channelId: channel.id, channelName: channel.name });
+  } catch(e) {
+    console.error('Channel message error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
+ * POST /channel-clear — Delete recent bot messages in a channel
+ * Body: { channelName, limit? }
+ */
+app.post('/channel-clear', auth, async (req, res) => {
+  try {
+    const { channelName, limit } = req.body;
+    if (!channelName) return res.status(400).json({ error: 'channelName is required' });
+
+    const guild = client.guilds.cache.get(GUILD_ID);
+    if (!guild) return res.status(500).json({ error: 'Guild not found' });
+
+    const channel = guild.channels.cache.find(c =>
+      c.isTextBased() && (
+        c.name === channelName ||
+        c.name.includes(channelName) ||
+        c.name.replace(/[^\w-]/g, '') === channelName.replace(/[^\w-]/g, '')
+      )
+    );
+    if (!channel) return res.status(404).json({ error: `Channel "${channelName}" not found` });
+
+    const messages = await channel.messages.fetch({ limit: Math.min(limit || 10, 50) });
+    const botMessages = messages.filter(m => m.author.id === client.user.id);
+    let deleted = 0;
+    for (const [, m] of botMessages) {
+      await m.delete();
+      deleted++;
+    }
+
+    res.json({ ok: true, deleted });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 /* ── Bot Events ─────────────────────────────────────────────── */
 
 client.once('ready', () => {

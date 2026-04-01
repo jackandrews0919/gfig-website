@@ -1154,3 +1154,62 @@ window.dbMarkAllRead = async function(uid) {
   snap.docs.forEach(function(d) { batch.update(d.ref, { read: true }); });
   await batch.commit();
 };
+
+/* ══════════════════════════════════════════════════════════════
+   FAVOURITE ROUTES
+   ══════════════════════════════════════════════════════════════ */
+
+/** Save a favourite route for a user */
+window.dbSaveFavouriteRoute = async function(uid, data) {
+  if (!window.db || !uid) return null;
+  var ref = await window.db.collection('favourite_routes').add({
+    uid: uid,
+    departure: data.departure || '',
+    arrival: data.arrival || '',
+    alternate: data.alternate || '',
+    route: data.route || '',
+    flightLevel: data.flightLevel || '',
+    aircraft: data.aircraft || '',
+    name: data.name || (data.departure + '-' + data.arrival),
+    createdAt: window.serverTimestamp()
+  });
+  return ref.id;
+};
+
+/** Get favourite routes for a user */
+window.dbGetFavouriteRoutes = async function(uid) {
+  if (!window.db || !uid) return [];
+  try {
+    var snap = await window.db.collection('favourite_routes')
+      .where('uid', '==', uid).orderBy('createdAt', 'desc').get();
+    return snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+  } catch(e) { return []; }
+};
+
+/** Delete a favourite route */
+window.dbDeleteFavouriteRoute = async function(id) {
+  if (!window.db || !id) return;
+  await window.db.collection('favourite_routes').doc(id).delete();
+};
+
+/* ══════════════════════════════════════════════════════════════
+   DISCORD CHANNEL CONTENT
+   ══════════════════════════════════════════════════════════════ */
+
+/** Save editable channel content to Firestore (admin) */
+window.dbSaveChannelContent = async function(channelKey, data) {
+  if (!window.db) return;
+  await window.db.collection('settings').doc('discord_channels').set(
+    { [channelKey]: { ...data, updatedAt: window.serverTimestamp() } },
+    { merge: true }
+  );
+};
+
+/** Get all channel content */
+window.dbGetChannelContent = async function() {
+  if (!window.db) return {};
+  try {
+    var doc = await window.db.collection('settings').doc('discord_channels').get();
+    return doc.exists ? doc.data() : {};
+  } catch(e) { return {}; }
+};

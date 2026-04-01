@@ -321,6 +321,23 @@
           </div>
 
           <div class="card">
+            <div class="card-title mb-16">📋 Currency Dates</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div>
+                <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">MEDICAL CERTIFICATE EXPIRY</label>
+                <input type="date" id="set-medical" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;">
+                <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">Appears on Dashboard currency tracker with expiry warnings.</div>
+              </div>
+              <div>
+                <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">BIENNIAL FLIGHT REVIEW DATE</label>
+                <input type="date" id="set-bfr" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;">
+                <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">Date of last BFR. Valid for 24 calendar months.</div>
+              </div>
+              <button class="btn btn-primary" onclick="saveCurrencyDates()" style="margin-top:6px;">Save Currency Dates</button>
+            </div>
+          </div>
+
+          <div class="card">
             <div class="card-title mb-16">🔗 Integrations</div>
             <div style="display:flex;flex-direction:column;gap:14px;">
               <div>
@@ -436,6 +453,21 @@
       if (user.simbriefId) document.getElementById('set-simbrief').value = user.simbriefId;
       if (user.vatsimCid) document.getElementById('set-vatsim').value = user.vatsimCid;
       if (user.ivaoVid) document.getElementById('set-ivao').value = user.ivaoVid;
+      if (user.medicalExpiry) document.getElementById('set-medical').value = user.medicalExpiry;
+      if (user.bfrDate) document.getElementById('set-bfr').value = user.bfrDate;
+    }
+
+    async function saveCurrencyDates() {
+      if (!_profileUser || !firebase.firestore) return;
+      var data = {};
+      var med = document.getElementById('set-medical').value;
+      var bfr = document.getElementById('set-bfr').value;
+      if (med !== undefined) data.medicalExpiry = med;
+      if (bfr !== undefined) data.bfrDate = bfr;
+      try {
+        await firebase.firestore().collection('users').doc(_profileUser.uid).update(data);
+        if (typeof showToast === 'function') showToast('Currency dates saved!', 'success');
+      } catch(e) { if (typeof showToast === 'function') showToast('Error: ' + e.message, 'error'); }
     }
 
     /* ── Rank thresholds ── */
