@@ -226,25 +226,30 @@ app.post('/messages', auth, async (req, res) => {
 /* ── Full GFIG Server Setup ─────────────────────────────────── */
 
 const GFIG_ROLES = [
+  // ── Display ranks (hoisted, shown in sidebar) ──
   { name: 'Director',            color: '#FF6A00', hoist: true,  permissions: '8' },
   { name: 'Chief Inspector',     color: '#FF6A00', hoist: true  },
   { name: 'Senior Inspector',    color: '#40AAFF', hoist: true  },
   { name: 'Inspector',           color: '#00E676', hoist: true  },
   { name: 'Junior Inspector',    color: '#FFD700', hoist: true  },
   { name: 'Trainee Inspector',   color: '#AAAAAA', hoist: true  },
+  // ── Staff tags (hoisted) ──
   { name: 'Flight Examiner',     color: '#E040FB', hoist: true  },
   { name: 'Training Officer',    color: '#FF80AB', hoist: true  },
-  { name: 'HR Officer',           color: '#29B6F6', hoist: true  },
+  { name: 'HR Officer',          color: '#29B6F6', hoist: true  },
+  // ── Specialty tags (not hoisted — not displayed separately) ──
   { name: 'Fleet Manager',       color: '#18FFFF', hoist: false },
   { name: 'Drone Operator',      color: '#76FF03', hoist: false },
   { name: 'Helicopter Pilot',    color: '#FFAB40', hoist: false },
   { name: 'VATSIM Controller',   color: '#26A69A', hoist: false },
+  // ── Status tags ──
   { name: 'On LOA',              color: '#F44336', hoist: true  },
-  { name: 'Guest',               color: '#95A5A6', hoist: true  },
   { name: 'Applicant',           color: '#E67E22', hoist: true  },
+  { name: 'Guest',               color: '#95A5A6', hoist: false },
   { name: 'Suspended',           color: '#555555', hoist: false },
+  // ── Base tags (bottom, not displayed separately) ──
+  { name: 'Member',              color: '#2ECC71', hoist: false },
   { name: 'GFIG Bot',            color: '#5865F2', hoist: false },
-  { name: 'Member',              color: '#2ECC71', hoist: true  }
 ];
 
 /* ── Permission Profiles (applied to categories, inherited by child channels) ── */
@@ -393,6 +398,25 @@ app.post('/setup', auth, async (req, res) => {
         log.push('ok:Created role: ' + r.name);
       } catch(e) { log.push('err:Failed role ' + r.name + ': ' + e.message); }
     }
+
+    /* ①b Re-order & update existing role hoist flags to match GFIG_ROLES array */
+    try {
+      await guild.roles.fetch();
+      const botMember = guild.members.me;
+      const botTop = botMember ? botMember.roles.highest.position : 0;
+      const positionUpdates = [];
+      GFIG_ROLES.forEach((r, idx) => {
+        const role = guild.roles.cache.find(x => x.name === r.name);
+        if (!role || role.managed) return;
+        const desiredPos = Math.max(1, botTop - 1 - idx);
+        if (role.position !== desiredPos) positionUpdates.push({ role: role.id, position: desiredPos });
+        if (role.hoist !== !!r.hoist) role.setHoist(!!r.hoist).catch(() => {});
+      });
+      if (positionUpdates.length) {
+        await guild.roles.setPositions(positionUpdates);
+        log.push('ok:Re-ordered ' + positionUpdates.length + ' roles');
+      }
+    } catch(e) { log.push('err:Role reorder: ' + e.message); }
 
     /* ② Channels & Categories */
     // Re-fetch so categories are in cache after creation

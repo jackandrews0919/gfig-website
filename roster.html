@@ -97,6 +97,19 @@
       color: #26A69A;
     }
 
+    .roster-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: var(--r-sm);
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: var(--font-head);
+      letter-spacing: 0.08em;
+      margin-right: 4px;
+    }
+    .roster-tag-instructor { background: rgba(255,128,171,0.12); color: #FF80AB; }
+    .roster-tag-examiner { background: rgba(224,64,251,0.12); color: #E040FB; }
+
     @media (max-width: 768px) {
       .roster-summary { grid-template-columns: repeat(2, 1fr); }
       .roster-filter { flex-direction: column; align-items: stretch; }
@@ -192,6 +205,7 @@
               <th>Member #</th>
               <th>Callsign</th>
               <th>Rank</th>
+              <th>Tags</th>
               <th>Region</th>
               <th>Missions</th>
               <th>Hours</th>
@@ -201,7 +215,7 @@
             </tr>
           </thead>
           <tbody id="roster-tbody">
-            <tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:32px;">Loading roster…</td></tr>
+            <tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:32px;">Loading roster…</td></tr>
           </tbody>
         </table>
       </div>
@@ -278,7 +292,7 @@
     function renderRoster(members) {
       var tbody = document.getElementById('roster-tbody');
       if (!members || members.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:32px;">No members found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:32px;">No members found.</td></tr>';
         return;
       }
       tbody.innerHTML = members.map(function(m) {
@@ -286,19 +300,20 @@
         var sl = m.status === 'reserve' ? 'Reserve' : m.status === 'inactive' ? 'Inactive' : 'Active';
         var initials = getInitials(m.name);
         var rc = getRankClass(m.rank);
-        var joinStr = '';
-        if (m.joinDate) {
-          var d = m.joinDate.toDate ? m.joinDate.toDate() : new Date(m.joinDate);
-          joinStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-        }
         var vatsimCid = m.vatsimCid || '—';
         var vatsimAtc = m.vatsimAtcRating ? '<span class="roster-vatsim-badge">' + m.vatsimAtcRating + '</span>' : '—';
+
+        var tags = '';
+        if (m.isInstructor) tags += '<span class="roster-tag roster-tag-instructor">Instructor</span>';
+        if (m.isExaminer) tags += '<span class="roster-tag roster-tag-examiner">Examiner</span>';
+        if (!tags) tags = '—';
 
         return '<tr>'
           + '<td><div class="roster-name-cell"><div class="roster-avatar">' + initials + '</div><div>' + (m.name || '—') + '</div></div></td>'
           + '<td style="font-family:var(--font-mono);color:var(--orange);">' + (m.memberNumber || '—') + '</td>'
           + '<td style="font-family:var(--font-mono);color:var(--blue-light);">' + (m.callsign || '—') + '</td>'
           + '<td><span class="rank-badge ' + rc + '">' + (m.rank || 'Member') + '</span></td>'
+          + '<td>' + tags + '</td>'
           + '<td>' + (m.region || '—') + '</td>'
           + '<td>' + (m.totalMissions || 0) + '</td>'
           + '<td>' + (m.flightHours || 0) + 'h</td>'
@@ -356,7 +371,7 @@
     /* ── Load Roster ── */
     document.addEventListener('gfig:authready', async function() {
       if (!window.GFIG_FIREBASE_READY) {
-        document.getElementById('roster-tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:32px;">Unable to connect to database.</td></tr>';
+        document.getElementById('roster-tbody').innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:32px;">Unable to connect to database.</td></tr>';
         return;
       }
       try {
@@ -367,7 +382,7 @@
         renderRoster(rosterData.filter(function(m) { return m.status !== 'inactive'; }));
       } catch (err) {
         console.error('Roster load error:', err);
-        document.getElementById('roster-tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:32px;">Error loading roster data.</td></tr>';
+        document.getElementById('roster-tbody').innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:32px;">Error loading roster data.</td></tr>';
       }
     });
   </script>

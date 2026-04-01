@@ -131,7 +131,7 @@ ul { list-style: none; }
 .nav-logo-img {
   height: 44px;
   width: auto;
-  background: #ffffff;
+  background: #0b1f3a;
   padding: 4px 12px;
   border-radius: var(--r-md);
   display: block;
@@ -673,7 +673,7 @@ textarea.form-control { resize: vertical; min-height: 110px; }
 /* ── Footer ──────────────────────────────────────────────────── */
 footer { background: var(--bg-secondary); border-top: 1px solid var(--border); padding: 52px 0 28px; margin-top: 80px; }
 .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
-.footer-logo-img { height: 54px; width: auto; background: #ffffff; padding: 5px 14px; border-radius: var(--r-md); display: block; object-fit: contain; margin-bottom: 14px; }
+.footer-logo-img { height: 54px; width: auto; background: #0b1f3a; padding: 5px 14px; border-radius: var(--r-md); display: block; object-fit: contain; margin-bottom: 14px; }
 .footer-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.65; max-width: 280px; }
 .footer-col-title { font-size: 0.72rem; font-weight: 700; color: var(--text-sub); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 16px; }
 .footer-link { display: block; font-size: 0.82rem; color: var(--text-muted); padding: 4px 0; transition: color var(--t); }

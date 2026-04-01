@@ -1628,6 +1628,17 @@
             <option value="ADM">ADM — Administrator</option>
           </select>
         </div>
+        <div class="admin-form-group">
+          <label class="admin-form-label">SPECIAL TAGS</label>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:4px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.84rem;color:var(--text);cursor:pointer;">
+              <input type="checkbox" id="mem-edit-isInstructor"> Instructor
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.84rem;color:var(--text);cursor:pointer;">
+              <input type="checkbox" id="mem-edit-isExaminer"> Examiner
+            </label>
+          </div>
+        </div>
       </div>
       <div class="mem-modal-footer">
         <button class="mem-modal-cancel" onclick="closeEditMember()">Cancel</button>
@@ -2023,6 +2034,8 @@
       document.getElementById('mem-edit-discordId').value = m.discordId || '';
       document.getElementById('mem-edit-vatsimCid').value = m.vatsimCid || '';
       document.getElementById('mem-edit-vatsimAtc').value = m.vatsimAtcRating || '';
+      document.getElementById('mem-edit-isInstructor').checked = !!m.isInstructor;
+      document.getElementById('mem-edit-isExaminer').checked = !!m.isExaminer;
       m._prevStatus = m.status || 'active';
       document.getElementById('mem-edit-overlay').classList.remove('hidden');
     }
@@ -2043,7 +2056,9 @@
         isAdmin:    document.getElementById('mem-edit-admin').value === 'true',
         discordId: (document.getElementById('mem-edit-discordId').value || '').trim(),
         vatsimCid: (document.getElementById('mem-edit-vatsimCid').value || '').trim(),
-        vatsimAtcRating: document.getElementById('mem-edit-vatsimAtc').value || ''
+        vatsimAtcRating: document.getElementById('mem-edit-vatsimAtc').value || '',
+        isInstructor: document.getElementById('mem-edit-isInstructor').checked,
+        isExaminer: document.getElementById('mem-edit-isExaminer').checked
       };
       if (!data.name) { toast('Name is required'); return; }
       // Auto-assign member number if pending/empty
