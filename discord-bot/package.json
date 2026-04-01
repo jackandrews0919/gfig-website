@@ -1,0 +1,23 @@
+{
+  "name": "gfig-discord-bot",
+  "version": "1.0.0",
+  "description": "GFIG Discord Bot — server management REST API for the GFIG Admin Panel",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev":   "nodemon index.js"
+  },
+  "dependencies": {
+    "cors":       "^2.8.5",
+    "discord.js": "^14.14.1",
+    "express":    "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["discord", "bot", "gfig"],
+  "license": "MIT"
+}

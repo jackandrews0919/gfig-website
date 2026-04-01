@@ -439,6 +439,42 @@
       box-shadow: 0 4px 24px rgba(0,0,0,0.4);
     }
     .toast-msg.visible { display: block; animation: fadeIn 0.2s; }
+
+    /* ── Discord Server Management ───────────────────────── */
+    .dc-status-indicator { display:flex; align-items:center; gap:8px; font-size:0.82rem; }
+    .dc-status-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; transition:background var(--t); }
+    .dc-status-dot.online  { background:var(--pass); box-shadow:0 0 0 3px rgba(0,230,118,.18); }
+    .dc-status-dot.offline { background:var(--danger); }
+    .dc-server-banner { display:flex; align-items:center; gap:16px; padding:16px 20px; background:var(--bg-card); border:1px solid rgba(0,230,118,.3); border-radius:var(--r-lg); margin-bottom:24px; flex-wrap:wrap; }
+    .dc-server-icon { width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#5865F2,#40AAFF); display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0; overflow:hidden; }
+    .dc-server-icon img { width:100%; height:100%; object-fit:cover; }
+    .dc-server-name { font-family:var(--font-head); font-size:1rem; font-weight:700; margin-bottom:3px; }
+    .dc-server-meta { font-size:0.78rem; color:var(--text-sub); }
+    .dc-tab-bar { display:flex; gap:2px; border-bottom:1px solid var(--border); margin-bottom:20px; }
+    .dc-tab { padding:9px 18px; font-size:0.79rem; font-family:var(--font-head); letter-spacing:0.06em; background:none; border:none; color:var(--text-sub); cursor:pointer; border-bottom:2px solid transparent; transition:all var(--t); }
+    .dc-tab:hover { color:var(--text); }
+    .dc-tab.active { color:var(--blue-light); border-bottom-color:var(--blue-light); }
+    .dc-tab-panel { display:none; }
+    .dc-tab-panel.active { display:block; }
+    .role-row { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid rgba(255,255,255,.04); transition:background var(--t); }
+    .role-row:last-child { border-bottom:none; }
+    .role-row:hover { background:var(--bg-hover); }
+    .role-color-dot { width:14px; height:14px; border-radius:50%; flex-shrink:0; border:1px solid rgba(255,255,255,.12); }
+    .role-name { flex:1; font-size:0.85rem; }
+    .role-count { font-size:0.75rem; color:var(--text-muted); font-family:var(--font-mono); }
+    .channel-category-header { padding:10px 16px 4px; font-size:0.68rem; letter-spacing:0.12em; color:var(--text-muted); font-family:var(--font-head); text-transform:uppercase; border-top:1px solid var(--border); margin-top:4px; display:flex; align-items:center; justify-content:space-between; }
+    .channel-category-header:first-child { border-top:none; margin-top:0; }
+    .channel-row { display:flex; align-items:center; gap:10px; padding:7px 20px; border-bottom:1px solid rgba(255,255,255,.03); transition:background var(--t); }
+    .channel-row:hover { background:var(--bg-hover); }
+    .channel-icon { font-size:0.85rem; width:16px; text-align:center; flex-shrink:0; opacity:.7; }
+    .channel-name { flex:1; font-size:0.83rem; }
+    .channel-topic { font-size:0.72rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+    .setup-log { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--r-md); padding:14px 16px; font-family:var(--font-mono); font-size:0.75rem; max-height:300px; overflow-y:auto; color:var(--text-sub); margin-top:14px; display:none; }
+    .setup-log.visible { display:block; }
+    .setup-log-line { padding:2px 0; line-height:1.6; }
+    .setup-log-line.ok   { color:var(--pass); }
+    .setup-log-line.skip { color:var(--text-muted); }
+    .setup-log-line.err  { color:var(--danger); }
   </style>
 </head>
 <body>
@@ -484,6 +520,9 @@
         </button>
         <button class="admin-nav-item" onclick="showSection('discord', this)">
           <span class="admin-nav-icon" style="color:#5865F2">⬡</span> Discord Bot
+        </button>
+        <button class="admin-nav-item" onclick="showSection('discordmgmt', this)">
+          <span class="admin-nav-icon" style="color:#5865F2">🖥</span> Discord Server
         </button>
 
         <span class="admin-nav-label">System</span>
@@ -1036,6 +1075,243 @@
             <textarea class="admin-textarea" id="ann-body" placeholder="Announcement body text…"></textarea>
           </div>
           <button class="btn btn-primary" onclick="sendAnnouncement()">Send to #announcements</button>
+        </div>
+      </section>
+
+      <!-- ─── DISCORD SERVER MANAGEMENT ─────────────────────── -->
+      <section class="admin-section" id="sec-discordmgmt">
+        <div class="admin-page-title">Discord Server Management</div>
+        <div class="admin-page-sub">Control your GFIG Discord server — manage roles, channels, broadcast messages, and run the full server setup.</div>
+
+        <!-- Setup instructions callout -->
+        <div style="background:rgba(88,101,242,.09);border:1px solid rgba(88,101,242,.28);border-radius:var(--r-md);padding:14px 18px;font-size:0.8rem;color:var(--text-sub);line-height:1.8;margin-bottom:22px;">
+          <strong style="color:var(--text);">One-time setup:</strong><br>
+          1. Go to <a href="https://discord.com/developers/applications" target="_blank" style="color:var(--blue-light);">discord.com/developers</a> → Create application → Add a Bot → copy the token.<br>
+          2. Deploy the <code style="color:var(--orange);font-family:var(--font-mono)">discord-bot/</code> folder to <a href="https://railway.app" target="_blank" style="color:var(--blue-light);">Railway</a> / <a href="https://render.com" target="_blank" style="color:var(--blue-light);">Render</a> (free). Set env vars: <code style="font-family:var(--font-mono);color:var(--orange)">BOT_TOKEN · GUILD_ID · ADMIN_SECRET · PORT</code><br>
+          3. Paste the deployed URL + your secret below. The bot will manage your server from this panel.
+        </div>
+
+        <!-- Connection Card -->
+        <div class="admin-form">
+          <div class="admin-form-title">BOT CONNECTION</div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label class="admin-form-label">BOT SERVER URL</label>
+              <input class="admin-input" type="url" id="dc-api-url" placeholder="https://gfig-bot.railway.app" autocomplete="off">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">ADMIN SECRET</label>
+              <input class="admin-input" type="password" id="dc-api-secret" placeholder="Your ADMIN_SECRET env var" autocomplete="new-password">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">BOT CLIENT ID <span style="color:var(--text-muted);font-weight:normal;font-size:0.75rem;">(for invite link)</span></label>
+              <input class="admin-input" type="text" id="dc-client-id" placeholder="Application ID from Developer Portal" oninput="dcUpdateInviteLink()">
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px;">
+            <button class="btn btn-primary" onclick="dcSaveConfig()">Save Config</button>
+            <button class="btn btn-secondary" onclick="dcTestConnection()">↺ Test Connection</button>
+            <div class="dc-status-indicator" id="dc-status-indicator">
+              <div class="dc-status-dot offline" id="dc-status-dot"></div>
+              <span id="dc-status-text">Not connected</span>
+            </div>
+          </div>
+          <div id="dc-invite-wrap" style="display:none;margin-top:12px;">
+            <label class="admin-form-label">BOT INVITE LINK</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input class="admin-input" type="text" id="dc-invite-link" readonly style="flex:1;font-size:0.78rem;font-family:var(--font-mono);color:var(--text-sub);">
+              <a id="dc-invite-btn" href="#" target="_blank" class="btn btn-secondary" style="white-space:nowrap;font-size:0.8rem;">Open ↗</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Server Info Banner -->
+        <div class="dc-server-banner" id="dc-server-banner" style="display:none;">
+          <div class="dc-server-icon" id="dc-server-icon-el">⬡</div>
+          <div>
+            <div class="dc-server-name" id="dc-server-name-el">—</div>
+            <div class="dc-server-meta" id="dc-server-meta-el">—</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-left:auto;">
+            <button class="btn btn-primary" onclick="dcShowSetup()" style="font-size:0.82rem;">⚡ Quick Setup</button>
+            <button class="btn btn-secondary" onclick="dcRefreshAll()" style="font-size:0.82rem;">↻ Refresh</button>
+          </div>
+        </div>
+
+        <!-- Main Content (tabs — shown when connected) -->
+        <div id="dc-main" style="display:none;">
+          <div class="dc-tab-bar">
+            <button class="dc-tab active" onclick="dcShowTab('roles',     this)">👑 Roles</button>
+            <button class="dc-tab"        onclick="dcShowTab('channels',  this)">📂 Channels</button>
+            <button class="dc-tab"        onclick="dcShowTab('broadcast', this)">📢 Broadcast</button>
+            <button class="dc-tab"        onclick="dcShowTab('setup',     this)">⚡ Server Setup</button>
+          </div>
+
+          <!-- ── ROLES ── -->
+          <div class="dc-tab-panel active" id="dc-panel-roles">
+            <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
+              <div class="admin-form" style="flex:1;min-width:260px;">
+                <div class="admin-form-title">CREATE ROLE</div>
+                <div class="admin-form-group" style="margin-bottom:12px;">
+                  <label class="admin-form-label">ROLE NAME</label>
+                  <input class="admin-input" id="dc-role-name" type="text" placeholder="e.g. Senior Inspector">
+                </div>
+                <div class="admin-form-group" style="margin-bottom:12px;">
+                  <label class="admin-form-label">COLOUR</label>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <input type="color" id="dc-role-color" value="#40AAFF"
+                      style="width:44px;height:36px;border:1px solid var(--border);border-radius:var(--r-sm);background:none;cursor:pointer;padding:2px;"
+                      oninput="document.getElementById('dc-role-color-hex').value=this.value">
+                    <input class="admin-input" id="dc-role-color-hex" style="flex:1;" placeholder="#40AAFF" value="#40AAFF"
+                      oninput="if(/^#[0-9a-f]{6}$/i.test(this.value))document.getElementById('dc-role-color').value=this.value">
+                  </div>
+                </div>
+                <div class="admin-form-group" style="margin-bottom:16px;">
+                  <label class="admin-form-label">OPTIONS</label>
+                  <div style="display:flex;gap:18px;">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;">
+                      <input type="checkbox" id="dc-role-hoist" style="accent-color:var(--blue);"> Show separately
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;">
+                      <input type="checkbox" id="dc-role-mentionable" style="accent-color:var(--blue);"> Mentionable
+                    </label>
+                  </div>
+                </div>
+                <button class="btn btn-primary" style="font-size:0.82rem;" onclick="dcCreateRole()">+ Create Role</button>
+              </div>
+              <div class="admin-table-wrap" style="flex:2;min-width:300px;">
+                <div class="admin-table-head">
+                  <div class="admin-table-title">ROLES</div>
+                  <button class="tbl-action-btn" onclick="dcLoadRoles()" title="Refresh" style="font-size:0.8rem;">↻</button>
+                </div>
+                <div id="dc-roles-list">
+                  <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.82rem;">Connect to load roles</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── CHANNELS ── -->
+          <div class="dc-tab-panel" id="dc-panel-channels">
+            <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
+              <div class="admin-form" style="flex:1;min-width:260px;">
+                <div class="admin-form-title">CREATE CHANNEL</div>
+                <div class="admin-form-group" style="margin-bottom:12px;">
+                  <label class="admin-form-label">NAME</label>
+                  <input class="admin-input" id="dc-ch-name" type="text" placeholder="e.g. mission-briefings">
+                </div>
+                <div class="admin-form-group" style="margin-bottom:12px;">
+                  <label class="admin-form-label">TYPE</label>
+                  <select class="admin-select" id="dc-ch-type">
+                    <option value="text">📝 Text</option>
+                    <option value="voice">🔊 Voice</option>
+                    <option value="category">📂 Category</option>
+                    <option value="announcement">📣 Announcement</option>
+                    <option value="forum">💬 Forum</option>
+                  </select>
+                </div>
+                <div class="admin-form-group" style="margin-bottom:12px;">
+                  <label class="admin-form-label">CATEGORY <span style="color:var(--text-muted);font-weight:normal">(optional)</span></label>
+                  <select class="admin-select" id="dc-ch-parent">
+                    <option value="">— No Category —</option>
+                  </select>
+                </div>
+                <div class="admin-form-group" style="margin-bottom:16px;">
+                  <label class="admin-form-label">TOPIC <span style="color:var(--text-muted);font-weight:normal">(optional)</span></label>
+                  <input class="admin-input" id="dc-ch-topic" type="text" placeholder="Channel description">
+                </div>
+                <button class="btn btn-primary" style="font-size:0.82rem;" onclick="dcCreateChannel()">+ Create Channel</button>
+              </div>
+              <div class="admin-table-wrap" style="flex:2;min-width:300px;">
+                <div class="admin-table-head">
+                  <div class="admin-table-title">CHANNELS</div>
+                  <button class="tbl-action-btn" onclick="dcLoadChannels()" title="Refresh" style="font-size:0.8rem;">↻</button>
+                </div>
+                <div id="dc-channels-list" style="max-height:500px;overflow-y:auto;">
+                  <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.82rem;">Connect to load channels</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── BROADCAST ── -->
+          <div class="dc-tab-panel" id="dc-panel-broadcast">
+            <div class="admin-form">
+              <div class="admin-form-title">BROADCAST MESSAGE</div>
+              <div class="admin-form-group" style="margin-bottom:14px;">
+                <label class="admin-form-label">TARGET CHANNEL</label>
+                <select class="admin-select" id="dc-broadcast-channel" style="max-width:380px;">
+                  <option value="">— Select channel —</option>
+                </select>
+              </div>
+              <div class="admin-form-group" style="margin-bottom:14px;">
+                <label class="admin-form-label">MESSAGE <span style="color:var(--text-muted);font-weight:normal">(Discord markdown supported)</span></label>
+                <textarea class="admin-textarea" id="dc-broadcast-msg" placeholder="e.g. **Operations update** — see #mission-briefings for details"></textarea>
+              </div>
+              <div class="admin-form-group" style="margin-bottom:14px;">
+                <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
+                  <input type="checkbox" id="dc-embed-toggle" style="accent-color:var(--blue);"
+                    onchange="document.getElementById('dc-embed-fields').style.display=this.checked?'block':'none'">
+                  Include as rich embed
+                </label>
+              </div>
+              <div id="dc-embed-fields" style="display:none;border:1px solid var(--border);border-radius:var(--r-md);padding:16px;margin-bottom:14px;">
+                <div class="admin-form-group" style="margin-bottom:10px;">
+                  <label class="admin-form-label">EMBED TITLE</label>
+                  <input class="admin-input" id="dc-embed-title" type="text" placeholder="Embed title">
+                </div>
+                <div class="admin-form-group">
+                  <label class="admin-form-label">EMBED COLOUR</label>
+                  <input type="color" id="dc-embed-color" value="#FF6A00"
+                    style="width:44px;height:36px;border:1px solid var(--border);border-radius:var(--r-sm);background:none;cursor:pointer;padding:2px;">
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="dcSendBroadcast()">📢 Send Message</button>
+            </div>
+          </div>
+
+          <!-- ── SERVER SETUP ── -->
+          <div class="dc-tab-panel" id="dc-panel-setup">
+            <div class="admin-form">
+              <div class="admin-form-title">GFIG SERVER STRUCTURE</div>
+              <div style="font-size:0.82rem;color:var(--text-sub);margin-bottom:22px;line-height:1.8;">
+                <strong style="color:var(--text);">Run Full GFIG Setup</strong> to create the complete recommended
+                server structure. Existing roles and channels with matching names are skipped — <em>nothing is deleted</em>.
+              </div>
+              <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:24px;">
+                <div style="flex:1;min-width:200px;">
+                  <div style="font-family:var(--font-head);font-size:0.7rem;letter-spacing:.1em;color:var(--text-sub);margin-bottom:10px;">ROLES</div>
+                  <div style="font-size:0.82rem;line-height:2.1;">
+                    <div><span style="color:#FF6A00">●</span> Director</div>
+                    <div><span style="color:#FF6A00">●</span> Chief Inspector</div>
+                    <div><span style="color:#40AAFF">●</span> Senior Inspector</div>
+                    <div><span style="color:#00E676">●</span> Inspector</div>
+                    <div><span style="color:#FFD700">●</span> Junior Inspector</div>
+                    <div><span style="color:#AAAAAA">●</span> Trainee Inspector</div>
+                    <div><span style="color:#5865F2">●</span> GFIG Bot</div>
+                    <div><span style="color:#777">●</span> Member</div>
+                  </div>
+                </div>
+                <div style="flex:2;min-width:240px;">
+                  <div style="font-family:var(--font-head);font-size:0.7rem;letter-spacing:.1em;color:var(--text-sub);margin-bottom:10px;">CHANNELS</div>
+                  <div style="font-size:0.78rem;line-height:1.95;font-family:var(--font-mono);">
+                    <div style="color:var(--orange);">📋 INFORMATION</div>
+                    <div style="padding-left:12px;color:var(--text-sub);"># welcome &middot; # rules &middot; 📣 announcements &middot; ⚠ notams</div>
+                    <div style="color:var(--orange);margin-top:6px;">✈ OPERATIONS</div>
+                    <div style="padding-left:12px;color:var(--text-sub);"># mission-briefings &middot; # completed-ops &middot; # leaderboard</div>
+                    <div style="color:var(--orange);margin-top:6px;">💬 COMMUNITY</div>
+                    <div style="padding-left:12px;color:var(--text-sub);"># general &middot; # screenshots &middot; # fleet-spotting</div>
+                    <div style="color:var(--orange);margin-top:6px;">🔊 VOICE</div>
+                    <div style="padding-left:12px;color:var(--text-sub);">🔊 Operations Briefing &middot; 🔊 General Voice &middot; 🔊 ATC Practice</div>
+                    <div style="color:var(--orange);margin-top:6px;">🔒 STAFF</div>
+                    <div style="padding-left:12px;color:var(--text-sub);"># admin-chat &middot; # bot-commands</div>
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="dcRunFullSetup()" id="dc-setup-btn">⚡ Run Full GFIG Setup</button>
+              <div class="setup-log" id="dc-setup-log"></div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1832,7 +2108,339 @@
         const el = document.getElementById('toggle-maintenance');
         if (el) el.checked = cfg.maintenanceMode;
       }
+      /* ── Restore Discord bot API URL (auto-connect if present) ── */
+      if (cfg.botApiUrl) {
+        const urlEl = document.getElementById('dc-api-url');
+        if (urlEl && !urlEl.value) urlEl.value = cfg.botApiUrl;
+        setTimeout(function() { dcTestConnection().catch(function(){}); }, 700);
+      }
     }
+
+    /* ══════════════════════════════════════════════════════════════
+       DISCORD SERVER MANAGEMENT
+    ══════════════════════════════════════════════════════════════ */
+
+    var _dcCfgCache = null;
+
+    async function _dcGetCfg() {
+      if (_dcCfgCache) return _dcCfgCache;
+      try {
+        const s = await getSettings();
+        _dcCfgCache = { url: (s.botApiUrl || '').replace(/\/$/, ''), secret: s.botApiSecret || '' };
+      } catch(e) { _dcCfgCache = { url: '', secret: '' }; }
+      return _dcCfgCache;
+    }
+
+    async function dcApi(method, path, body) {
+      const cfg = await _dcGetCfg();
+      if (!cfg.url) { toast('Configure Bot Server URL first'); return null; }
+      const res = await fetch(cfg.url + path, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': cfg.secret },
+        body: body !== undefined ? JSON.stringify(body) : undefined
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(function() { return {}; });
+        throw new Error(err.error || ('Bot API error ' + res.status));
+      }
+      return res.status === 204 ? null : res.json();
+    }
+
+    async function dcSaveConfig() {
+      const url    = (document.getElementById('dc-api-url')?.value    || '').trim();
+      const secret = (document.getElementById('dc-api-secret')?.value || '').trim();
+      if (!url) { toast('Enter the Bot Server URL'); return; }
+      _dcCfgCache = null;
+      try {
+        await dbSaveSettings({ botApiUrl: url, botApiSecret: secret });
+        _dcCfgCache = { url: url.replace(/\/$/, ''), secret };
+        toast('✓ Config saved');
+      } catch(e) { toast('Save error: ' + e.message); return; }
+      await dcTestConnection();
+    }
+
+    async function dcTestConnection() {
+      const dotEl = document.getElementById('dc-status-dot');
+      const txtEl = document.getElementById('dc-status-text');
+      if (dotEl) dotEl.className = 'dc-status-dot offline';
+      if (txtEl) txtEl.textContent = 'Connecting…';
+      try {
+        _dcCfgCache = null;
+        const s = await getSettings().catch(function() { return {}; });
+        if (s.botApiUrl) {
+          const urlEl = document.getElementById('dc-api-url');
+          if (urlEl && !urlEl.value) urlEl.value = s.botApiUrl;
+          _dcCfgCache = { url: s.botApiUrl.replace(/\/$/, ''), secret: s.botApiSecret || '' };
+        }
+        const info = await dcApi('GET', '/health');
+        if (!info || !info.botOnline) throw new Error('Bot not online');
+
+        if (dotEl) dotEl.className = 'dc-status-dot online';
+        if (txtEl) txtEl.textContent = 'Connected · ' + (info.guildName || 'server') + ' · ' + (info.memberCount || '?') + ' members';
+
+        const banner = document.getElementById('dc-server-banner');
+        const nameEl = document.getElementById('dc-server-name-el');
+        const metaEl = document.getElementById('dc-server-meta-el');
+        const iconEl = document.getElementById('dc-server-icon-el');
+        if (banner) banner.style.display = 'flex';
+        if (nameEl) nameEl.textContent = info.guildName || 'GFIG Server';
+        if (metaEl) metaEl.textContent = (info.memberCount || '?') + ' members · ' + (info.botTag || 'Bot online');
+        if (iconEl && info.iconURL) {
+          iconEl.innerHTML = '<img src="' + info.iconURL + '" alt="server icon">';
+        }
+
+        var main = document.getElementById('dc-main');
+        if (main) main.style.display = 'block';
+        await Promise.allSettled([dcLoadRoles(), dcLoadChannels()]);
+      } catch(e) {
+        if (dotEl) dotEl.className = 'dc-status-dot offline';
+        if (txtEl) txtEl.textContent = 'Failed: ' + e.message;
+        var banner2 = document.getElementById('dc-server-banner');
+        if (banner2) banner2.style.display = 'none';
+        var main2 = document.getElementById('dc-main');
+        if (main2) main2.style.display = 'none';
+      }
+    }
+
+    function dcUpdateInviteLink() {
+      var clientId = (document.getElementById('dc-client-id')?.value || '').trim();
+      var wrap  = document.getElementById('dc-invite-wrap');
+      var input = document.getElementById('dc-invite-link');
+      var btn   = document.getElementById('dc-invite-btn');
+      if (!clientId) { if (wrap) wrap.style.display = 'none'; return; }
+      var link = 'https://discord.com/api/oauth2/authorize?client_id=' + clientId + '&permissions=8&scope=bot';
+      if (wrap)  wrap.style.display = 'block';
+      if (input) input.value = link;
+      if (btn)   btn.href    = link;
+    }
+
+    function dcShowTab(tab, btn) {
+      document.querySelectorAll('.dc-tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.dc-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+      if (btn) btn.classList.add('active');
+      var panel = document.getElementById('dc-panel-' + tab);
+      if (panel) panel.classList.add('active');
+    }
+
+    function dcShowSetup() {
+      var setupBtn = document.querySelector('#dc-main .dc-tab:last-child');
+      dcShowTab('setup', setupBtn);
+    }
+
+    async function dcRefreshAll() {
+      await Promise.allSettled([dcLoadRoles(), dcLoadChannels()]);
+      toast('↻ Refreshed');
+    }
+
+    /* ── Roles ── */
+    var _dcRoles = [];
+
+    async function dcLoadRoles() {
+      var list = document.getElementById('dc-roles-list');
+      if (!list) return;
+      list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.82rem;">Loading…</div>';
+      try {
+        var roles = await dcApi('GET', '/roles');
+        _dcRoles = roles || [];
+        if (!_dcRoles.length) {
+          list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No roles found</div>';
+          return;
+        }
+        list.innerHTML = _dcRoles.map(function(r) {
+          var col = (r.color && r.color !== '#555555') ? r.color : '#888';
+          var del = r.managed ? '' : '<button class="tbl-action-btn danger" onclick="dcDeleteRole(\'' + r.id + '\',\'' + r.name.replace(/'/g, "\\'") + '\')" title="Delete role">✕</button>';
+          return '<div class="role-row">'
+            + '<div class="role-color-dot" style="background:' + col + ';"></div>'
+            + '<div class="role-name">' + r.name + (r.managed ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(managed)</span>' : '') + '</div>'
+            + '<div class="role-count">' + (r.memberCount || 0) + ' members</div>'
+            + del + '</div>';
+        }).join('');
+      } catch(e) {
+        list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger);font-size:0.82rem;">Error: ' + e.message + '</div>';
+      }
+    }
+
+    async function dcCreateRole() {
+      var name        = (document.getElementById('dc-role-name')?.value        || '').trim();
+      var color       =  document.getElementById('dc-role-color-hex')?.value   || '#40AAFF';
+      var hoist       =  document.getElementById('dc-role-hoist')?.checked     || false;
+      var mentionable =  document.getElementById('dc-role-mentionable')?.checked || false;
+      if (!name) { toast('Enter a role name'); return; }
+      try {
+        await dcApi('POST', '/roles', { name, color, hoist, mentionable });
+        toast('✓ Role "' + name + '" created');
+        document.getElementById('dc-role-name').value = '';
+        await dcLoadRoles();
+      } catch(e) { toast('Error: ' + e.message); }
+    }
+
+    async function dcDeleteRole(id, name) {
+      if (!confirm('Delete role "' + name + '"?\n\nThis cannot be undone.')) return;
+      try {
+        await dcApi('DELETE', '/roles/' + id);
+        toast('Role deleted');
+        await dcLoadRoles();
+      } catch(e) { toast('Error: ' + e.message); }
+    }
+
+    /* ── Channels ── */
+    var _dcChannels = [];
+
+    async function dcLoadChannels() {
+      var list       = document.getElementById('dc-channels-list');
+      var parentSel  = document.getElementById('dc-ch-parent');
+      var broadSel   = document.getElementById('dc-broadcast-channel');
+      if (!list) return;
+      list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.82rem;">Loading…</div>';
+      try {
+        var channels = await dcApi('GET', '/channels');
+        _dcChannels = channels || [];
+
+        /* populate category selector */
+        var cats = _dcChannels.filter(function(c) { return c.type === 4; });
+        var catOpts = '<option value="">— No Category —</option>'
+          + cats.map(function(c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
+        if (parentSel) parentSel.innerHTML = catOpts;
+
+        /* populate broadcast channel selector */
+        var textChs = _dcChannels.filter(function(c) { return c.type === 0 || c.type === 5; });
+        if (broadSel) {
+          broadSel.innerHTML = '<option value="">— Select channel —</option>'
+            + textChs.map(function(c) {
+              return '<option value="' + c.id + '">' + (c.parentName ? '[' + c.parentName + '] ' : '') + '# ' + c.name + '</option>';
+            }).join('');
+        }
+
+        if (!_dcChannels.length) {
+          list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No channels found</div>';
+          return;
+        }
+
+        /* render grouped by category */
+        var typeIcon = { 0: '#', 2: '🔊', 4: '📂', 5: '📣', 15: '💬', 13: '🎭' };
+        var uncategorized = _dcChannels.filter(function(c) { return c.type !== 4 && !c.parentId; });
+        var html = [];
+
+        if (uncategorized.length) {
+          html.push('<div class="channel-category-header"><span>No Category</span></div>');
+          uncategorized.forEach(function(c) { html.push(_dcChannelRowHtml(c, typeIcon)); });
+        }
+        cats.forEach(function(cat) {
+          html.push('<div class="channel-category-header"><span>' + cat.name.toUpperCase() + '</span>'
+            + '<button class="tbl-action-btn danger" style="font-size:0.7rem;" onclick="dcDeleteChannel(\'' + cat.id + '\',\'' + cat.name.replace(/'/g, "\\'") + '\')">✕</button></div>');
+          _dcChannels.filter(function(c) { return c.parentId === cat.id; })
+            .forEach(function(c) { html.push(_dcChannelRowHtml(c, typeIcon)); });
+        });
+
+        list.innerHTML = html.join('');
+      } catch(e) {
+        list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger);font-size:0.82rem;">Error: ' + e.message + '</div>';
+      }
+    }
+
+    function _dcChannelRowHtml(c, typeIcon) {
+      var ico = typeIcon[c.type] || '#';
+      return '<div class="channel-row">'
+        + '<span class="channel-icon">' + ico + '</span>'
+        + '<span class="channel-name">' + c.name + '</span>'
+        + (c.topic ? '<span class="channel-topic" title="' + c.topic.replace(/"/g, '&quot;') + '">' + c.topic + '</span>' : '')
+        + '<button class="tbl-action-btn danger" style="flex-shrink:0;margin-left:auto;" onclick="dcDeleteChannel(\'' + c.id + '\',\'' + c.name.replace(/'/g, "\\'") + '\')">✕</button>'
+        + '</div>';
+    }
+
+    async function dcCreateChannel() {
+      var name     = (document.getElementById('dc-ch-name')?.value   || '').trim();
+      var type     =  document.getElementById('dc-ch-type')?.value   || 'text';
+      var parentId =  document.getElementById('dc-ch-parent')?.value || '';
+      var topic    = (document.getElementById('dc-ch-topic')?.value  || '').trim();
+      if (!name) { toast('Enter a channel name'); return; }
+      try {
+        await dcApi('POST', '/channels', { name, type, parentId: parentId || null, topic: topic || undefined });
+        toast('✓ Channel #' + name + ' created');
+        document.getElementById('dc-ch-name').value  = '';
+        document.getElementById('dc-ch-topic').value = '';
+        await dcLoadChannels();
+      } catch(e) { toast('Error: ' + e.message); }
+    }
+
+    async function dcDeleteChannel(id, name) {
+      if (!confirm('Delete #' + name + '?\n\nThis cannot be undone.')) return;
+      try {
+        await dcApi('DELETE', '/channels/' + id);
+        toast('Channel deleted');
+        await dcLoadChannels();
+      } catch(e) { toast('Error: ' + e.message); }
+    }
+
+    /* ── Broadcast ── */
+
+    async function dcSendBroadcast() {
+      var channelId = document.getElementById('dc-broadcast-channel')?.value || '';
+      var content   = (document.getElementById('dc-broadcast-msg')?.value || '').trim();
+      var useEmbed  = document.getElementById('dc-embed-toggle')?.checked   || false;
+      if (!channelId) { toast('Select a channel'); return; }
+      if (!content && !useEmbed) { toast('Enter a message'); return; }
+
+      var payload = { channelId, content };
+      if (useEmbed) {
+        var title    = (document.getElementById('dc-embed-title')?.value  || '').trim();
+        var hexColor =  document.getElementById('dc-embed-color')?.value  || '#FF6A00';
+        var intColor = parseInt(hexColor.replace('#', ''), 16);
+        var embed    = { color: intColor, footer: { text: 'GFIG Staff Broadcast' }, timestamp: new Date().toISOString() };
+        if (title)   embed.title       = title;
+        if (content) embed.description = content;
+        payload.embeds  = [embed];
+        payload.content = '';
+      }
+
+      try {
+        await dcApi('POST', '/messages', payload);
+        toast('✓ Message sent to Discord');
+        document.getElementById('dc-broadcast-msg').value = '';
+      } catch(e) { toast('Error: ' + e.message); }
+    }
+
+    /* ── Full Server Setup ── */
+
+    async function dcRunFullSetup() {
+      var btn = document.getElementById('dc-setup-btn');
+      var log = document.getElementById('dc-setup-log');
+      if (!confirm('This will create GFIG roles and channels on your Discord server.\n\nExisting items with matching names will be skipped. Nothing will be deleted.\n\nProceed?')) return;
+      if (btn) { btn.textContent = '⏳ Running setup…'; btn.disabled = true; }
+      if (log) { log.innerHTML = ''; log.classList.add('visible'); }
+
+      function appendLog(text, cls) {
+        if (!log) return;
+        var line = document.createElement('div');
+        line.className = 'setup-log-line ' + (cls || '');
+        line.textContent = text;
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      appendLog('Starting GFIG server setup…', '');
+      try {
+        var result = await dcApi('POST', '/setup', {});
+        if (result && result.log) {
+          result.log.forEach(function(line) {
+            var parts = line.split(':');
+            var cls   = parts[0];
+            var msg   = parts.slice(1).join(':').trimStart();
+            appendLog(msg || line, cls === 'ok' ? 'ok' : cls === 'err' ? 'err' : 'skip');
+          });
+        }
+        appendLog('', '');
+        appendLog('✓ Setup complete!', 'ok');
+        toast('✓ GFIG Discord server setup complete!');
+        await dcRefreshAll();
+      } catch(e) {
+        appendLog('✗ Error: ' + e.message, 'err');
+        toast('Setup error: ' + e.message);
+      } finally {
+        if (btn) { btn.textContent = '⚡ Run Full GFIG Setup'; btn.disabled = false; }
+      }
+    }
+
     restoreSettings();
 
     /* ── Auth ready — load live data from Firestore ── */
