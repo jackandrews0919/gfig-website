@@ -605,7 +605,74 @@
         <div class="admin-page-sub">Create, edit, and expire missions. Claimed missions are locked until submitted.</div>
 
         <div class="quick-actions">
-          <button class="qa-btn orange" onclick="toggleCreateMission()">+ Create New Mission</button>
+          <button class="qa-btn orange" onclick="toggleCreateMission()">+ Create Mission</button>
+          <button class="qa-btn" onclick="toggleAutoGen()">⚡ Auto-Generate</button>
+          <button class="qa-btn" onclick="toggleILSSchedule()">📅 ILS Schedule</button>
+        </div>
+
+        <!-- Auto-Generate Panel -->
+        <div class="admin-form" id="auto-gen-form" style="display:none; border-color:var(--blue);">
+          <div class="admin-form-title" style="color:var(--blue-light);">⚡ AUTO-GENERATE MISSIONS</div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label class="admin-form-label">NUMBER TO GENERATE</label>
+              <input class="admin-input" id="ag-count" type="number" value="5" min="1" max="20" placeholder="e.g. 5">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">REGION</label>
+              <select class="admin-select" id="ag-region">
+                <option>All Regions</option>
+                <option>Europe</option>
+                <option>North America</option>
+                <option>Asia-Pacific</option>
+                <option>Middle East</option>
+                <option>Africa</option>
+                <option>Latin America</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">MISSION TYPE</label>
+              <select class="admin-select" id="ag-type">
+                <option>All Types</option>
+                <option>ILS Calibration</option>
+                <option>VOR Check</option>
+                <option>NDB Calibration</option>
+                <option>RNAV / RNP Check</option>
+                <option>Approach Validation</option>
+                <option>Procedure Validation</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-form-label">PRIORITY</label>
+              <select class="admin-select" id="ag-priority">
+                <option>Standard</option>
+                <option>High Priority</option>
+                <option>Urgent — ATC Hold</option>
+              </select>
+            </div>
+          </div>
+          <div style="font-size:0.76rem; color:var(--text-muted); margin-bottom:14px;">Missions are randomly selected from the built-in airport pool, shuffled to ensure variety. ILS missions will be tracked in the recurring schedule.</div>
+          <button class="btn btn-primary" onclick="runAutoGenerate()">⚡ Generate Missions</button>
+          <button class="btn" style="margin-left:10px;background:none;border:1px solid var(--border);color:var(--text-sub);" onclick="toggleAutoGen()">Cancel</button>
+        </div>
+
+        <!-- ILS Schedule Panel -->
+        <div id="ils-schedule-panel" style="display:none; margin-bottom:24px;">
+          <div class="admin-table-wrap">
+            <div class="admin-table-head" style="justify-content:space-between;">
+              <div class="admin-table-title" style="color:var(--orange);">📅 ILS RECURRING SCHEDULE <span style="color:var(--text-muted);font-size:0.72rem;font-family:var(--font-body);letter-spacing:0;font-weight:400;">(90-day cycle · auto-regenerates on FAIL)</span></div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button class="tbl-action-btn" onclick="loadILSSchedule()" style="font-size:0.75rem;">↻ Refresh</button>
+                <button class="tbl-action-btn success" onclick="runILSCheck()" style="font-size:0.75rem;">▶ Run Schedule Check</button>
+              </div>
+            </div>
+            <table class="admin-table">
+              <thead><tr><th>ICAO</th><th>RUNWAY / NAV</th><th>REGION</th><th>LAST COMPLETED</th><th>RESULT</th><th>NEXT DUE</th><th>STATUS</th><th>ACTIVE MISSION</th></tr></thead>
+              <tbody id="ils-schedule-tbody">
+                <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;">Loading schedule…</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div class="admin-form" id="create-mission-form" style="display:none">
@@ -1124,6 +1191,94 @@
     function toggleCreateMission() {
       const f = document.getElementById('create-mission-form');
       f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+
+    /* ── Auto-Generate ── */
+    function toggleAutoGen() {
+      const f = document.getElementById('auto-gen-form');
+      f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function runAutoGenerate() {
+      const count    = parseInt(document.getElementById('ag-count').value, 10) || 5;
+      const region   = document.getElementById('ag-region').value;
+      const type     = document.getElementById('ag-type').value;
+      const priority = document.getElementById('ag-priority').value;
+      const btn = document.querySelector('#auto-gen-form .btn-primary');
+      if (btn) { btn.textContent = 'Generating…'; btn.disabled = true; }
+      try {
+        if (!window.dbAutoGenerateMissions) { toast('Auto-gen not available'); return; }
+        const ids = await dbAutoGenerateMissions(count, { region, type, priority });
+        toast('✓ ' + ids.length + ' mission(s) generated and posted to the mission board');
+        toggleAutoGen();
+        loadMissionsAdmin();
+      } catch(e) {
+        toast('Error: ' + e.message);
+      } finally {
+        if (btn) { btn.textContent = '⚡ Generate Missions'; btn.disabled = false; }
+      }
+    }
+
+    /* ── ILS Schedule ── */
+    function toggleILSSchedule() {
+      const p = document.getElementById('ils-schedule-panel');
+      const showing = p.style.display !== 'none';
+      p.style.display = showing ? 'none' : 'block';
+      if (!showing) loadILSSchedule();
+    }
+
+    function _fmtMs(ms) {
+      if (!ms) return '—';
+      if (typeof ms === 'object' && ms.toMillis) ms = ms.toMillis();
+      const d = new Date(ms);
+      return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    }
+
+    async function loadILSSchedule() {
+      const tbody = document.getElementById('ils-schedule-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;">Loading…</td></tr>';
+      if (!window.dbGetILSSchedule) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;">Not available</td></tr>'; return; }
+      try {
+        const entries = await dbGetILSSchedule();
+        const now = Date.now();
+        if (!entries.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;">No schedule data</td></tr>'; return; }
+        tbody.innerHTML = entries.map(function(e) {
+          let due = e.nextDue;
+          if (due && typeof due === 'object' && due.toMillis) due = due.toMillis();
+          const overdue  = due && due <= now;
+          const notSched = !due;
+          const sc = notSched ? 'badge-reserve' : overdue ? 'badge-expired' : 'badge-active';
+          const sl = notSched ? 'Never Calibrated' : overdue ? '⚠ OVERDUE' : 'On Schedule';
+          const rc = e.lastResult === 'pass' ? 'var(--pass)' : e.lastResult === 'fail' ? 'var(--danger)' : e.lastResult === 'monitor' ? 'var(--monitor)' : 'var(--text-muted)';
+          return '<tr>'
+            + '<td style="font-family:var(--font-mono);color:var(--orange)">' + e.icao + '</td>'
+            + '<td>' + (e.nav || '—') + '</td>'
+            + '<td>' + (e.region || '—') + '</td>'
+            + '<td style="font-family:var(--font-mono);font-size:0.78rem;">' + _fmtMs(e.lastCompleted) + '</td>'
+            + '<td style="color:' + rc + ';font-weight:600;">' + (e.lastResult ? e.lastResult.toUpperCase() : '—') + '</td>'
+            + '<td style="font-family:var(--font-mono);font-size:0.78rem;' + (overdue ? 'color:var(--danger);' : '') + '">' + _fmtMs(due) + '</td>'
+            + '<td><span class="status-badge ' + sc + '">' + sl + '</span></td>'
+            + '<td style="font-family:var(--font-mono);font-size:0.77rem;color:var(--text-muted)">' + (e.activeMissionId || '—') + '</td>'
+            + '</tr>';
+        }).join('');
+      } catch(e) { toast('ILS schedule error: ' + e.message); }
+    }
+
+    async function runILSCheck() {
+      const btn = document.querySelector('#ils-schedule-panel .success');
+      if (btn) { btn.textContent = 'Running…'; btn.disabled = true; }
+      try {
+        if (!window.dbCheckILSSchedule) { toast('Not available'); return; }
+        const n = await dbCheckILSSchedule();
+        toast(n > 0 ? '✓ ' + n + ' overdue ILS mission(s) generated' : 'No overdue airports — schedule is current');
+        loadILSSchedule();
+        loadMissionsAdmin();
+      } catch(e) {
+        toast('Error: ' + e.message);
+      } finally {
+        if (btn) { btn.textContent = '▶ Run Schedule Check'; btn.disabled = false; }
+      }
     }
 
     /* ── Toast ── */

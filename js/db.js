@@ -117,6 +117,191 @@ window.dbExpireMission = async function(missionId) {
 };
 
 /* ══════════════════════════════════════════════════════════════
+   AUTO-GENERATOR & ILS RECURRING SCHEDULE
+   ══════════════════════════════════════════════════════════════ */
+
+const _MISSION_POOL = [
+  // ── Class A · ILS Calibration ───────────────────────────────
+  { icao:'EGLL', nav:'RWY 27R', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Europe',        missionClass:'A', points:120 },
+  { icao:'EGLL', nav:'RWY 09R', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Europe',        missionClass:'A', points:120 },
+  { icao:'EDDM', nav:'RWY 08R', type:'ILS Calibration', aircraft:'King Air 350ER (Class A/B)', region:'Europe',        missionClass:'A', points:120 },
+  { icao:'EHAM', nav:'RWY 06',  type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Europe',        missionClass:'A', points:120 },
+  { icao:'LFPG', nav:'RWY 09L', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Europe',        missionClass:'A', points:120 },
+  { icao:'LEMD', nav:'RWY 32L', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Europe',        missionClass:'A', points:120 },
+  { icao:'EGCC', nav:'RWY 05R', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Europe',        missionClass:'A', points:120 },
+  { icao:'LSZH', nav:'RWY 14',  type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Europe',        missionClass:'A', points:120 },
+  { icao:'KJFK', nav:'RWY 13R', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'North America', missionClass:'A', points:120 },
+  { icao:'KLAX', nav:'RWY 24R', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'North America', missionClass:'A', points:120 },
+  { icao:'KORD', nav:'RWY 10C', type:'ILS Calibration', aircraft:'King Air 350ER (Class A/B)', region:'North America', missionClass:'A', points:120 },
+  { icao:'CYYZ', nav:'RWY 06L', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'North America', missionClass:'A', points:120 },
+  { icao:'KATL', nav:'RWY 08R', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'North America', missionClass:'A', points:120 },
+  { icao:'KMIA', nav:'RWY 09',  type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'North America', missionClass:'A', points:120 },
+  { icao:'OMDB', nav:'RWY 30L', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Middle East',   missionClass:'A', points:130 },
+  { icao:'OERK', nav:'RWY 15R', type:'ILS Calibration', aircraft:'King Air 350ER (Class A/B)', region:'Middle East',   missionClass:'A', points:130 },
+  { icao:'RJTT', nav:'RWY 22',  type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Asia-Pacific',  missionClass:'A', points:130 },
+  { icao:'YSSY', nav:'RWY 16R', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Asia-Pacific',  missionClass:'A', points:130 },
+  { icao:'ZSPD', nav:'RWY 17L', type:'ILS Calibration', aircraft:'King Air 350ER (Class A/B)', region:'Asia-Pacific',  missionClass:'A', points:130 },
+  { icao:'WSSS', nav:'RWY 03C', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Asia-Pacific',  missionClass:'A', points:130 },
+  { icao:'FAOR', nav:'RWY 03L', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Africa',        missionClass:'A', points:130 },
+  { icao:'HECA', nav:'RWY 05R', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Africa',        missionClass:'A', points:130 },
+  { icao:'SBGR', nav:'RWY 10R', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Latin America', missionClass:'A', points:130 },
+  { icao:'MMMX', nav:'RWY 23L', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Latin America', missionClass:'A', points:130 },
+  { icao:'SCEL', nav:'RWY 17R', type:'ILS Calibration', aircraft:'King Air B200 (Class A/B)',  region:'Latin America', missionClass:'A', points:130 },
+  // ── Class B · VOR / NDB ─────────────────────────────────────
+  { icao:'LSZH', nav:'VOR ZUE', type:'VOR Check',       aircraft:'King Air B200 (Class A/B)', region:'Europe',        missionClass:'B', points:100 },
+  { icao:'EGPD', nav:'VOR ADN', type:'VOR Check',       aircraft:'King Air B200 (Class A/B)', region:'Europe',        missionClass:'B', points:100 },
+  { icao:'CYYZ', nav:'VOR YYZ', type:'VOR Check',       aircraft:'King Air B200 (Class A/B)', region:'North America', missionClass:'B', points:100 },
+  { icao:'KEWR', nav:'VOR EWR', type:'VOR Check',       aircraft:'King Air B200 (Class A/B)', region:'North America', missionClass:'B', points:100 },
+  { icao:'RJTT', nav:'VOR OKO', type:'VOR Check',       aircraft:'King Air B200 (Class A/B)', region:'Asia-Pacific',  missionClass:'B', points:100 },
+  { icao:'OMDB', nav:'VOR DXB', type:'VOR Check',       aircraft:'King Air B200 (Class A/B)', region:'Middle East',   missionClass:'B', points:100 },
+  { icao:'HECA', nav:'VOR CAI', type:'VOR Check',       aircraft:'King Air B200 (Class A/B)', region:'Africa',        missionClass:'B', points:100 },
+  { icao:'FAOR', nav:'NDB AA',  type:'NDB Calibration', aircraft:'King Air B200 (Class A/B)', region:'Africa',        missionClass:'B', points:100 },
+  // ── Class C · RNAV / Approach ───────────────────────────────
+  { icao:'EGLL', nav:'RNP AR 27R',  type:'RNAV / RNP Check',    aircraft:'Falcon 20 (Class C/D)',     region:'Europe',        missionClass:'C', points:140 },
+  { icao:'KJFK', nav:'RNAV 13R',    type:'RNAV / RNP Check',    aircraft:'Falcon 20 (Class C/D)',     region:'North America', missionClass:'C', points:140 },
+  { icao:'YSSY', nav:'RNAV 34L',    type:'Approach Validation', aircraft:'Learjet 60XR (Class A/C)', region:'Asia-Pacific',  missionClass:'C', points:140 },
+  { icao:'SCEL', nav:'RNAV 17R',    type:'Approach Validation', aircraft:'Falcon 20 (Class C/D)',     region:'Latin America', missionClass:'C', points:140 },
+  { icao:'OMDB', nav:'RNP AR 30L',  type:'RNAV / RNP Check',    aircraft:'Learjet 60XR (Class A/C)', region:'Middle East',   missionClass:'C', points:140 },
+  // ── Class D · Procedure Validation ──────────────────────────
+  { icao:'EDDM', nav:'SID BETOS1G', type:'Procedure Validation', aircraft:'Citation CJ4 (Class C/D)', region:'Europe',        missionClass:'D', points:160 },
+  { icao:'KLAX', nav:'STAR ANGG4',  type:'Procedure Validation', aircraft:'Citation CJ4 (Class C/D)', region:'North America', missionClass:'D', points:160 },
+  { icao:'WSSS', nav:'SID BUNTO9D', type:'Procedure Validation', aircraft:'Citation CJ4 (Class C/D)', region:'Asia-Pacific',  missionClass:'D', points:160 },
+  { icao:'OMDB', nav:'SID RIDAP2M', type:'Procedure Validation', aircraft:'Citation CJ4 (Class C/D)', region:'Middle East',   missionClass:'D', points:160 },
+];
+
+/** Auto-generate N missions from the built-in pool */
+window.dbAutoGenerateMissions = async function(count, opts) {
+  count = parseInt(count, 10) || 5;
+  opts  = opts || {};
+  if (!window.db) throw new Error('Not connected');
+  let pool = _MISSION_POOL.slice();
+  if (opts.region && opts.region !== 'All Regions') pool = pool.filter(m => m.region === opts.region);
+  if (opts.type   && opts.type   !== 'All Types')   pool = pool.filter(m => m.type   === opts.type);
+  if (!pool.length) throw new Error('No missions match the selected filters');
+  // Fisher-Yates shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const ids = [];
+  for (const m of pool.slice(0, Math.min(count, pool.length))) {
+    const id = await dbCreateMission({
+      icao:         m.icao,
+      nav:          m.nav,
+      title:        m.icao + ' ' + m.nav,
+      dep:          m.icao,
+      arr:          m.icao,
+      type:         m.type,
+      aircraft:     m.aircraft,
+      region:       m.region,
+      priority:     opts.priority || 'Standard',
+      points:       m.points,
+      missionClass: 'Class ' + m.missionClass,
+      autoGenerated: true
+    });
+    ids.push(id);
+  }
+  return ids;
+};
+
+/** Get / seed the ILS recurring schedule */
+window.dbGetILSSchedule = async function() {
+  if (!window.db) return [];
+  try {
+    const snap = await window.db.collection('ils_schedule').get();
+    if (snap.empty) {
+      // Seed on first call
+      const ilsEntries = _MISSION_POOL.filter(m => m.type === 'ILS Calibration');
+      const batch = window.db.batch();
+      ilsEntries.forEach(m => {
+        const docId = m.icao + '-' + m.nav.replace(/\s+/g, '');
+        batch.set(window.db.collection('ils_schedule').doc(docId), {
+          id: docId, icao: m.icao, nav: m.nav, region: m.region,
+          aircraft: m.aircraft, points: m.points,
+          lastCompleted: null, lastResult: null, nextDue: null, activeMissionId: null
+        }, { merge: true });
+      });
+      await batch.commit();
+      return ilsEntries.map(m => ({
+        id: m.icao + '-' + m.nav.replace(/\s+/g,''), icao: m.icao, nav: m.nav,
+        region: m.region, aircraft: m.aircraft, points: m.points,
+        lastCompleted: null, lastResult: null, nextDue: null, activeMissionId: null
+      }));
+    }
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) { console.warn('dbGetILSSchedule:', e); return []; }
+};
+
+/** Check schedule and create missions for overdue airports (nextDue <= now, no active mission) */
+window.dbCheckILSSchedule = async function() {
+  if (!window.db) throw new Error('Not connected');
+  const schedule = await dbGetILSSchedule();
+  const now = Date.now();
+  let generated = 0;
+  for (const entry of schedule) {
+    if (entry.activeMissionId) continue;
+    let due = entry.nextDue;
+    if (due && typeof due === 'object' && due.toMillis) due = due.toMillis();
+    if (!due || due > now) continue; // null = never scheduled; skip
+    const tmpl = _MISSION_POOL.find(m => m.type === 'ILS Calibration' && m.icao === entry.icao && m.nav === entry.nav);
+    if (!tmpl) continue;
+    try {
+      const missionId = await dbCreateMission({
+        icao: entry.icao, nav: entry.nav,
+        title: entry.icao + ' ' + entry.nav,
+        dep: entry.icao, arr: entry.icao,
+        type: 'ILS Calibration', aircraft: tmpl.aircraft,
+        region: tmpl.region, priority: 'High Priority',
+        points: tmpl.points, missionClass: 'Class A',
+        isRecurringILS: true, ilsScheduleId: entry.id
+      });
+      await window.db.collection('ils_schedule').doc(entry.id).update({ activeMissionId: missionId });
+      generated++;
+    } catch(e) { console.warn('ILS check create failed:', entry.id, e); }
+  }
+  return generated;
+};
+
+/** Called inside dbSubmitReport when an ILS inspection result arrives */
+async function _handleILSReport(missionId, result, icao, nav) {
+  if (!window.db || !icao || !nav) return;
+  try {
+    const ilsId  = icao + '-' + nav.replace(/\s+/g, '');
+    const now    = Date.now();
+    const next90 = now + 90 * 24 * 60 * 60 * 1000; // +90 days
+    if (result === 'pass') {
+      await window.db.collection('ils_schedule').doc(ilsId).set({
+        lastCompleted: window.serverTimestamp(), lastResult: 'pass',
+        nextDue: next90, activeMissionId: null
+      }, { merge: true });
+    } else {
+      // fail or monitor — set nextDue = now so it's immediately overdue
+      await window.db.collection('ils_schedule').doc(ilsId).set({
+        lastCompleted: window.serverTimestamp(), lastResult: result,
+        nextDue: now, activeMissionId: null
+      }, { merge: true });
+      // Auto-create re-inspection mission
+      const tmpl = _MISSION_POOL.find(m => m.type === 'ILS Calibration' && m.icao === icao);
+      if (tmpl) {
+        const newId = await dbCreateMission({
+          icao: icao, nav: nav,
+          title: icao + ' ' + nav + ' [RE-INSPECT]',
+          dep: icao, arr: icao,
+          type: 'ILS Calibration', aircraft: tmpl.aircraft,
+          region: tmpl.region, priority: 'Urgent — ATC Hold',
+          points: tmpl.points + 20, missionClass: 'Class A',
+          isRecurringILS: true, ilsScheduleId: ilsId,
+          reInspection: true, failedReportId: missionId
+        });
+        await window.db.collection('ils_schedule').doc(ilsId).update({ activeMissionId: newId });
+        await dbLogActivity('fail',
+          'ILS re-inspection auto-generated for <strong>' + icao + ' ' + nav + '</strong> after ' + result.toUpperCase());
+      }
+    }
+  } catch(e) { console.warn('_handleILSReport:', e); }
+}
+
+/* ══════════════════════════════════════════════════════════════
    REPORTS
    ══════════════════════════════════════════════════════════════ */
 
@@ -152,6 +337,19 @@ window.dbSubmitReport = async function(reportData) {
       completedAt:  window.serverTimestamp(),
       result:       reportData.result
     }).catch(() => {});
+  }
+
+  /* ILS recurring schedule hook — auto-updates schedule and re-creates on fail */
+  if (reportData.missionId) {
+    try {
+      const mDoc = await window.db.collection('missions').doc(reportData.missionId).get();
+      if (mDoc.exists) {
+        const mData = mDoc.data();
+        if (mData.type === 'ILS Calibration') {
+          await _handleILSReport(reportData.missionId, reportData.result, mData.icao, mData.nav || mData.runway);
+        }
+      }
+    } catch(e) { console.warn('ILS hook:', e); }
   }
 
   /* Award points & update user stats */
