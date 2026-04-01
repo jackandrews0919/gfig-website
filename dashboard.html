@@ -389,6 +389,14 @@
             </div>
           </div>
 
+          <!-- Pilot Currency -->
+          <div class="card" style="margin-top:24px;">
+            <div class="card-title mb-16">📋 Pilot Currency</div>
+            <div id="currency-list" style="display:flex;flex-direction:column;gap:10px;">
+              <div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.82rem;">Loading currency…</div>
+            </div>
+          </div>
+
         </div><!-- end dash-side -->
       </div><!-- end dash-grid -->
 
@@ -543,6 +551,70 @@
       document.getElementById('btn-mark-all-read').style.display = 'none';
       loadNotifications(user.uid);
     }
-    document.addEventListener('gfig:authready', function(e) { if (e.detail) loadNotifications(e.detail.uid); });
+    document.addEventListener('gfig:authready', function(e) {
+      if (e.detail) {
+        loadNotifications(e.detail.uid);
+        loadCurrency(e.detail.uid);
+      }
+    });
+
+    /* ── Pilot Currency ── */
+    async function loadCurrency(uid) {
+      var el = document.getElementById('currency-list');
+      if (!el || !window.dbGetLogEntries) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.82rem;">No logbook data</div>';
+        return;
+      }
+      try {
+        var entries = await dbGetLogEntries(uid);
+        var now = Date.now();
+        var d90 = 90 * 86400000;
+        var d30 = 30 * 86400000;
+        var d365 = 365 * 86400000;
+
+        // Filter flights in last 90 days
+        var recent90 = entries.filter(function(e) {
+          var dt = e.date ? new Date(e.date).getTime() : 0;
+          return (now - dt) < d90;
+        });
+        var recent30 = entries.filter(function(e) {
+          var dt = e.date ? new Date(e.date).getTime() : 0;
+          return (now - dt) < d30;
+        });
+        var recent365 = entries.filter(function(e) {
+          var dt = e.date ? new Date(e.date).getTime() : 0;
+          return (now - dt) < d365;
+        });
+
+        // Calc hours
+        var hours30 = recent30.reduce(function(s, e) { return s + (parseFloat(e.blockTime) || 0); }, 0);
+        var hours90 = recent90.reduce(function(s, e) { return s + (parseFloat(e.blockTime) || 0); }, 0);
+        var hours365 = recent365.reduce(function(s, e) { return s + (parseFloat(e.blockTime) || 0); }, 0);
+
+        // Last flight date
+        var lastFlight = entries.length ? entries.sort(function(a,b) { return (b.date||'').localeCompare(a.date||''); })[0] : null;
+        var daysSinceLast = lastFlight && lastFlight.date ? Math.floor((now - new Date(lastFlight.date).getTime()) / 86400000) : 999;
+
+        var items = [
+          currencyItem('90-Day Currency', recent90.length + ' flights / ' + hours90.toFixed(1) + 'h', recent90.length >= 3 ? 'current' : recent90.length >= 1 ? 'due-soon' : 'expired'),
+          currencyItem('30-Day Activity', recent30.length + ' flights / ' + hours30.toFixed(1) + 'h', recent30.length >= 1 ? 'current' : 'expired'),
+          currencyItem('Last Flight', daysSinceLast < 999 ? daysSinceLast + ' days ago' : 'No flights', daysSinceLast < 14 ? 'current' : daysSinceLast < 30 ? 'due-soon' : 'expired'),
+          currencyItem('Annual Hours', hours365.toFixed(1) + 'h logged', hours365 >= 10 ? 'current' : hours365 >= 5 ? 'due-soon' : 'expired')
+        ];
+        el.innerHTML = items.join('');
+      } catch(e) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.82rem;">Error loading currency</div>';
+      }
+    }
+
+    function currencyItem(label, value, status) {
+      var colors = { current: '#00e676', 'due-soon': '#ffd700', expired: '#ff4444' };
+      var labels = { current: 'CURRENT', 'due-soon': 'DUE SOON', expired: 'EXPIRED' };
+      var c = colors[status] || colors.expired;
+      var l = labels[status] || 'UNKNOWN';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg-secondary);border-radius:8px;border-left:3px solid ' + c + ';">'
+        + '<div><div style="font-size:0.78rem;font-weight:600;">' + label + '</div><div style="font-size:0.7rem;color:var(--text-sub);">' + value + '</div></div>'
+        + '<span style="font-size:0.6rem;font-weight:700;letter-spacing:0.08em;color:' + c + ';">' + l + '</span></div>';
+    }
   </script>
 </html>

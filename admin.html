@@ -2181,12 +2181,14 @@
         await dbUpdateApplicationStatus(appId, action);
         toast(action === 'approved' ? '✓ Application approved — welcome to GFIG!' : '✗ Application declined');
 
-        // Notify Discord #applications channel
+        // Fetch the application details
         var app = null;
         if (window.dbGetApplications) {
           var allApps = await dbGetApplications();
           app = allApps.find(function(a) { return a.id === appId; });
         }
+
+        // Notify Discord #applications channel
         dcApi('POST', '/notify-form', {
           type: 'application',
           memberName: app?.name || appId,
@@ -2197,6 +2199,19 @@
             'Reference': app?.ref || appId
           }
         }).catch(function() {});
+
+        // Send DM to applicant via Discord bot
+        if (app?.discord) {
+          dcApi('POST', '/dm', {
+            discordUsername: app.discord,
+            type: action === 'approved' ? 'approved' : 'denied',
+            fields: action === 'approved' ? [
+              { name: 'Member Name', value: app.name || '—', inline: true },
+              { name: 'Rank', value: 'Trainee Inspector', inline: true },
+              { name: 'Next Step', value: 'Log in to your Dashboard and start training!', inline: false }
+            ] : []
+          }).catch(function() {});
+        }
 
         loadApplicationsAdmin();
       } catch(e) { toast('Error: ' + e.message); }

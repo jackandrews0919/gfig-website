@@ -568,6 +568,28 @@ async function _webhookApplication(settings, data, id) {
     footer:    { text: `App ID: ${id} · GFIG Application System` },
     timestamp: new Date().toISOString()
   }]);
+
+  // Send DM confirmation to applicant via Discord bot
+  if (settings.botApiUrl && data.discord) {
+    try {
+      await fetch(settings.botApiUrl.replace(/\/$/, '') + '/dm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': settings.botApiSecret || ''
+        },
+        body: JSON.stringify({
+          discordUsername: data.discord,
+          type: 'registration',
+          fields: [
+            { name: 'Reference', value: id || '—', inline: true },
+            { name: 'Name', value: data.name || '—', inline: true },
+            { name: 'Status', value: '⏳ Under Review', inline: true }
+          ]
+        })
+      });
+    } catch(e) { console.warn('DM notification failed:', e.message); }
+  }
 }
 
 window.dbGetApplications = async function(status = null) {

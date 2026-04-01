@@ -78,6 +78,20 @@
       </div>
 
       <div class="dispatch-panel">
+        <!-- SimBrief Import -->
+        <div style="grid-column:1/-1;margin-bottom:-10px;">
+          <div class="dispatch-card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <img src="https://www.simbrief.com/images/simbrief_logo.png" alt="SimBrief" style="height:28px;filter:brightness(0) invert(1);opacity:0.7;" onerror="this.style.display='none'">
+            <div style="flex:1;min-width:200px;">
+              <div class="dispatch-form-row" style="margin:0;grid-template-columns:1fr auto;">
+                <div class="dispatch-form-group" style="margin:0;"><label>SIMBRIEF PILOT ID OR USERNAME</label><input type="text" id="d-simbrief" placeholder="Enter your SimBrief Pilot ID or username"></div>
+                <button class="btn btn-secondary" onclick="importSimBrief()" style="align-self:end;white-space:nowrap;">⬇ Import Flight Plan</button>
+              </div>
+            </div>
+            <span id="simbrief-status" style="font-size:0.75rem;color:var(--text-muted);"></span>
+          </div>
+        </div>
+
         <!-- Route Input -->
         <div class="dispatch-card">
           <h3>✈ ROUTE</h3>
@@ -330,7 +344,101 @@
       } catch(e) { if (typeof showToast === 'function') showToast('Error saving: ' + e.message, 'error'); }
     }
 
-    document.addEventListener('gfig:authready', function(e) { _currentUser = e.detail; });
+    document.addEventListener('gfig:authready', function(e) {
+      _currentUser = e.detail;
+      // Restore saved SimBrief ID from profile
+      if (_currentUser && _currentUser.simbriefId) {
+        document.getElementById('d-simbrief').value = _currentUser.simbriefId;
+      }
+    });
+
+    /* ── SimBrief Import ────────────────────────────────────────── */
+    var _simbriefData = null;
+
+    async function importSimBrief() {
+      var idOrName = (document.getElementById('d-simbrief').value || '').trim();
+      if (!idOrName) { showToast('Enter your SimBrief Pilot ID or username', 'error'); return; }
+
+      var statusEl = document.getElementById('simbrief-status');
+      statusEl.textContent = 'Fetching from SimBrief…';
+      statusEl.style.color = 'var(--text-muted)';
+
+      try {
+        // SimBrief API — fetch latest OFP
+        var url = 'https://www.simbrief.com/api/xml.fetcher.php?json=1';
+        // If numeric, use pilot_id; otherwise use username
+        if (/^\d+$/.test(idOrName)) {
+          url += '&userid=' + encodeURIComponent(idOrName);
+        } else {
+          url += '&username=' + encodeURIComponent(idOrName);
+        }
+
+        var resp = await fetch(url);
+        if (!resp.ok) throw new Error('SimBrief API returned ' + resp.status);
+        var data = await resp.json();
+
+        if (data.fetch && data.fetch.status === 'Error') {
+          throw new Error(data.fetch.result || 'No flight plan found');
+        }
+
+        _simbriefData = data;
+
+        // Populate form fields from SimBrief data
+        var origin = data.origin || {};
+        var dest = data.destination || {};
+        var alt = data.alternate || {};
+        var general = data.general || {};
+        var fuel = data.fuel || {};
+        var times = data.times || {};
+        var params = data.params || {};
+
+        if (origin.icao_code) document.getElementById('d-dep').value = origin.icao_code;
+        if (dest.icao_code) document.getElementById('d-arr').value = dest.icao_code;
+        if (alt.icao_code) document.getElementById('d-alt').value = alt.icao_code;
+        if (general.initial_altitude) document.getElementById('d-fl').value = Math.round(parseInt(general.initial_altitude) / 100);
+        if (general.route) document.getElementById('d-route').value = general.route;
+        if (params.passengers) document.getElementById('d-pax').value = params.passengers;
+        if (general.costindex) document.getElementById('d-ci').value = general.costindex;
+
+        // Try to match aircraft type to dropdown
+        var sbAcType = (data.aircraft || {}).icaocode || '';
+        var acSelect = document.getElementById('d-ac');
+        var matched = false;
+        for (var i = 0; i < acSelect.options.length; i++) {
+          if (acSelect.options[i].value === sbAcType) {
+            acSelect.value = sbAcType;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) acSelect.value = 'custom';
+
+        // Set ZFW from SimBrief (convert kg to lbs if necessary)
+        if (fuel.plan_zfw) {
+          var zfw = parseInt(fuel.plan_zfw);
+          var units = (params.units || '').toLowerCase();
+          if (units === 'kgs' || units === 'metric') zfw = Math.round(zfw * 2.205);
+          document.getElementById('d-zfw').value = zfw;
+        }
+
+        // Save SimBrief ID to user profile for next time
+        if (_currentUser && _currentUser.uid) {
+          try {
+            firebase.firestore().collection('users').doc(_currentUser.uid).update({ simbriefId: idOrName });
+          } catch(e) { /* silent */ }
+        }
+
+        statusEl.textContent = '✓ Imported: ' + (origin.icao_code || '?') + ' → ' + (dest.icao_code || '?') + ' (' + (data.aircraft || {}).name + ')';
+        statusEl.style.color = 'var(--green, #00e676)';
+        showToast('SimBrief flight plan imported! Click Generate to create OFP.', 'success');
+
+      } catch(e) {
+        statusEl.textContent = '✗ ' + e.message;
+        statusEl.style.color = 'var(--red, #ff4444)';
+        showToast('SimBrief import failed: ' + e.message, 'error');
+        _simbriefData = null;
+      }
+    }
   </script>
 </body>
 </html>

@@ -60,10 +60,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// ── Inject "Tools" dropdown into nav ────────────────────────────
+// ── Inject "Tools" dropdown into nav (members only) ─────────────
 (function() {
   var navLinks = document.getElementById('nav-links');
   if (!navLinks) return;
+  // Don't show tools on public pages (no auth required)
+  var publicPages = ['index.html','login.html','join.html','sops.html','roster.html','stats.html','404.html',''];
+  var currentPage = (window.location.pathname.split('/').pop() || '').toLowerCase();
+  if (publicPages.indexOf(currentPage) !== -1) return;
   var toolsPages = [
     { href:'logbook.html',      label:'📒 Logbook' },
     { href:'pireps.html',       label:'📡 PIREPs' },

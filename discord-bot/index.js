@@ -1072,6 +1072,153 @@ app.post('/notams/discord', auth, async (req, res) => {
   }
 });
 
+/* ═══════════════════════════════════════════════════════════════
+   DIRECT MESSAGE (DM) NOTIFICATION SYSTEM
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * POST /dm — Send a DM to a Discord user
+ * Body: { discordId?, discordUsername?, type, title, message, fields?, color? }
+ * Provide discordId OR discordUsername (bot will search guild members by username)
+ * Types: registration, approved, denied, training_booked, training_reminder,
+ *        mission_assigned, rank_promotion, event_reminder, generic
+ */
+app.post('/dm', auth, async (req, res) => {
+  try {
+    const { discordId, discordUsername, type, title, message, fields, color } = req.body;
+    if (!discordId && !discordUsername) return res.status(400).json({ error: 'discordId or discordUsername is required' });
+    if (!type && !message) return res.status(400).json({ error: 'type or message is required' });
+
+    // Resolve user — by ID or by username search
+    let user;
+    if (discordId) {
+      try { user = await client.users.fetch(discordId); }
+      catch(e) { return res.status(404).json({ error: 'Discord user not found by ID' }); }
+    } else {
+      // Search guild members by username
+      const guild = getGuild(res); if (!guild) return;
+      await guild.members.fetch();
+      const cleanName = discordUsername.replace(/^@/, '').toLowerCase();
+      const member = guild.members.cache.find(m =>
+        m.user.username.toLowerCase() === cleanName ||
+        m.user.tag.toLowerCase() === cleanName ||
+        m.displayName.toLowerCase() === cleanName
+      );
+      if (!member) return res.status(404).json({ error: 'Discord user "' + discordUsername + '" not found in server' });
+      user = member.user;
+    }
+
+    const DM_TEMPLATES = {
+      registration: {
+        color: 0xE67E22,
+        title: '📬 Application Received — GFIG',
+        description: 'Your application to **Global Flight Inspection Group** has been received!\n\nOur HR team will review your application and get back to you shortly. You can track your application status on the GFIG website.\n\n*Thank you for your interest in joining GFIG!*'
+      },
+      approved: {
+        color: 0x00E676,
+        title: '✅ Application Approved — GFIG',
+        description: 'Congratulations! Your application to **GFIG** has been **approved**! 🎉\n\nYou are now a full member of the Global Flight Inspection Group. Here\'s what to do next:\n\n• Visit your **Dashboard** to see your member profile\n• Check out the **Training** page to begin your courses\n• Browse **Missions** for available inspections\n• Join events on the **Events** page\n\nWelcome aboard, Inspector!'
+      },
+      denied: {
+        color: 0xFF4444,
+        title: '❌ Application Update — GFIG',
+        description: 'Thank you for your interest in GFIG. Unfortunately, your application has not been approved at this time.\n\nYou are welcome to reapply in the future. If you have questions, please reach out to our HR team.'
+      },
+      training_booked: {
+        color: 0x40AAFF,
+        title: '📚 Training Session Booked — GFIG',
+        description: 'Your training session has been booked! Here are the details:'
+      },
+      training_reminder: {
+        color: 0xFFD700,
+        title: '⏰ Training Reminder — GFIG',
+        description: 'This is a reminder that you have an upcoming training session:'
+      },
+      mission_assigned: {
+        color: 0xFF6A00,
+        title: '✈️ Mission Assigned — GFIG',
+        description: 'You have been assigned to a new mission! Check the Missions page for full details.'
+      },
+      rank_promotion: {
+        color: 0xE040FB,
+        title: '⭐ Rank Promotion — GFIG',
+        description: 'Congratulations on your promotion! Your dedication to GFIG has been recognised.'
+      },
+      event_reminder: {
+        color: 0x5865F2,
+        title: '📅 Event Reminder — GFIG',
+        description: 'Reminder: You have an upcoming GFIG event!'
+      }
+    };
+
+    const template = DM_TEMPLATES[type] || {};
+    const embed = {
+      color: color || template.color || 0x5865F2,
+      title: title || template.title || '📋 GFIG Notification',
+      description: message || template.description || '',
+      footer: { text: 'Global Flight Inspection Group', iconURL: 'https://jackandrews0919.github.io/gfig-website/logo.png' },
+      timestamp: new Date().toISOString()
+    };
+
+    // Add custom fields if provided
+    if (fields && Array.isArray(fields)) {
+      embed.fields = fields.map(f => ({
+        name: String(f.name || '').substring(0, 256),
+        value: String(f.value || '').substring(0, 1024),
+        inline: !!f.inline
+      }));
+    }
+
+    await user.send({ embeds: [embed] });
+    auditPush({ type: 'dm_sent', user: user.tag, summary: `DM sent to **${user.tag}**: ${embed.title}` });
+    res.json({ ok: true, sent: true, userId: user.id, userTag: user.tag });
+  } catch(e) {
+    // User may have DMs disabled
+    if (e.code === 50007) {
+      return res.json({ ok: false, sent: false, reason: 'User has DMs disabled' });
+    }
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
+ * POST /dm/bulk — Send a DM to multiple users
+ * Body: { userIds: [discordId,...], type, title, message, fields?, color? }
+ */
+app.post('/dm/bulk', auth, async (req, res) => {
+  try {
+    const { userIds, type, title, message, fields, color } = req.body;
+    if (!userIds || !userIds.length) return res.status(400).json({ error: 'userIds array is required' });
+
+    const log = [];
+    for (const discordId of userIds.slice(0, 50)) { // Max 50 per batch
+      try {
+        const user = await client.users.fetch(discordId);
+        const DM_TEMPLATES = {
+          registration: { color: 0xE67E22, title: '📬 Application Received — GFIG' },
+          approved:     { color: 0x00E676, title: '✅ Application Approved — GFIG' },
+          event_reminder: { color: 0x5865F2, title: '📅 Event Reminder — GFIG' }
+        };
+        const template = DM_TEMPLATES[type] || {};
+        const embed = {
+          color: color || template.color || 0x5865F2,
+          title: title || template.title || '📋 GFIG Notification',
+          description: message || '',
+          footer: { text: 'Global Flight Inspection Group' },
+          timestamp: new Date().toISOString()
+        };
+        if (fields && Array.isArray(fields)) embed.fields = fields;
+        await user.send({ embeds: [embed] });
+        log.push('ok:' + user.tag);
+      } catch(e) {
+        log.push('err:' + discordId + ': ' + e.message);
+      }
+    }
+
+    res.json({ ok: true, sent: log.filter(l => l.startsWith('ok:')).length, failed: log.filter(l => l.startsWith('err:')).length, log });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 /* ── Bot Events ─────────────────────────────────────────────── */
 
 client.once('ready', () => {
@@ -1163,6 +1310,22 @@ client.on(Events.GuildMemberAdd, async (member) => {
       }] });
     }
   } catch(e) { console.warn('Failed to send welcome message:', e.message); }
+
+  // Send welcome DM to new member
+  try {
+    await member.user.send({ embeds: [{
+      color: 0x2ECC71,
+      title: '👋 Welcome to GFIG!',
+      description: `Hi **${member.user.username}**! Welcome to the **Global Flight Inspection Group** Discord server.\n\n`
+        + `You've been given the **Guest** role. To become a full member and gain access to all channels, you'll need to apply on our website:\n\n`
+        + `🌐 **Apply here:** https://jackandrews0919.github.io/gfig-website/join.html\n\n`
+        + `Once approved, you'll receive your member rank, access to missions, training, and all GFIG operations.\n\n`
+        + `If you have any questions, feel free to ask in our community channels!`,
+      thumbnail: { url: member.guild.iconURL({ size: 128 }) || '' },
+      footer: { text: 'Global Flight Inspection Group' },
+      timestamp: new Date().toISOString()
+    }] });
+  } catch(e) { /* User may have DMs disabled — silent fail */ }
 });
 
 /* Audit: Member Leave */

@@ -128,6 +128,7 @@
         <div class="tab" onclick="showTab('history', this)">Mission History</div>
         <div class="tab" onclick="showTab('stats', this)">Statistics</div>
         <div class="tab" onclick="showTab('awards', this)">Awards</div>
+        <div class="tab" onclick="showTab('settings', this)">⚙ Settings</div>
       </div>
 
       <!-- ── Tab: Certifications ── -->
@@ -277,6 +278,70 @@
         </div>
       </div>
 
+      <!-- ── Tab: Settings ── -->
+      <div id="tab-settings" class="hidden">
+        <div class="grid-2" style="gap:24px;">
+          <div class="card">
+            <div class="card-title mb-16">📋 Profile Settings</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div>
+                <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">CALLSIGN</label>
+                <input type="text" id="set-callsign" class="admin-input" placeholder="e.g. GFIG-001" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;">
+              </div>
+              <div>
+                <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">HOME REGION</label>
+                <select id="set-region" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;">
+                  <option value="">Select region…</option>
+                  <option value="Europe">Europe</option>
+                  <option value="North America">North America</option>
+                  <option value="South America">South America</option>
+                  <option value="Asia">Asia</option>
+                  <option value="Middle East">Middle East</option>
+                  <option value="Africa">Africa</option>
+                  <option value="Oceania">Oceania</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">TIMEZONE</label>
+                <select id="set-tz" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;">
+                  <option value="">Select timezone…</option>
+                  <option value="UTC-12">UTC-12</option><option value="UTC-11">UTC-11</option><option value="UTC-10">UTC-10 (Hawaii)</option>
+                  <option value="UTC-9">UTC-9 (Alaska)</option><option value="UTC-8">UTC-8 (Pacific)</option><option value="UTC-7">UTC-7 (Mountain)</option>
+                  <option value="UTC-6">UTC-6 (Central)</option><option value="UTC-5">UTC-5 (Eastern)</option><option value="UTC-4">UTC-4 (Atlantic)</option>
+                  <option value="UTC-3">UTC-3 (Brazil)</option><option value="UTC-2">UTC-2</option><option value="UTC-1">UTC-1</option>
+                  <option value="UTC+0">UTC+0 (UK/GMT)</option><option value="UTC+1">UTC+1 (CET)</option><option value="UTC+2">UTC+2 (EET)</option>
+                  <option value="UTC+3">UTC+3 (Moscow)</option><option value="UTC+4">UTC+4 (Gulf)</option><option value="UTC+5">UTC+5 (Pakistan)</option>
+                  <option value="UTC+5:30">UTC+5:30 (India)</option><option value="UTC+6">UTC+6</option><option value="UTC+7">UTC+7 (Bangkok)</option>
+                  <option value="UTC+8">UTC+8 (China)</option><option value="UTC+9">UTC+9 (Japan)</option><option value="UTC+10">UTC+10 (Sydney)</option>
+                  <option value="UTC+11">UTC+11</option><option value="UTC+12">UTC+12 (NZ)</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="saveProfileSettings()" style="margin-top:6px;">Save Profile</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title mb-16">🔗 Integrations</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div>
+                <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">SIMBRIEF PILOT ID / USERNAME</label>
+                <input type="text" id="set-simbrief" class="admin-input" placeholder="Enter your SimBrief Pilot ID or username" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;">
+                <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">Find your Pilot ID at simbrief.com → Account Settings. Used for auto-importing flight plans in Dispatch.</div>
+              </div>
+              <div>
+                <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">VATSIM CID</label>
+                <input type="text" id="set-vatsim" class="admin-input" placeholder="e.g. 1234567" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;">
+              </div>
+              <div>
+                <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">IVAO VID</label>
+                <input type="text" id="set-ivao" class="admin-input" placeholder="e.g. 123456" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;">
+              </div>
+              <button class="btn btn-primary" onclick="saveIntegrationSettings()" style="margin-top:6px;">Save Integrations</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -329,7 +394,48 @@
       el.classList.add('active');
     }
     function editProfile() {
-      alert('Profile editing will be available in the next update. To change your callsign or timezone, please use the #support channel on Discord.');
+      showTab('settings', document.querySelectorAll('.tab')[4]);
+    }
+
+    var _profileUser = null;
+
+    async function saveProfileSettings() {
+      if (!_profileUser || !firebase.firestore) return;
+      var data = {};
+      var callsign = (document.getElementById('set-callsign').value || '').trim();
+      var region = document.getElementById('set-region').value;
+      var tz = document.getElementById('set-tz').value;
+      if (callsign) data.callsign = callsign;
+      if (region) data.region = region;
+      if (tz) data.timezone = tz;
+      try {
+        await firebase.firestore().collection('users').doc(_profileUser.uid).update(data);
+        if (typeof showToast === 'function') showToast('Profile saved!', 'success');
+      } catch(e) { if (typeof showToast === 'function') showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function saveIntegrationSettings() {
+      if (!_profileUser || !firebase.firestore) return;
+      var data = {};
+      var sb = (document.getElementById('set-simbrief').value || '').trim();
+      var vatsim = (document.getElementById('set-vatsim').value || '').trim();
+      var ivao = (document.getElementById('set-ivao').value || '').trim();
+      if (sb !== undefined) data.simbriefId = sb;
+      if (vatsim !== undefined) data.vatsimCid = vatsim;
+      if (ivao !== undefined) data.ivaoVid = ivao;
+      try {
+        await firebase.firestore().collection('users').doc(_profileUser.uid).update(data);
+        if (typeof showToast === 'function') showToast('Integrations saved!', 'success');
+      } catch(e) { if (typeof showToast === 'function') showToast('Error: ' + e.message, 'error'); }
+    }
+
+    function populateSettings(user) {
+      if (user.callsign) document.getElementById('set-callsign').value = user.callsign;
+      if (user.region) document.getElementById('set-region').value = user.region;
+      if (user.timezone) document.getElementById('set-tz').value = user.timezone;
+      if (user.simbriefId) document.getElementById('set-simbrief').value = user.simbriefId;
+      if (user.vatsimCid) document.getElementById('set-vatsim').value = user.vatsimCid;
+      if (user.ivaoVid) document.getElementById('set-ivao').value = user.ivaoVid;
     }
 
     /* ── Rank thresholds ── */
@@ -355,6 +461,8 @@
     document.addEventListener('gfig:authready', async function(e) {
       const user = e.detail;
       if (!user) return;
+      _profileUser = user;
+      populateSettings(user);
 
       /* Basic identity */
       const av = document.getElementById('profile-avatar');
