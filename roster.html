@@ -194,6 +194,11 @@
           <option value="reserve">Reserve</option>
           <option value="inactive">Inactive</option>
         </select>
+        <select class="form-control" id="roster-branch-filter" onchange="filterRoster()" style="width:auto;">
+          <option value="">All Branches</option>
+          <option value="GFIG">✈ GFIG</option>
+          <option value="NAG">🌍 NAG</option>
+        </select>
       </div>
 
       <!-- Roster Table -->
@@ -204,6 +209,7 @@
               <th>Member</th>
               <th>Member #</th>
               <th>Callsign</th>
+              <th>Branch</th>
               <th>Rank</th>
               <th>Tags</th>
               <th>Region</th>
@@ -215,7 +221,7 @@
             </tr>
           </thead>
           <tbody id="roster-tbody">
-            <tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:32px;">Loading roster…</td></tr>
+            <tr><td colspan="12" style="text-align:center;color:var(--text-muted);padding:32px;">Loading roster…</td></tr>
           </tbody>
         </table>
       </div>
@@ -292,7 +298,7 @@
     function renderRoster(members) {
       var tbody = document.getElementById('roster-tbody');
       if (!members || members.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:32px;">No members found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text-muted);padding:32px;">No members found.</td></tr>';
         return;
       }
       tbody.innerHTML = members.map(function(m) {
@@ -308,13 +314,19 @@
         if (m.isExaminer) tags += '<span class="roster-tag roster-tag-examiner">Examiner</span>';
         if (!tags) tags = '—';
 
+        var branchId = m.branch || 'GFIG';
+        var branchInfo = window.getBranchInfo ? window.getBranchInfo(branchId) : { icon: '✈', short: 'GFIG', id: 'GFIG' };
+        var branchHtml = '<span class="branch-badge branch-' + branchInfo.id.toLowerCase() + '">' + branchInfo.icon + ' ' + branchInfo.short + '</span>';
+
+        var avatarHtml = m.photoURL
+          ? '<img src="' + m.photoURL + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' 
+          : initials;
+
         return '<tr>'
-          + '<td><div class="roster-name-cell"><div class="roster-avatar">' + initials + '</div><div>' + (m.name || '—') + '</div></div></td>'
+          + '<td><div class="roster-name-cell"><div class="roster-avatar">' + avatarHtml + '</div><div>' + (m.name || '—') + '</div></div></td>'
           + '<td style="font-family:var(--font-mono);color:var(--orange);">' + (m.memberNumber || '—') + '</td>'
           + '<td style="font-family:var(--font-mono);color:var(--blue-light);">' + (m.callsign || '—') + '</td>'
-          + '<td><span class="rank-badge ' + rc + '">' + (m.rank || 'Member') + '</span></td>'
-          + '<td>' + tags + '</td>'
-          + '<td>' + (m.region || '—') + '</td>'
+          + '<td>' + branchHtml + '</td>'
           + '<td>' + (m.totalMissions || 0) + '</td>'
           + '<td>' + (m.flightHours || 0) + 'h</td>'
           + '<td>' + vatsimCid + '</td>'
@@ -354,6 +366,7 @@
       var rankF = document.getElementById('roster-rank-filter').value;
       var regionF = document.getElementById('roster-region-filter').value;
       var statusF = document.getElementById('roster-status-filter').value;
+      var branchF = document.getElementById('roster-branch-filter').value;
 
       var filtered = rosterData.filter(function(m) {
         if (search) {
@@ -363,6 +376,7 @@
         if (rankF && m.rank !== rankF) return false;
         if (regionF && m.region !== regionF) return false;
         if (statusF && m.status !== statusF) return false;
+        if (branchF && (m.branch || 'GFIG') !== branchF) return false;
         return true;
       });
       renderRoster(filtered);

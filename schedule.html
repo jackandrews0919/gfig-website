@@ -71,12 +71,18 @@
           <p>Scheduled calibration flights, navaid checks & approach validations</p>
         </div>
         <div style="display:flex;gap:10px;align-items:center;">
+          <button class="btn btn-secondary" onclick="autoGenerate()" id="btn-auto-gen" style="font-size:0.78rem;">⚡ Auto-Generate</button>
           <span class="badge badge-active" id="sched-count">0 Missions</span>
         </div>
       </div>
 
       <div class="card">
         <div class="sched-filters">
+          <select id="filter-branch" onchange="applyFilters()">
+            <option value="">All Branches</option>
+            <option value="GFIG">✈ GFIG</option>
+            <option value="NAG">🌍 NAG</option>
+          </select>
           <select id="filter-hub" onchange="applyFilters()">
             <option value="">All Regions</option>
             <option value="EUR">Europe</option>
@@ -85,13 +91,18 @@
             <option value="APAC">Asia-Pacific</option>
           </select>
           <select id="filter-type" onchange="applyFilters()">
-            <option value="">All Inspection Types</option>
+            <option value="">All Types</option>
             <option value="ILS">ILS Calibration</option>
             <option value="VOR">VOR/DME Check</option>
             <option value="RNAV">RNAV/GPS Validation</option>
             <option value="LIGHT">Lighting Inspection</option>
             <option value="RADAR">Radar Calibration</option>
             <option value="FULL">Full Facility Check</option>
+            <option value="CHARTER">Charter Flight</option>
+            <option value="CARGO">Cargo Haul</option>
+            <option value="BUSH">Bush Flight</option>
+            <option value="ISLAND">Island Hopper</option>
+            <option value="HUMANITARIAN">Humanitarian Aid</option>
           </select>
           <select id="filter-day" onchange="applyFilters()">
             <option value="">All Days</option>
@@ -167,7 +178,16 @@
       { flightNum:'GFI-C402', dep:'RJTT', arr:'RJAA', days:[2,4,6], aircraft:'Citation CJ4', etd:'05:00', inspType:'RADAR', label:'ARSR Radar Flight Check', hub:'APAC' },
       { flightNum:'GFI-C403', dep:'YSSY', arr:'YSSY', days:[1,4], aircraft:'King Air 350i', etd:'03:30', inspType:'ILS', label:'ILS CAT III Recertification', hub:'APAC' },
       { flightNum:'GFI-C404', dep:'VHHH', arr:'VHHH', days:[2,5], aircraft:'King Air 350i', etd:'04:30', inspType:'FULL', label:'Full Facility Inspection', hub:'APAC' },
-      { flightNum:'GFI-C405', dep:'NZAA', arr:'NZWN', days:[3,6], aircraft:'Citation CJ4', etd:'06:00', inspType:'VOR', label:'Oceanic VOR/NDB Verification', hub:'APAC' }
+      { flightNum:'GFI-C405', dep:'NZAA', arr:'NZWN', days:[3,6], aircraft:'Citation CJ4', etd:'06:00', inspType:'VOR', label:'Oceanic VOR/NDB Verification', hub:'APAC' },
+      // NAG — Nomadic Aviation Group Scheduled Services
+      { flightNum:'NAG-S101', dep:'FAOR', arr:'FALA', days:[1,3,5], aircraft:'Cessna 208B', etd:'06:30', inspType:'CHARTER', label:'Johannesburg Shuttle', hub:'MDE', branch:'NAG' },
+      { flightNum:'NAG-S102', dep:'HTDA', arr:'HTKJ', days:[2,4,6], aircraft:'DHC-6 Twin Otter', etd:'07:00', inspType:'BUSH', label:'Tanzanian Safari Transfer', hub:'MDE', branch:'NAG' },
+      { flightNum:'NAG-S103', dep:'DNMM', arr:'DGAA', days:[1,4], aircraft:'ATR 72-600', etd:'08:00', inspType:'CARGO', label:'West Africa Cargo Run', hub:'MDE', branch:'NAG' },
+      { flightNum:'NAG-S104', dep:'FMMI', arr:'FMEE', days:[3,5], aircraft:'BN-2 Islander', etd:'09:00', inspType:'ISLAND', label:'Madagascar Island Hop', hub:'MDE', branch:'NAG' },
+      { flightNum:'NAG-S105', dep:'HKJK', arr:'HUEN', days:[2,6], aircraft:'C-130 Hercules', etd:'05:00', inspType:'HUMANITARIAN', label:'East Africa Aid Corridor', hub:'MDE', branch:'NAG' },
+      { flightNum:'NAG-S201', dep:'TFFR', arr:'TFFF', days:[1,3,5], aircraft:'DHC-6 Twin Otter', etd:'10:00', inspType:'ISLAND', label:'Caribbean Island Circuit', hub:'NAM', branch:'NAG' },
+      { flightNum:'NAG-S202', dep:'PAFA', arr:'PABE', days:[2,4], aircraft:'Cessna 208B', etd:'14:00', inspType:'BUSH', label:'Alaska Bush Route', hub:'NAM', branch:'NAG' },
+      { flightNum:'NAG-S203', dep:'SCEL', arr:'SCFA', days:[1,5], aircraft:'DHC-6 Twin Otter', etd:'12:00', inspType:'CHARTER', label:'Patagonia Explorer', hub:'NAM', branch:'NAG' }
     ];
 
     var dayNames = ['S','M','T','W','T','F','S'];
@@ -201,12 +221,14 @@
       var hub = document.getElementById('filter-hub').value;
       var day = document.getElementById('filter-day').value;
       var search = document.getElementById('filter-search').value.toLowerCase();
+      var branch = document.getElementById('filter-branch') ? document.getElementById('filter-branch').value : '';
 
       var itype = document.getElementById('filter-type') ? document.getElementById('filter-type').value : '';
       var filtered = _schedule.filter(function(f) {
         if (hub && f.hub !== hub) return false;
         if (itype && f.inspType !== itype) return false;
         if (day && f.days.indexOf(parseInt(day)) === -1) return false;
+        if (branch && (f.branch || 'GFIG') !== branch) return false;
         if (search && (f.flightNum + f.dep + f.arr + f.aircraft + (f.label||'')).toLowerCase().indexOf(search) === -1) return false;
         return true;
       });
@@ -223,15 +245,18 @@
           return '<div class="day ' + (f.days.indexOf(d) !== -1 ? 'active' : 'inactive') + '">' + dayNames[d] + '</div>';
         }).join('');
         var booked = !!_myBookings[f.flightNum];
+        var isNAG = f.branch === 'NAG';
+        var branchColor = isNAG ? 'rgba(224,64,251,0.1)' : 'rgba(0,119,255,0.1)';
+        var branchText  = isNAG ? '#e040fb' : 'var(--blue-light)';
 
-        return '<div class="sched-row">'
-          + '<div class="flight-num">' + esc(f.flightNum) + '</div>'
+        return '<div class="sched-row" style="' + (isNAG ? 'border-left:3px solid #e040fb;' : '') + '">'
+          + '<div class="flight-num" style="' + (isNAG ? 'color:#e040fb;' : '') + '">' + esc(f.flightNum) + '</div>'
           + '<div class="icao">' + esc(f.dep) + '</div>'
           + '<div class="icao">' + esc(f.arr) + '</div>'
           + '<div class="days">' + daysHtml + '</div>'
           + '<div style="font-size:0.78rem;color:var(--text-sub);">' + esc(f.aircraft) + '</div>'
           + '<div style="font-family:var(--font-mono);font-size:0.8rem;">' + esc(f.etd) + 'Z</div>'
-          + '<div style="font-size:0.72rem;"><span style="padding:2px 7px;border-radius:6px;background:rgba(0,119,255,0.1);color:var(--blue-light);font-weight:600;">' + esc(f.inspType||'—') + '</span></div>'
+          + '<div style="font-size:0.72rem;"><span style="padding:2px 7px;border-radius:6px;background:' + branchColor + ';color:' + branchText + ';font-weight:600;">' + esc(f.inspType||'—') + '</span></div>'
           + '<div>' + (booked
             ? '<span class="booked-badge">✓ Assigned</span>'
             : '<button class="btn btn-primary book-btn" onclick="bookFlight(\'' + esc(f.flightNum) + '\')">Assign Me</button>')
@@ -286,6 +311,60 @@
           + '<button class="btn btn-sm btn-secondary" onclick="cancelBooking(\'' + esc(b.flightNum) + '\')" style="font-size:0.72rem;">Remove</button>'
           + '</div>';
       }).join('');
+    }
+
+    /* ── Auto-Generate Schedule from Mission Pool ── */
+    async function autoGenerate() {
+      if (!window.db) { showToast('Database not available', 'warn'); return; }
+      var btn = document.getElementById('btn-auto-gen');
+      btn.disabled = true; btn.textContent = '⏳ Generating…';
+
+      try {
+        var pool = window._MISSION_POOL || [];
+        if (!pool.length) { showToast('No mission pool available', 'warn'); btn.disabled = false; btn.textContent = '⚡ Auto-Generate'; return; }
+
+        var dayPatterns = [[1,3,5],[2,4,6],[1,4],[2,5],[3,6],[1,2,3,4,5]];
+        var etds = ['04:00','05:00','05:30','06:00','06:30','07:00','07:30','08:00','09:00','10:00','12:00','14:00'];
+        var count = 0;
+        var batch = window.db.batch();
+
+        pool.forEach(function(m, idx) {
+          if (idx >= 20) return; /* limit batch size */
+          var existing = _schedule.find(function(s) { return s.dep === m.dep && s.arr === m.arr; });
+          if (existing) return;
+
+          var isNAG = m.branch === 'NAG';
+          var flightNum = (isNAG ? 'NAG-A' : 'GFI-A') + String(100 + idx);
+          var typeMap = { 'Charter Flight':'CHARTER', 'Cargo Haul':'CARGO', 'GA Bush Flight':'BUSH', 'Island Hopper':'ISLAND', 'Humanitarian Aid':'HUMANITARIAN',
+            'ILS Calibration':'ILS', 'VOR Check':'VOR', 'RNAV / RNP Check':'RNAV', 'Approach Validation':'RNAV', 'Procedure Validation':'FULL', 'NDB Calibration':'VOR' };
+          var entry = {
+            flightNum: flightNum,
+            dep: m.dep, arr: m.arr,
+            days: dayPatterns[idx % dayPatterns.length],
+            aircraft: m.aircraft || (isNAG ? 'Cessna 208B' : 'King Air 350i'),
+            etd: etds[idx % etds.length],
+            inspType: typeMap[m.type] || 'FULL',
+            label: m.type + ' — ' + m.dep + '→' + m.arr,
+            hub: m.region || 'EUR',
+            branch: m.branch || 'GFIG',
+            autoGenerated: true
+          };
+
+          var ref = window.db.collection('schedule').doc(flightNum);
+          batch.set(ref, entry);
+          _schedule.push(entry);
+          count++;
+        });
+
+        if (count > 0) {
+          await batch.commit();
+          showToast('✓ Generated ' + count + ' new schedule entries from mission pool', 'success');
+          applyFilters();
+        } else {
+          showToast('All pool missions already in schedule', 'info');
+        }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+      btn.disabled = false; btn.textContent = '⚡ Auto-Generate';
     }
 
     document.addEventListener('gfig:authready', function() { loadSchedule(); });

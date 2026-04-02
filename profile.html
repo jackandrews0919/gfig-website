@@ -15,6 +15,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
   <script src="js/firebase.js"></script>
   <script src="js/db.js"></script>
 </head>
@@ -75,12 +76,18 @@
 
       <!-- Profile Hero -->
       <div class="profile-hero">
-        <div class="profile-avatar" id="profile-avatar">IN</div>
+        <div class="profile-avatar" id="profile-avatar" onclick="document.getElementById('avatar-upload').click()" style="cursor:pointer;position:relative;overflow:hidden;" title="Click to change photo">
+          <span id="avatar-text">IN</span>
+          <img id="avatar-img" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:50%;display:none;">
+          <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);text-align:center;padding:2px 0;font-size:0.55rem;letter-spacing:0.06em;color:#fff;font-family:var(--font-body);font-weight:600;">📷 EDIT</div>
+        </div>
+        <input type="file" id="avatar-upload" accept="image/*" style="display:none;" onchange="uploadAvatar(this)">
         <div class="profile-info">
           <div class="profile-name" id="profile-name">Inspector</div>
           <div class="profile-callsign" id="profile-callsign">— &nbsp;|&nbsp; Callsign: —</div>
           <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
             <span class="rank-badge rank-junior" id="profile-rank-badge">Trainee Inspector</span>
+            <span class="branch-badge branch-gfig" id="profile-branch-badge">✈ GFIG</span>
             <span class="badge badge-active">● Online</span>
             <span class="badge" id="profile-vatsim-badge" style="display:none;background:#26A69A;color:#fff;"></span>
           </div>
@@ -289,6 +296,14 @@
                 <input type="text" id="set-callsign" class="admin-input" readonly style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text-muted);font-size:0.85rem;cursor:not-allowed;opacity:0.7;">
               </div>
               <div>
+                <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">BRANCH</label>
+                <select id="set-branch" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;">
+                  <option value="GFIG">✈ GFIG — Flight Inspection Group</option>
+                  <option value="NAG">🌍 NAG — Nomadic Aviation Group</option>
+                </select>
+                <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">Select the division you operate under.</div>
+              </div>
+              <div>
                 <label style="display:block;font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">HOME REGION</label>
                 <select id="set-region" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:0.85rem;">
                   <option value="">Select region…</option>
@@ -416,15 +431,79 @@
 
     var _profileUser = null;
 
+    /* ── Avatar Upload ── */
+    async function uploadAvatar(input) {
+      if (!_profileUser) { showToast('Sign in first', 'warn'); return; }
+      var file = input.files && input.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) { showToast('Please select an image file', 'warn'); return; }
+      if (file.size > 5 * 1024 * 1024) { showToast('Image must be under 5 MB', 'warn'); return; }
+
+      showToast('Uploading photo…', 'info');
+      try {
+        /* Resize to 256x256 for consistency */
+        var dataUrl = await resizeImage(file, 256);
+        var storage = firebase.storage();
+        var ref = storage.ref('avatars/' + _profileUser.uid + '.jpg');
+        await ref.putString(dataUrl, 'data_url');
+        var url = await ref.getDownloadURL();
+
+        /* Save URL to Firestore user doc */
+        await firebase.firestore().collection('users').doc(_profileUser.uid).update({ photoURL: url });
+
+        /* Update UI immediately */
+        var img = document.getElementById('avatar-img');
+        if (img) { img.src = url; img.style.display = ''; }
+        document.getElementById('avatar-text').style.display = 'none';
+
+        /* Update nav avatar too */
+        document.querySelectorAll('.nav-avatar').forEach(function(el) {
+          el.innerHTML = '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+        });
+
+        showToast('✓ Profile photo updated', 'success');
+      } catch(e) {
+        console.error('Avatar upload error:', e);
+        showToast('Upload failed: ' + e.message, 'error');
+      }
+      input.value = '';
+    }
+
+    function resizeImage(file, maxSize) {
+      return new Promise(function(resolve) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            var canvas = document.createElement('canvas');
+            canvas.width = maxSize;
+            canvas.height = maxSize;
+            var ctx = canvas.getContext('2d');
+            /* Center-crop to square */
+            var s = Math.min(img.width, img.height);
+            var sx = (img.width - s) / 2;
+            var sy = (img.height - s) / 2;
+            ctx.drawImage(img, sx, sy, s, s, 0, 0, maxSize, maxSize);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     async function saveProfileSettings() {
       if (!_profileUser || !firebase.firestore) return;
       var data = {};
       var region = document.getElementById('set-region').value;
       var tz = document.getElementById('set-tz').value;
+      var branch = document.getElementById('set-branch').value;
       if (region) data.region = region;
       if (tz) data.timezone = tz;
+      if (branch) data.branch = branch;
       try {
         await firebase.firestore().collection('users').doc(_profileUser.uid).update(data);
+        updateBranchBadge(branch);
         if (typeof showToast === 'function') showToast('Profile saved!', 'success');
       } catch(e) { if (typeof showToast === 'function') showToast('Error: ' + e.message, 'error'); }
     }
@@ -448,11 +527,21 @@
       if (user.callsign) document.getElementById('set-callsign').value = user.callsign;
       if (user.region) document.getElementById('set-region').value = user.region;
       if (user.timezone) document.getElementById('set-tz').value = user.timezone;
+      if (user.branch) document.getElementById('set-branch').value = user.branch;
       if (user.simbriefId) document.getElementById('set-simbrief').value = user.simbriefId;
       if (user.vatsimCid) document.getElementById('set-vatsim').value = user.vatsimCid;
       if (user.ivaoVid) document.getElementById('set-ivao').value = user.ivaoVid;
       if (user.medicalExpiry) document.getElementById('set-medical').value = user.medicalExpiry;
       if (user.bfrDate) document.getElementById('set-bfr').value = user.bfrDate;
+    }
+
+    function updateBranchBadge(branchId) {
+      var badge = document.getElementById('profile-branch-badge');
+      if (!badge) return;
+      var info = window.getBranchInfo ? window.getBranchInfo(branchId) : null;
+      if (!info) return;
+      badge.textContent = info.icon + ' ' + info.short;
+      badge.className = 'branch-badge branch-' + info.id.toLowerCase();
     }
 
     async function saveCurrencyDates() {
@@ -498,7 +587,16 @@
       const av = document.getElementById('profile-avatar');
       const nm = document.getElementById('profile-name');
       const cs = document.getElementById('profile-callsign');
-      if (av) av.textContent = user.avatar || (user.name || 'XX').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      if (av) {
+        var avatarText = document.getElementById('avatar-text');
+        var avatarImg  = document.getElementById('avatar-img');
+        if (user.photoURL) {
+          if (avatarImg) { avatarImg.src = user.photoURL; avatarImg.style.display = ''; }
+          if (avatarText) avatarText.style.display = 'none';
+        } else {
+          if (avatarText) avatarText.textContent = user.avatar || (user.name || 'XX').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        }
+      }
       if (nm) nm.textContent = user.name || 'Inspector';
       if (cs) {
         var memberNum = user.memberNumber || '';
@@ -515,6 +613,9 @@
       if (regionEl) regionEl.textContent  = '🌍 Region: '  + (user.region      || '—');
       if (netEl)    netEl.textContent     = '🖥 Network: ' + (user.network     || '—');
       if (ptsMetaEl) ptsMetaEl.textContent = '⭐ ' + ((user.points || 0).toLocaleString()) + ' Inspector Points';
+
+      /* Branch badge */
+      updateBranchBadge(user.branch || 'GFIG');
 
       /* Stats row */
       const smEl  = document.getElementById('stat-missions');
@@ -578,7 +679,13 @@
       const navAvEl = document.querySelector('.nav-avatar');
       const navNmEl = document.querySelector('.nav-pilot-name');
       const navRkEl = document.querySelector('.nav-pilot-rank');
-      if (navAvEl) navAvEl.textContent = user.avatar || (user.name || 'XX').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      if (navAvEl) {
+        if (user.photoURL) {
+          navAvEl.innerHTML = '<img src="' + user.photoURL + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+        } else {
+          navAvEl.textContent = user.avatar || (user.name || 'XX').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        }
+      }
       if (navNmEl) navNmEl.textContent = user.name  || 'Inspector';
       if (navRkEl) navRkEl.textContent = displayRank  || 'Inspector';
 

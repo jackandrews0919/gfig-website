@@ -260,6 +260,7 @@
               <div id="dash-status-name" style="font-weight:700; font-size:1rem; margin-bottom:3px;">Inspector</div>
               <div id="dash-status-callsign" style="font-family:var(--font-mono); color:var(--blue-light); font-size:0.82rem; margin-bottom:10px;">—</div>
               <span id="dash-status-rank-badge" class="rank-badge rank-junior">Trainee Inspector</span>
+              <span id="dash-status-branch-badge" class="branch-badge branch-gfig" style="margin-left:6px;">✈ GFIG</span>
             </div>
             <hr class="divider">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; text-align:center;">
@@ -290,11 +291,38 @@
             <div class="text-xs text-muted mt-8" data-rank-progress style="text-align:right;">0 / 500</div>
           </div>
 
+          <!-- Wallet / Economy -->
+          <div class="card mb-24">
+            <div class="card-header">
+              <span class="card-title">💰 G-Credits Wallet</span>
+              <span class="badge badge-active" id="wallet-balance-badge">G$ 0</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center;padding:8px 0 16px;">
+              <div>
+                <div id="wallet-earned" style="font-family:var(--font-head);font-size:1.15rem;font-weight:700;color:var(--pass);">G$ 0</div>
+                <div class="text-sm text-muted mt-4">Total Earned</div>
+              </div>
+              <div>
+                <div id="wallet-spent" style="font-family:var(--font-head);font-size:1.15rem;font-weight:700;color:var(--orange);">G$ 0</div>
+                <div class="text-sm text-muted mt-4">Total Spent</div>
+              </div>
+            </div>
+            <hr class="divider">
+            <div style="font-size:0.72rem;color:var(--text-sub);margin-bottom:8px;font-weight:600;">Recent Transactions</div>
+            <div id="wallet-transactions" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;">
+              <div style="text-align:center;color:var(--text-muted);padding:12px;font-size:0.78rem;">Loading…</div>
+            </div>
+          </div>
+
           <!-- Leaderboard -->
           <div class="card mb-24">
             <div class="card-header">
-              <span class="card-title">Top Inspectors</span>
-              <span class="text-xs text-sub">This Month</span>
+              <span class="card-title">Top Pilots</span>
+              <div style="display:flex;gap:4px;">
+                <button class="lb-tab active" data-lb-branch="all" onclick="switchLeaderboard('all',this)">All</button>
+                <button class="lb-tab" data-lb-branch="GFIG" onclick="switchLeaderboard('GFIG',this)">✈ GFIG</button>
+                <button class="lb-tab" data-lb-branch="NAG" onclick="switchLeaderboard('NAG',this)">🌍 NAG</button>
+              </div>
             </div>
             <div id="leaderboard-list">
               <div style="text-align:center;padding:32px;color:var(--text-muted);font-family:var(--font-head);font-size:0.78rem;letter-spacing:0.08em;">NO DATA YET</div>

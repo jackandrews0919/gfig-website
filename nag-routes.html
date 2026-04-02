@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAG Route Map — GFIG</title>
+  <meta name="description" content="Nomadic Aviation Group route network — charter, cargo, bush & humanitarian routes visualised on a global map.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <style>
+    #route-map { width:100%; height:65vh; min-height:420px; border-radius:var(--r-lg); border:1px solid var(--border); }
+    .route-sidebar { display:flex; flex-direction:column; gap:10px; max-height:65vh; overflow-y:auto; }
+    .route-card { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-secondary); border-radius:var(--r-md); cursor:pointer; transition:background 0.15s; border-left:3px solid #e040fb; }
+    .route-card:hover { background:var(--bg-card); }
+    .route-card.active { background:rgba(224,64,251,0.08); border-left-color:#e040fb; }
+    .route-card .r-code { font-family:var(--font-mono); font-weight:700; color:#e040fb; font-size:0.82rem; min-width:100px; }
+    .route-card .r-type { font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; }
+    .route-card .r-aircraft { font-size:0.72rem; color:var(--text-sub); }
+    .route-legend { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+    .legend-item { display:flex; align-items:center; gap:6px; font-size:0.75rem; color:var(--text-sub); }
+    .legend-dot { width:12px; height:12px; border-radius:50%; }
+    .route-filter { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .route-filter button { padding:6px 14px; border-radius:var(--r-full); font-size:0.75rem; font-weight:600; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text-sub); cursor:pointer; transition:all 0.15s; }
+    .route-filter button.active { background:#e040fb; border-color:#e040fb; color:#fff; }
+    .leaflet-popup-content-wrapper { background:var(--bg-card)!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:10px!important; }
+    .leaflet-popup-tip { background:var(--bg-card)!important; }
+    .leaflet-popup-content { font-family:'Inter',sans-serif; font-size:0.82rem; }
+    @media(max-width:900px) { .map-layout { grid-template-columns:1fr!important; } .route-sidebar { max-height:300px; } }
+  </style>
+</head>
+<body>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="nag.html" class="nav-link" style="color:#e040fb;">🌍 NAG</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name">Member</div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>🌍 NAG Route Network</h1>
+          <p>Charter, cargo, bush & humanitarian routes across 6 continents</p>
+        </div>
+        <a href="nag.html" class="btn btn-secondary">← Back to NAG</a>
+      </div>
+
+      <!-- Legend -->
+      <div class="route-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#e040fb;"></div> Charter</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff6a00;"></div> Cargo</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00e676;"></div> Bush Flight</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#40aaff;"></div> Island Hopper</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff1744;"></div> Humanitarian</div>
+      </div>
+
+      <!-- Filter -->
+      <div class="route-filter">
+        <button class="active" data-filter="all" onclick="filterRoutes('all',this)">All Routes</button>
+        <button data-filter="Charter Flight" onclick="filterRoutes('Charter Flight',this)">Charter</button>
+        <button data-filter="Cargo Haul" onclick="filterRoutes('Cargo Haul',this)">Cargo</button>
+        <button data-filter="GA Bush Flight" onclick="filterRoutes('GA Bush Flight',this)">Bush</button>
+        <button data-filter="Island Hopper" onclick="filterRoutes('Island Hopper',this)">Island Hopper</button>
+        <button data-filter="Humanitarian Aid" onclick="filterRoutes('Humanitarian Aid',this)">Humanitarian</button>
+      </div>
+
+      <!-- Map + Sidebar -->
+      <div class="map-layout" style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div id="route-map"></div>
+        </div>
+        <div class="route-sidebar" id="route-sidebar">
+          <div style="text-align:center;color:var(--text-muted);padding:24px;">Loading routes…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-bottom">
+        <span>© 2026 Global Flight Inspection Group · Nomadic Aviation Group</span>
+        <span>Not affiliated with any real-world aviation authority.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    var map = L.map('route-map', { zoomControl: true }).setView([20, 20], 2);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap, &copy; CARTO', maxZoom: 18
+    }).addTo(map);
+
+    /* Airport coordinates lookup */
+    var AIRPORTS = {
+      EGLL:[51.47,-0.46],LFPG:[49.01,2.55],LOWI:[47.26,11.34],EDDM:[48.35,11.79],LDSP:[43.54,16.30],LIRF:[41.80,12.25],
+      LGAV:[37.94,23.94],LTFM:[41.26,28.74],KJFK:[40.64,-73.78],KMIA:[25.79,-80.29],KLAS:[36.08,-115.15],KLAX:[33.94,-118.41],
+      CYUL:[45.47,-73.74],CYYZ:[43.68,-79.63],OMDB:[25.25,55.36],OEJN:[21.68,39.16],VHHH:[22.31,113.91],WSSS:[1.36,103.99],
+      FAOR:[-26.14,28.24],FALE:[-29.61,31.12],PANC:[61.17,-149.99],RKSI:[37.46,126.44],EDDF:[50.03,8.57],KMEM:[35.04,-89.98],
+      YSSY:[-33.95,151.18],EHAM:[52.31,4.76],DNMM:[6.58,3.32],LEMD:[40.47,-3.57],SBGR:[-23.43,-46.47],
+      EGPD:[57.20,-2.20],EGPC:[58.46,-3.09],FVCP:[-15.65,28.59],NZQN:[-45.02,168.74],NZMF:[-44.67,167.92],
+      PAJN:[58.35,-134.58],PAYA:[59.50,-139.66],SCCI:[-53.00,-70.85],SCTE:[-38.77,-72.64],RPLL:[14.51,121.02],RPVM:[10.31,123.98],
+      HKJK:[-1.32,36.93],HUEN:[0.04,32.44],VNKT:[27.70,85.36],VQPR:[27.59,88.73],TNCM:[18.04,-63.11],TKPK:[17.31,-62.72]
+    };
+
+    var TYPE_COLORS = {
+      'Charter Flight': '#e040fb',
+      'Cargo Haul': '#ff6a00',
+      'GA Bush Flight': '#00e676',
+      'Island Hopper': '#40aaff',
+      'Humanitarian Aid': '#ff1744'
+    };
+
+    /* NAG routes from mission pool */
+    var NAG_ROUTES = [
+      {dep:'EGLL',arr:'LFPG',type:'Charter Flight',aircraft:'CRJ-700',region:'Europe',points:100},
+      {dep:'LOWI',arr:'EDDM',type:'Charter Flight',aircraft:'King Air 350',region:'Europe',points:110},
+      {dep:'LDSP',arr:'LIRF',type:'Charter Flight',aircraft:'Citation CJ4',region:'Europe',points:120},
+      {dep:'LGAV',arr:'LTFM',type:'Charter Flight',aircraft:'Learjet 45',region:'Europe',points:115},
+      {dep:'KJFK',arr:'KMIA',type:'Charter Flight',aircraft:'Challenger 350',region:'North America',points:120},
+      {dep:'KLAS',arr:'KLAX',type:'Charter Flight',aircraft:'Citation Longitude',region:'North America',points:100},
+      {dep:'CYUL',arr:'CYYZ',type:'Charter Flight',aircraft:'Pilatus PC-12',region:'North America',points:95},
+      {dep:'OMDB',arr:'OEJN',type:'Charter Flight',aircraft:'Global 7500',region:'Middle East',points:140},
+      {dep:'VHHH',arr:'WSSS',type:'Charter Flight',aircraft:'Falcon 7X',region:'Asia-Pacific',points:130},
+      {dep:'FAOR',arr:'FALE',type:'Charter Flight',aircraft:'King Air B200',region:'Africa',points:110},
+      {dep:'PANC',arr:'RKSI',type:'Cargo Haul',aircraft:'Boeing 747-8F',region:'Asia-Pacific',points:180},
+      {dep:'EDDF',arr:'OMDB',type:'Cargo Haul',aircraft:'Boeing 777F',region:'Europe',points:170},
+      {dep:'KMEM',arr:'KJFK',type:'Cargo Haul',aircraft:'Airbus A300-600F',region:'North America',points:140},
+      {dep:'VHHH',arr:'YSSY',type:'Cargo Haul',aircraft:'Boeing 747-400F',region:'Asia-Pacific',points:170},
+      {dep:'EHAM',arr:'DNMM',type:'Cargo Haul',aircraft:'Boeing 777F',region:'Africa',points:160},
+      {dep:'LEMD',arr:'SBGR',type:'Cargo Haul',aircraft:'Airbus A330-200F',region:'Latin America',points:180},
+      {dep:'EGPD',arr:'EGPC',type:'GA Bush Flight',aircraft:'Cessna 208 Caravan',region:'Europe',points:80},
+      {dep:'FALE',arr:'FVCP',type:'GA Bush Flight',aircraft:'DHC-6 Twin Otter',region:'Africa',points:90},
+      {dep:'NZQN',arr:'NZMF',type:'GA Bush Flight',aircraft:'Pilatus PC-6',region:'Asia-Pacific',points:85},
+      {dep:'PAJN',arr:'PAYA',type:'GA Bush Flight',aircraft:'DHC-2 Beaver',region:'North America',points:85},
+      {dep:'SCCI',arr:'SCTE',type:'GA Bush Flight',aircraft:'Cessna 208 Caravan',region:'Latin America',points:90},
+      {dep:'RPLL',arr:'RPVM',type:'Island Hopper',aircraft:'ATR 72-600',region:'Asia-Pacific',points:95},
+      {dep:'HKJK',arr:'HUEN',type:'Humanitarian Aid',aircraft:'C-130 Hercules',region:'Africa',points:150},
+      {dep:'VNKT',arr:'VQPR',type:'Humanitarian Aid',aircraft:'DHC-6 Twin Otter',region:'Asia-Pacific',points:130},
+      {dep:'TNCM',arr:'TKPK',type:'Humanitarian Aid',aircraft:'Cessna 208 Caravan',region:'Latin America',points:110}
+    ];
+
+    var routeLines = [];
+    var routeMarkers = [];
+    var activeFilter = 'all';
+
+    function drawRoutes(filter) {
+      /* Clear existing */
+      routeLines.forEach(function(l) { map.removeLayer(l); });
+      routeMarkers.forEach(function(m) { map.removeLayer(m); });
+      routeLines = [];
+      routeMarkers = [];
+
+      var sidebar = document.getElementById('route-sidebar');
+      sidebar.innerHTML = '';
+      var drawnAirports = {};
+
+      var routes = filter === 'all' ? NAG_ROUTES : NAG_ROUTES.filter(function(r) { return r.type === filter; });
+
+      routes.forEach(function(route, idx) {
+        var depCoord = AIRPORTS[route.dep];
+        var arrCoord = AIRPORTS[route.arr];
+        if (!depCoord || !arrCoord) return;
+
+        var color = TYPE_COLORS[route.type] || '#e040fb';
+
+        /* Draw great circle line */
+        var line = L.polyline([depCoord, arrCoord], {
+          color: color, weight: 2, opacity: 0.7, dashArray: '6,4'
+        }).addTo(map);
+        line.bindPopup('<div style="font-family:var(--font-head);letter-spacing:0.06em;"><strong style="color:' + color + ';">' + route.dep + ' → ' + route.arr + '</strong><br><span style="font-size:0.78rem;">' + route.type + '</span><br><span style="font-size:0.75rem;color:#aaa;">Aircraft: ' + route.aircraft + '</span><br><span style="font-size:0.75rem;color:#aaa;">Points: ' + route.points + '</span></div>');
+        routeLines.push(line);
+
+        /* Dep marker */
+        if (!drawnAirports[route.dep]) {
+          var m1 = L.circleMarker(depCoord, { radius: 5, color: color, fillColor: color, fillOpacity: 0.8, weight: 1 }).addTo(map);
+          m1.bindTooltip(route.dep, { permanent: false, direction: 'top', className: '' });
+          routeMarkers.push(m1);
+          drawnAirports[route.dep] = true;
+        }
+        /* Arr marker */
+        if (!drawnAirports[route.arr]) {
+          var m2 = L.circleMarker(arrCoord, { radius: 5, color: color, fillColor: color, fillOpacity: 0.8, weight: 1 }).addTo(map);
+          m2.bindTooltip(route.arr, { permanent: false, direction: 'top', className: '' });
+          routeMarkers.push(m2);
+          drawnAirports[route.arr] = true;
+        }
+
+        /* Sidebar card */
+        var card = document.createElement('div');
+        card.className = 'route-card';
+        card.innerHTML = '<div><div class="r-code">' + route.dep + ' → ' + route.arr + '</div><div class="r-type">' + route.type + '</div></div><div style="margin-left:auto;text-align:right;"><div class="r-aircraft">' + route.aircraft + '</div><div style="font-size:0.7rem;color:#e040fb;font-weight:600;">' + route.points + ' pts</div></div>';
+        card.onclick = (function(depC, arrC, ln) {
+          return function() {
+            map.fitBounds([depC, arrC], { padding: [60, 60] });
+            ln.openPopup();
+          };
+        })(depCoord, arrCoord, line);
+        sidebar.appendChild(card);
+      });
+
+      if (!routes.length) {
+        sidebar.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;">No routes for this filter</div>';
+      }
+    }
+
+    function filterRoutes(type, btn) {
+      activeFilter = type;
+      document.querySelectorAll('.route-filter button').forEach(function(b) { b.classList.remove('active'); });
+      if (btn) btn.classList.add('active');
+      drawRoutes(type);
+    }
+
+    /* Init */
+    drawRoutes('all');
+  </script>
+</body>
+</html>

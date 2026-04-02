@@ -7,6 +7,40 @@
    ================================================================ */
 
 /* ══════════════════════════════════════════════════════════════
+   BRANCHES
+   ══════════════════════════════════════════════════════════════ */
+
+window.GFIG_BRANCHES = {
+  GFIG: {
+    id:    'GFIG',
+    name:  'Global Flight Inspection Group',
+    short: 'GFIG',
+    color: '#0077ff',
+    icon:  '✈',
+    desc:  'ILS calibration, navaid inspection, and procedure validation operations.'
+  },
+  NAG: {
+    id:    'NAG',
+    name:  'Nomadic Aviation Group',
+    short: 'NAG',
+    color: '#e040fb',
+    icon:  '🌍',
+    desc:  'Charter, cargo, and general aviation operations across the globe.'
+  }
+};
+
+/** Get branch info by id (defaults to GFIG) */
+window.getBranchInfo = function(branchId) {
+  return window.GFIG_BRANCHES[branchId] || window.GFIG_BRANCHES.GFIG;
+};
+
+/** Update a user's branch affiliation */
+window.dbSetUserBranch = async function(uid, branchId) {
+  if (!window.db || !uid) return;
+  await window.db.collection('users').doc(uid).update({ branch: branchId });
+};
+
+/* ══════════════════════════════════════════════════════════════
    UTILITY
    ══════════════════════════════════════════════════════════════ */
 
@@ -205,6 +239,40 @@ const _MISSION_POOL = [
   { icao:'KLAX', nav:'STAR ANGG4',  type:'Procedure Validation', aircraft:'Citation CJ4 (Class C/D)', region:'North America', missionClass:'D', points:160 },
   { icao:'WSSS', nav:'SID BUNTO9D', type:'Procedure Validation', aircraft:'Citation CJ4 (Class C/D)', region:'Asia-Pacific',  missionClass:'D', points:160 },
   { icao:'OMDB', nav:'SID RIDAP2M', type:'Procedure Validation', aircraft:'Citation CJ4 (Class C/D)', region:'Middle East',   missionClass:'D', points:160 },
+
+  // ── NAG · Nomadic Aviation Group — Charter & Cargo ──────────
+  // Charter Routes
+  { icao:'EGLL', dep:'EGLL', arr:'LFPG', type:'Charter Flight',   aircraft:'CRJ-700',        region:'Europe',        missionClass:'NAG', points:100, branch:'NAG', nav:'EGLL → LFPG' },
+  { icao:'LOWI', dep:'LOWI', arr:'EDDM', type:'Charter Flight',   aircraft:'King Air 350',    region:'Europe',        missionClass:'NAG', points:110, branch:'NAG', nav:'LOWI → EDDM' },
+  { icao:'LDSP', dep:'LDSP', arr:'LIRF', type:'Charter Flight',   aircraft:'Citation CJ4',    region:'Europe',        missionClass:'NAG', points:120, branch:'NAG', nav:'LDSP → LIRF' },
+  { icao:'LGAV', dep:'LGAV', arr:'LTFM', type:'Charter Flight',   aircraft:'Learjet 45',      region:'Europe',        missionClass:'NAG', points:115, branch:'NAG', nav:'LGAV → LTFM' },
+  { icao:'KJFK', dep:'KJFK', arr:'KMIA', type:'Charter Flight',   aircraft:'Challenger 350',  region:'North America', missionClass:'NAG', points:120, branch:'NAG', nav:'KJFK → KMIA' },
+  { icao:'KLAS', dep:'KLAS', arr:'KLAX', type:'Charter Flight',   aircraft:'Citation Longitude', region:'North America', missionClass:'NAG', points:100, branch:'NAG', nav:'KLAS → KLAX' },
+  { icao:'CYUL', dep:'CYUL', arr:'CYYZ', type:'Charter Flight',   aircraft:'Pilatus PC-12',   region:'North America', missionClass:'NAG', points:95,  branch:'NAG', nav:'CYUL → CYYZ' },
+  { icao:'OMDB', dep:'OMDB', arr:'OEJN', type:'Charter Flight',   aircraft:'Global 7500',     region:'Middle East',   missionClass:'NAG', points:140, branch:'NAG', nav:'OMDB → OEJN' },
+  { icao:'VHHH', dep:'VHHH', arr:'WSSS', type:'Charter Flight',   aircraft:'Falcon 7X',       region:'Asia-Pacific',  missionClass:'NAG', points:130, branch:'NAG', nav:'VHHH → WSSS' },
+  { icao:'FAOR', dep:'FAOR', arr:'FALE', type:'Charter Flight',   aircraft:'King Air B200',   region:'Africa',        missionClass:'NAG', points:110, branch:'NAG', nav:'FAOR → FALE' },
+
+  // Cargo Routes
+  { icao:'PANC', dep:'PANC', arr:'RKSI', type:'Cargo Haul',       aircraft:'Boeing 747-8F',   region:'Asia-Pacific',  missionClass:'NAG', points:180, branch:'NAG', nav:'PANC → RKSI' },
+  { icao:'EDDF', dep:'EDDF', arr:'OMDB', type:'Cargo Haul',       aircraft:'Boeing 777F',     region:'Europe',        missionClass:'NAG', points:170, branch:'NAG', nav:'EDDF → OMDB' },
+  { icao:'KMEM', dep:'KMEM', arr:'KJFK', type:'Cargo Haul',       aircraft:'Airbus A300-600F', region:'North America', missionClass:'NAG', points:140, branch:'NAG', nav:'KMEM → KJFK' },
+  { icao:'VHHH', dep:'VHHH', arr:'YSSY', type:'Cargo Haul',       aircraft:'Boeing 747-400F', region:'Asia-Pacific',  missionClass:'NAG', points:170, branch:'NAG', nav:'VHHH → YSSY' },
+  { icao:'EHAM', dep:'EHAM', arr:'DNMM', type:'Cargo Haul',       aircraft:'Boeing 777F',     region:'Africa',        missionClass:'NAG', points:160, branch:'NAG', nav:'EHAM → DNMM' },
+  { icao:'LEMD', dep:'LEMD', arr:'SBGR', type:'Cargo Haul',       aircraft:'Airbus A330-200F', region:'Latin America', missionClass:'NAG', points:180, branch:'NAG', nav:'LEMD → SBGR' },
+
+  // GA / Bush Flying
+  { icao:'EGPD', dep:'EGPD', arr:'EGPC', type:'GA Bush Flight',   aircraft:'Cessna 208 Caravan', region:'Europe',     missionClass:'NAG', points:80,  branch:'NAG', nav:'EGPD → EGPC' },
+  { icao:'FALE', dep:'FALE', arr:'FVCP', type:'GA Bush Flight',   aircraft:'DHC-6 Twin Otter',   region:'Africa',     missionClass:'NAG', points:90,  branch:'NAG', nav:'FALE → FVCP' },
+  { icao:'NZQN', dep:'NZQN', arr:'NZMF', type:'GA Bush Flight',   aircraft:'Pilatus PC-6',       region:'Asia-Pacific', missionClass:'NAG', points:85,  branch:'NAG', nav:'NZQN → NZMF' },
+  { icao:'PAJN', dep:'PAJN', arr:'PAYA', type:'GA Bush Flight',   aircraft:'DHC-2 Beaver',       region:'North America', missionClass:'NAG', points:85,  branch:'NAG', nav:'PAJN → PAYA' },
+  { icao:'SCCI', dep:'SCCI', arr:'SCTE', type:'GA Bush Flight',   aircraft:'Cessna 208 Caravan', region:'Latin America', missionClass:'NAG', points:90,  branch:'NAG', nav:'SCCI → SCTE' },
+  { icao:'RPLL', dep:'RPLL', arr:'RPVM', type:'Island Hopper',    aircraft:'ATR 72-600',         region:'Asia-Pacific',  missionClass:'NAG', points:95,  branch:'NAG', nav:'RPLL → RPVM' },
+
+  // Humanitarian / Aid Flights
+  { icao:'HKJK', dep:'HKJK', arr:'HUEN', type:'Humanitarian Aid', aircraft:'C-130 Hercules',  region:'Africa',        missionClass:'NAG', points:150, branch:'NAG', nav:'HKJK → HUEN' },
+  { icao:'VNKT', dep:'VNKT', arr:'VQPR', type:'Humanitarian Aid', aircraft:'DHC-6 Twin Otter', region:'Asia-Pacific', missionClass:'NAG', points:130, branch:'NAG', nav:'VNKT → VQPR' },
+  { icao:'TNCM', dep:'TNCM', arr:'TKPK', type:'Humanitarian Aid', aircraft:'Cessna 208 Caravan', region:'Latin America', missionClass:'NAG', points:110, branch:'NAG', nav:'TNCM → TKPK' },
 ];
 
 /** Auto-generate N missions from the built-in pool */
@@ -213,8 +281,9 @@ window.dbAutoGenerateMissions = async function(count, opts) {
   opts  = opts || {};
   if (!window.db) throw new Error('Not connected');
   let pool = _MISSION_POOL.slice();
-  if (opts.region && opts.region !== 'All Regions') pool = pool.filter(m => m.region === opts.region);
-  if (opts.type   && opts.type   !== 'All Types')   pool = pool.filter(m => m.type   === opts.type);
+  if (opts.branch && opts.branch !== 'All')          pool = pool.filter(m => (m.branch || 'GFIG') === opts.branch);
+  if (opts.region && opts.region !== 'All Regions')   pool = pool.filter(m => m.region === opts.region);
+  if (opts.type   && opts.type   !== 'All Types')     pool = pool.filter(m => m.type   === opts.type);
   if (!pool.length) throw new Error('No missions match the selected filters');
   // Fisher-Yates shuffle
   for (let i = pool.length - 1; i > 0; i--) {
@@ -226,15 +295,16 @@ window.dbAutoGenerateMissions = async function(count, opts) {
     const id = await dbCreateMission({
       icao:         m.icao,
       nav:          m.nav,
-      title:        m.icao + ' ' + m.nav,
-      dep:          m.icao,
-      arr:          m.icao,
+      title:        m.dep && m.arr && m.dep !== m.arr ? m.dep + ' → ' + m.arr : m.icao + ' ' + m.nav,
+      dep:          m.dep || m.icao,
+      arr:          m.arr || m.icao,
       type:         m.type,
       aircraft:     m.aircraft,
       region:       m.region,
       priority:     opts.priority || 'Standard',
       points:       m.points,
-      missionClass: 'Class ' + m.missionClass,
+      missionClass: m.missionClass === 'NAG' ? 'NAG' : 'Class ' + m.missionClass,
+      branch:       m.branch || 'GFIG',
       autoGenerated: true
     });
     ids.push(id);
@@ -399,6 +469,17 @@ window.dbSubmitReport = async function(reportData) {
     }).catch(() => {});
     /* Check and unlock milestone awards */
     try { await window.dbCheckAndUnlockAwards(user.uid); } catch(e) {}
+
+    /* Economy: credit wallet for completed mission */
+    try {
+      var mType = reportData.type || reportData.missionType || 'default';
+      var revenue = window.calcFlightRevenue(mType, reportData.distanceNM || 0);
+      if (reportData.result === 'fail') revenue = Math.round(revenue * 0.25);
+      else if (reportData.result === 'monitor') revenue = Math.round(revenue * 0.6);
+      await window.dbCreditWallet(user.uid, revenue, mType + ' — ' + (reportData.missionId || 'mission'));
+      var userBranch = user.branch || 'GFIG';
+      await window.dbUpdateEconomyStats(revenue, userBranch);
+    } catch(e) { console.warn('Economy credit:', e); }
   }
 
   /* Activity log */
@@ -1212,4 +1293,103 @@ window.dbGetChannelContent = async function() {
     var doc = await window.db.collection('settings').doc('discord_channels').get();
     return doc.exists ? doc.data() : {};
   } catch(e) { return {}; }
+};
+
+/* ══════════════════════════════════════════════════════════════
+   VIRTUAL ECONOMY
+   NAG earns revenue from flights; GFIG is funded by operations.
+   Currency: G-Credits (G$)
+   ══════════════════════════════════════════════════════════════ */
+
+/** Revenue rates per mission type */
+window.ECONOMY_RATES = {
+  'Charter Flight':   { base: 8500,  perNM: 12  },
+  'Cargo Haul':       { base: 15000, perNM: 8   },
+  'GA Bush Flight':   { base: 2500,  perNM: 18  },
+  'Island Hopper':    { base: 3200,  perNM: 15  },
+  'Humanitarian Aid': { base: 5000,  perNM: 5   },
+  'ILS Calibration':  { base: 12000, perNM: 0   },
+  'VOR Check':        { base: 8000,  perNM: 0   },
+  'RNAV / RNP Check': { base: 14000, perNM: 0   },
+  'Approach Validation': { base: 11000, perNM: 0 },
+  'Procedure Validation': { base: 16000, perNM: 0 },
+  'NDB Calibration':  { base: 7000,  perNM: 0   },
+  'default':          { base: 5000,  perNM: 5   }
+};
+
+/** Calculate flight revenue */
+window.calcFlightRevenue = function(missionType, distanceNM) {
+  var rate = window.ECONOMY_RATES[missionType] || window.ECONOMY_RATES['default'];
+  return Math.round(rate.base + (rate.perNM * (distanceNM || 0)));
+};
+
+/** Get a pilot's wallet */
+window.dbGetWallet = async function(uid) {
+  if (!window.db || !uid) return { balance: 0, totalEarned: 0, totalSpent: 0, transactions: [] };
+  try {
+    var doc = await window.db.collection('wallets').doc(uid).get();
+    if (doc.exists) return { id: doc.id, ...doc.data() };
+    /* Create wallet on first access */
+    var newWallet = { balance: 1000, totalEarned: 1000, totalSpent: 0, createdAt: window.serverTimestamp() };
+    await window.db.collection('wallets').doc(uid).set(newWallet);
+    return newWallet;
+  } catch(e) { return { balance: 0, totalEarned: 0, totalSpent: 0 }; }
+};
+
+/** Credit a pilot's wallet */
+window.dbCreditWallet = async function(uid, amount, reason) {
+  if (!window.db || !uid || !amount) return;
+  await window.db.collection('wallets').doc(uid).set({
+    balance: window.increment(amount),
+    totalEarned: window.increment(amount)
+  }, { merge: true });
+  await window.db.collection('wallet_transactions').add({
+    uid: uid, type: 'credit', amount: amount,
+    reason: reason || 'Flight revenue',
+    createdAt: window.serverTimestamp()
+  });
+};
+
+/** Debit a pilot's wallet */
+window.dbDebitWallet = async function(uid, amount, reason) {
+  if (!window.db || !uid || !amount) return;
+  var wallet = await window.dbGetWallet(uid);
+  if (wallet.balance < amount) throw new Error('Insufficient G-Credits');
+  await window.db.collection('wallets').doc(uid).set({
+    balance: window.increment(-amount),
+    totalSpent: window.increment(amount)
+  }, { merge: true });
+  await window.db.collection('wallet_transactions').add({
+    uid: uid, type: 'debit', amount: amount,
+    reason: reason || 'Purchase',
+    createdAt: window.serverTimestamp()
+  });
+};
+
+/** Get recent transactions for a pilot */
+window.dbGetTransactions = async function(uid, limit) {
+  if (!window.db || !uid) return [];
+  try {
+    var snap = await window.db.collection('wallet_transactions')
+      .where('uid', '==', uid).orderBy('createdAt', 'desc').limit(limit || 20).get();
+    return snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+  } catch(e) { return []; }
+};
+
+/** Get org-wide economy stats */
+window.dbGetEconomyStats = async function() {
+  if (!window.db) return { totalRevenue: 0, nagRevenue: 0, gfigFunding: 0 };
+  try {
+    var doc = await window.db.collection('settings').doc('economy').get();
+    return doc.exists ? doc.data() : { totalRevenue: 0, nagRevenue: 0, gfigFunding: 0 };
+  } catch(e) { return { totalRevenue: 0, nagRevenue: 0, gfigFunding: 0 }; }
+};
+
+/** Update org economy totals (called after revenue is earned) */
+window.dbUpdateEconomyStats = async function(amount, branch) {
+  if (!window.db) return;
+  var update = { totalRevenue: window.increment(amount) };
+  if (branch === 'NAG') update.nagRevenue = window.increment(amount);
+  else update.gfigFunding = window.increment(amount);
+  await window.db.collection('settings').doc('economy').set(update, { merge: true });
 };

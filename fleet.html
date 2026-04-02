@@ -88,6 +88,13 @@
         <div class="fleet-stat"><div class="fleet-stat-val" id="fs-maint">0</div><div class="fleet-stat-lbl">In Maintenance</div></div>
       </div>
 
+      <!-- Branch Filter -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;">
+        <button class="lb-tab active" onclick="filterFleetBranch('all',this)">All Fleet</button>
+        <button class="lb-tab" onclick="filterFleetBranch('GFIG',this)">✈ GFIG</button>
+        <button class="lb-tab" onclick="filterFleetBranch('NAG',this)">🌍 NAG</button>
+      </div>
+
       <!-- Add Aircraft Form -->
       <div class="fleet-form" id="fleet-form">
         <h3 style="font-family:var(--font-head);letter-spacing:0.08em;margin-bottom:16px;">ADD AIRCRAFT</h3>
@@ -102,6 +109,12 @@
               <option value="active">Active</option>
               <option value="maintenance">In Maintenance</option>
               <option value="retired">Retired</option>
+            </select>
+          </div>
+          <div class="fleet-form-group"><label>BRANCH</label>
+            <select id="ac-branch">
+              <option value="GFIG">✈ GFIG — Inspection</option>
+              <option value="NAG">🌍 NAG — Nomadic Aviation</option>
             </select>
           </div>
           <div class="fleet-form-group"><label>MAX PAX</label><input type="number" id="ac-pax" placeholder="e.g. 189"></div>
@@ -146,6 +159,7 @@
         livery: (document.getElementById('ac-livery').value||'').trim(),
         baseAirport: (document.getElementById('ac-base').value||'').trim().toUpperCase(),
         status: document.getElementById('ac-status').value,
+        branch: document.getElementById('ac-branch').value,
         maxPax: parseInt(document.getElementById('ac-pax').value) || 0,
         range: parseInt(document.getElementById('ac-range').value) || 0,
         cruiseSpeed: parseInt(document.getElementById('ac-speed').value) || 0,
@@ -171,7 +185,8 @@
           + '<div class="fleet-card-body">'
           + '<div class="fleet-card-title">' + esc(a.type) + '</div>'
           + '<div class="fleet-card-sub">' + esc(a.registration) + (a.icaoCode ? ' · ' + esc(a.icaoCode) : '') + (a.livery ? ' · ' + esc(a.livery) : '') + '</div>'
-          + '<div style="margin-bottom:10px;"><span class="fleet-status ' + statusCls + '">' + esc(a.status || 'active') + '</span></div>'
+          + '<div style="margin-bottom:10px;display:flex;gap:6px;align-items:center;"><span class="fleet-status ' + statusCls + '">' + esc(a.status || 'active') + '</span>'
+          + '<span class="branch-badge branch-' + ((a.branch||'GFIG').toLowerCase()) + '" style="font-size:0.62rem;padding:1px 6px;">' + (a.branch==='NAG'?'🌍 NAG':'✈ GFIG') + '</span></div>'
           + '<dl class="fleet-card-specs">'
           + (a.baseAirport ? '<dt>Base</dt><dd>' + esc(a.baseAirport) + '</dd>' : '')
           + (a.maxPax ? '<dt>Passengers</dt><dd>' + a.maxPax + '</dd>' : '')
@@ -207,6 +222,16 @@
       }
       loadFleet();
     });
+
+    var _fleetBranchFilter = 'all';
+    function filterFleetBranch(branch, btn) {
+      _fleetBranchFilter = branch;
+      document.querySelectorAll('.lb-tab').forEach(function(b) { b.classList.remove('active'); });
+      if (btn) btn.classList.add('active');
+      var filtered = branch === 'all' ? _fleet : _fleet.filter(function(a) { return (a.branch || 'GFIG') === branch; });
+      renderFleet(filtered);
+      updateFleetStats(filtered);
+    }
   </script>
 </body>
 </html>

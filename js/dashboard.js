@@ -103,6 +103,14 @@ document.addEventListener('gfig:authready', async (e) => {
   if (dashCallsign) dashCallsign.textContent = user.callsign || '—';
   if (dashRankBadge) { dashRankBadge.textContent = user.rank || 'Trainee Inspector'; dashRankBadge.className = 'rank-badge'; }
 
+  /* Branch badge */
+  const dashBranchBadge = document.getElementById('dash-status-branch-badge');
+  if (dashBranchBadge && window.getBranchInfo) {
+    const bi = window.getBranchInfo(user.branch || 'GFIG');
+    dashBranchBadge.textContent = bi.icon + ' ' + bi.short;
+    dashBranchBadge.className = 'branch-badge branch-' + bi.id.toLowerCase();
+  }
+
   /* Progress bar */
   const rankPts   = { 'Junior Inspector': 500, 'Inspector': 1500, 'Senior Inspector': 3000, 'Chief Inspector': 6000, 'Deputy Director': 12000, 'Director': 999999 };
   const nextRanks = Object.keys(rankPts);
@@ -212,36 +220,52 @@ document.addEventListener('gfig:authready', async (e) => {
   }
 
   /* ── Load leaderboard ── */
+  var _allLeaders = [];
   try {
-    const leaders = await dbGetLeaderboard(6);
-    const lbList  = document.getElementById('leaderboard-list');
-    if (leaders && leaders.length) {
-      if (lbList) {
-        lbList.innerHTML = '';
-        leaders.forEach((leader, i) => {
-          const av   = leader.avatar || (leader.name || 'IN').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-          const isMe = leader.id === user.uid;
-          const item = document.createElement('div');
-          item.className = 'lb-item';
-          if (isMe) item.style.cssText = 'background:rgba(0,119,255,0.05);border-radius:6px;padding:11px 6px;';
-          const rankClasses = ['gold','silver','bronze','','',''];
-          item.innerHTML = `
-            <div class="lb-rank ${rankClasses[i] || ''}">${i + 1}</div>
-            <div class="lb-avatar">${av}</div>
-            <div class="lb-info">
-              <div class="lb-name">${leader.name || '—'}${isMe ? ' <span class="text-xs text-muted">(you)</span>' : ''}</div>
-              <div class="lb-detail">${leader.rank || 'Inspector'} · ${leader.totalMissions || 0} missions</div>
-            </div>
-            <div class="lb-pts">${(leader.points || 0).toLocaleString()}</div>
-          `;
-          lbList.appendChild(item);
-        });
-      }
-    } else if (lbList) {
-      lbList.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-family:var(--font-head);font-size:0.78rem;letter-spacing:0.08em;">NO DATA YET</div>';
-    }
+    const leaders = await dbGetLeaderboard(30);
+    _allLeaders = leaders || [];
+    renderLeaderboard(_allLeaders, 'all', user);
   } catch (err) {
     console.warn('Leaderboard load error:', err.message);
+  }
+
+  /* Branch switching */
+  window._dashboardLeaders = _allLeaders;
+  window._dashboardUser = user;
+  window.switchLeaderboard = function(branch, btn) {
+    document.querySelectorAll('.lb-tab').forEach(function(b) { b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    renderLeaderboard(window._dashboardLeaders, branch, window._dashboardUser);
+  };
+
+  function renderLeaderboard(allLeaders, branch, currentUser) {
+    var filtered = branch === 'all' ? allLeaders : allLeaders.filter(function(l) { return (l.branch || 'GFIG') === branch; });
+    filtered = filtered.slice(0, 6);
+    var lbList = document.getElementById('leaderboard-list');
+    if (!lbList) return;
+    if (!filtered.length) {
+      lbList.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-family:var(--font-head);font-size:0.78rem;letter-spacing:0.08em;">NO DATA YET</div>';
+      return;
+    }
+    lbList.innerHTML = '';
+    filtered.forEach(function(leader, i) {
+      var av   = leader.avatar || (leader.name || 'IN').split(' ').map(function(w) { return w[0]; }).join('').slice(0,2).toUpperCase();
+      var isMe = leader.id === currentUser.uid;
+      var item = document.createElement('div');
+      item.className = 'lb-item';
+      if (isMe) item.style.cssText = 'background:rgba(0,119,255,0.05);border-radius:6px;padding:11px 6px;';
+      var rankClasses = ['gold','silver','bronze','','',''];
+      var bi = window.getBranchInfo ? window.getBranchInfo(leader.branch) : null;
+      var branchTag = bi ? ' <span class="branch-badge branch-' + bi.id.toLowerCase() + '" style="font-size:0.6rem;padding:1px 6px;">' + bi.icon + '</span>' : '';
+      item.innerHTML = '<div class="lb-rank ' + (rankClasses[i] || '') + '">' + (i + 1) + '</div>'
+        + '<div class="lb-avatar">' + av + '</div>'
+        + '<div class="lb-info">'
+        + '<div class="lb-name">' + (leader.name || '—') + branchTag + (isMe ? ' <span class="text-xs text-muted">(you)</span>' : '') + '</div>'
+        + '<div class="lb-detail">' + (leader.rank || 'Inspector') + ' · ' + (leader.totalMissions || 0) + ' missions</div>'
+        + '</div>'
+        + '<div class="lb-pts">' + (leader.points || 0).toLocaleString() + '</div>';
+      lbList.appendChild(item);
+    });
   }
 
   /* ── Real-time activity listener: push new events live ── */
@@ -256,4 +280,35 @@ document.addEventListener('gfig:authready', async (e) => {
         }
       });
     }, () => {}); /* silence permission errors */
+
+  /* ── Load Wallet / Economy ── */
+  try {
+    var wallet = window.dbGetWallet ? await window.dbGetWallet(user.uid) : null;
+    if (wallet) {
+      var balBadge = document.getElementById('wallet-balance-badge');
+      var earnedEl = document.getElementById('wallet-earned');
+      var spentEl  = document.getElementById('wallet-spent');
+      if (balBadge) balBadge.textContent = 'G$ ' + (wallet.balance || 0).toLocaleString();
+      if (earnedEl) earnedEl.textContent = 'G$ ' + (wallet.totalEarned || 0).toLocaleString();
+      if (spentEl)  spentEl.textContent  = 'G$ ' + (wallet.totalSpent  || 0).toLocaleString();
+    }
+    var txns = window.dbGetTransactions ? await window.dbGetTransactions(user.uid, 8) : [];
+    var txnList = document.getElementById('wallet-transactions');
+    if (txnList) {
+      if (txns.length) {
+        txnList.innerHTML = '';
+        txns.forEach(function(tx) {
+          var isCredit = tx.type === 'credit';
+          var div = document.createElement('div');
+          div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--r-sm);font-size:0.75rem;';
+          div.innerHTML = '<span style="color:var(--text-sub);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (tx.reason || (isCredit ? 'Revenue' : 'Expense')) + '</span>'
+            + '<span style="font-weight:700;color:' + (isCredit ? 'var(--pass)' : 'var(--danger)') + ';white-space:nowrap;margin-left:8px;">'
+            + (isCredit ? '+' : '-') + ' G$ ' + (tx.amount || 0).toLocaleString() + '</span>';
+          txnList.appendChild(div);
+        });
+      } else {
+        txnList.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:12px;font-size:0.78rem;">No transactions yet — complete a mission to earn G-Credits!</div>';
+      }
+    }
+  } catch(e) { console.warn('Wallet load error:', e.message); }
 });

@@ -79,6 +79,7 @@
           <p>Personal flight log — track departures, arrivals, block times, fuel burn &amp; currency</p>
         </div>
         <button class="btn btn-primary" onclick="toggleLogForm()">+ New Entry</button>
+        <button class="btn btn-secondary" onclick="autoFillFromReports()" id="btn-autofill">⚡ Auto-Fill from Reports</button>
       </div>
 
       <!-- Stats -->
@@ -177,6 +178,59 @@
 
     function toggleLogForm() {
       document.getElementById('log-form').classList.toggle('open');
+    }
+
+    /* Auto-fill logbook from completed inspection reports */
+    async function autoFillFromReports() {
+      if (!_currentUser || !window.db) { showToast('Not connected', 'warn'); return; }
+      var btn = document.getElementById('btn-autofill');
+      btn.disabled = true; btn.textContent = '⏳ Scanning…';
+      try {
+        var reports = await dbGetReports({ submittedBy: _currentUser.uid });
+        if (!reports || !reports.length) { showToast('No reports found to import', 'warn'); btn.disabled = false; btn.textContent = '⚡ Auto-Fill from Reports'; return; }
+        /* Get existing logbook dates+routes to avoid duplicates */
+        var existingKeys = {};
+        _logEntries.forEach(function(e) { existingKeys[e.date + '|' + e.departure + '|' + e.arrival] = true; });
+        var imported = 0;
+        for (var i = 0; i < reports.length; i++) {
+          var r = reports[i];
+          var route = (r.missionRoute || '').split('→').map(function(s) { return s.trim(); });
+          var dep = route[0] || ''; var arr = route[1] || '';
+          if (!dep || !arr || !r.flightDate) continue;
+          var key = r.flightDate + '|' + dep + '|' + arr;
+          if (existingKeys[key]) continue;
+          await dbAddLogEntry(_currentUser.uid, {
+            date: r.flightDate,
+            aircraft: r.aircraft || '',
+            registration: '',
+            departure: dep,
+            arrival: arr,
+            blockOff: r.blockOff || '',
+            blockOn: r.blockOn || '',
+            blockTime: (function() {
+              if (!r.blockOff || !r.blockOn) return 0;
+              var a = r.blockOff.split(':').map(Number), b = r.blockOn.split(':').map(Number);
+              var m = (b[0]*60+b[1]) - (a[0]*60+a[1]); if (m < 0) m += 1440;
+              return parseFloat((m/60).toFixed(1));
+            })(),
+            fuelBurn: 0,
+            flightType: (r.missionType || '').match(/Charter|Cargo|Bush|Island|Humanitarian/) ? 'personal' : 'inspection',
+            network: r.network || 'vatsim',
+            approach: '',
+            remarks: 'Auto-imported from report ' + (r.missionId || r.id) + ' — Result: ' + (r.result || '').toUpperCase(),
+            pilotName: _currentUser.name || '',
+            autoImported: true,
+            reportId: r.missionId || r.id
+          });
+          existingKeys[key] = true;
+          imported++;
+        }
+        showToast('✓ Imported ' + imported + ' new logbook entries from reports', 'success');
+        await loadLogbook();
+      } catch(e) {
+        showToast('Import error: ' + e.message, 'error');
+      }
+      btn.disabled = false; btn.textContent = '⚡ Auto-Fill from Reports';
     }
 
     function calcBlockTime() {

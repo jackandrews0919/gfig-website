@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nomadic Aviation Group — GFIG</title>
+  <meta name="description" content="Nomadic Aviation Group — Charter, cargo, bush flying & humanitarian operations across the globe.">
+  <meta property="og:title" content="Nomadic Aviation Group — GFIG">
+  <meta property="og:description" content="Charter, cargo, bush flying & humanitarian operations.">
+  <meta property="og:image" content="https://jackandrews0919.github.io/gfig-website/logo.png">
+  <meta name="theme-color" content="#0b1f3a">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <style>
+    .nag-hero { background:linear-gradient(135deg,rgba(224,64,251,0.18),rgba(0,119,255,0.08)); border:1px solid rgba(224,64,251,0.25); border-radius:var(--r-lg); padding:48px 40px; margin-bottom:32px; position:relative; overflow:hidden; }
+    .nag-hero::before { content:'🌍'; position:absolute; right:40px; top:50%; transform:translateY(-50%); font-size:8rem; opacity:0.08; }
+    .nag-hero h1 { font-family:var(--font-head); font-size:2rem; letter-spacing:0.08em; margin-bottom:8px; }
+    .nag-hero h1 span { color:#e040fb; }
+    .nag-hero p { color:var(--text-sub); font-size:0.92rem; max-width:600px; line-height:1.7; }
+    .nag-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:32px; }
+    .nag-stat { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:20px; text-align:center; }
+    .nag-stat-val { font-family:var(--font-head); font-size:1.6rem; font-weight:700; color:#e040fb; }
+    .nag-stat-lbl { font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-top:4px; }
+    .nag-ops { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; margin-bottom:32px; }
+    .nag-op { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:24px; transition:border-color 0.2s,transform 0.2s; }
+    .nag-op:hover { border-color:#e040fb; transform:translateY(-2px); }
+    .nag-op-icon { font-size:2rem; margin-bottom:12px; }
+    .nag-op-title { font-family:var(--font-head); font-size:1rem; font-weight:700; margin-bottom:6px; letter-spacing:0.04em; }
+    .nag-op-desc { font-size:0.82rem; color:var(--text-sub); line-height:1.6; margin-bottom:14px; }
+    .nag-op-routes { font-size:0.75rem; color:var(--text-muted); }
+    .nag-routes-preview { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:24px; margin-bottom:32px; }
+    .nag-route-row { display:grid; grid-template-columns:140px 1fr 120px 100px; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); font-size:0.82rem; }
+    .nag-route-row:last-child { border-bottom:none; }
+    .nag-route-row .route-code { font-family:var(--font-mono); font-weight:700; color:#e040fb; }
+    .nag-fleet-preview { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; margin-bottom:32px; }
+    .nag-fleet-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:18px; text-align:center; }
+    .nag-fleet-card .ac-icon { font-size:2rem; margin-bottom:8px; }
+    .nag-fleet-card .ac-name { font-weight:700; font-size:0.88rem; margin-bottom:2px; }
+    .nag-fleet-card .ac-role { font-size:0.72rem; color:var(--text-muted); }
+    @media(max-width:768px) { .nag-hero { padding:28px 20px; } .nag-route-row { grid-template-columns:1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script>gfigAuth.guard();</script>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="logo.png" alt="GFIG" class="nav-logo-img"></a>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">⌂ Home</a>
+        <a href="dashboard.html" class="nav-link">◈ Dashboard</a>
+        <a href="missions.html" class="nav-link">◉ Missions</a>
+        <a href="notam.html" class="nav-link">⚠ NOTAMs</a>
+        <a href="training.html" class="nav-link">◎ Training</a>
+        <a href="events.html" class="nav-link">◗ Events</a>
+        <a href="sops.html" class="nav-link">≡ SOPs</a>
+        <a href="roster.html" class="nav-link">◔ Roster</a>
+        <a href="profile.html" class="nav-link">▣ Profile</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-pilot"><div class="nav-avatar">—</div><div class="nav-pilot-info"><div class="nav-pilot-name">Member</div><div class="nav-pilot-rank"></div></div><div class="nav-online"></div></div>
+        <a href="admin.html" class="nav-admin-link" style="display:none;padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;text-decoration:none;">⚙</a>
+        <button onclick="gfigAuth.logout()" style="padding:5px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);font-size:0.82rem;cursor:pointer;font-family:inherit;">↩</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+
+      <!-- Hero -->
+      <div class="nag-hero">
+        <h1>🌍 <span>NOMADIC AVIATION GROUP</span></h1>
+        <p>Charter flights, cargo hauling, bush flying & humanitarian aid operations. Explore the world beyond the runways — from African safaris to Caribbean island hops, Alaskan bush strips to silk road cargo runs.</p>
+        <div style="display:flex;gap:10px;margin-top:18px;">
+          <a href="missions.html" class="btn btn-primary" style="background:#e040fb;border-color:#e040fb;">Browse NAG Missions</a>
+          <a href="nag-routes.html" class="btn btn-secondary">View Route Map →</a>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="nag-stats">
+        <div class="nag-stat"><div class="nag-stat-val" id="nag-routes-count">25</div><div class="nag-stat-lbl">Active Routes</div></div>
+        <div class="nag-stat"><div class="nag-stat-val" id="nag-pilots-count">0</div><div class="nag-stat-lbl">NAG Pilots</div></div>
+        <div class="nag-stat"><div class="nag-stat-val" id="nag-flights-count">0</div><div class="nag-stat-lbl">Flights Completed</div></div>
+        <div class="nag-stat"><div class="nag-stat-val">5</div><div class="nag-stat-lbl">Operation Types</div></div>
+        <div class="nag-stat"><div class="nag-stat-val">6</div><div class="nag-stat-lbl">Continents</div></div>
+      </div>
+
+      <!-- Operation Types -->
+      <h2 style="font-family:var(--font-head);font-size:1.1rem;letter-spacing:0.08em;margin-bottom:16px;">OPERATION TYPES</h2>
+      <div class="nag-ops">
+        <div class="nag-op">
+          <div class="nag-op-icon">🛩</div>
+          <div class="nag-op-title">Charter Flights</div>
+          <div class="nag-op-desc">Luxury and executive charter services between major cities. CRJ, Challenger, Citation, Global aircraft.</div>
+          <div class="nag-op-routes">10 Routes · Europe, N. America, Middle East, Asia-Pacific, Africa</div>
+        </div>
+        <div class="nag-op">
+          <div class="nag-op-icon">📦</div>
+          <div class="nag-op-title">Cargo Hauling</div>
+          <div class="nag-op-desc">Heavy freight operations on Boeing 747F, 777F, A300F, and A330F. International cargo corridors.</div>
+          <div class="nag-op-routes">6 Routes · Transcontinental freight lanes</div>
+        </div>
+        <div class="nag-op">
+          <div class="nag-op-icon">🌿</div>
+          <div class="nag-op-title">Bush Flying</div>
+          <div class="nag-op-desc">Remote strip operations in Cessna Caravans, Twin Otters, Beavers, and PC-6 Porters. Short & unpaved.</div>
+          <div class="nag-op-routes">5 Routes · Scotland, Africa, NZ, Alaska, Patagonia</div>
+        </div>
+        <div class="nag-op">
+          <div class="nag-op-icon">🏝</div>
+          <div class="nag-op-title">Island Hopping</div>
+          <div class="nag-op-desc">Island-to-island connections on ATR-72 and turboprops. Short scenic legs with stunning approaches.</div>
+          <div class="nag-op-routes">1 Route · Philippines island chain</div>
+        </div>
+        <div class="nag-op">
+          <div class="nag-op-icon">🚑</div>
+          <div class="nag-op-title">Humanitarian Aid</div>
+          <div class="nag-op-desc">Aid & relief cargo to remote airstrips. C-130 Hercules, Twin Otter, Caravan missions to underserved areas.</div>
+          <div class="nag-op-routes">3 Routes · East Africa, Nepal, Caribbean</div>
+        </div>
+      </div>
+
+      <!-- Featured Routes -->
+      <h2 style="font-family:var(--font-head);font-size:1.1rem;letter-spacing:0.08em;margin-bottom:16px;">FEATURED ROUTES</h2>
+      <div class="nag-routes-preview">
+        <div class="nag-route-row" style="font-family:var(--font-head);font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border);padding-bottom:12px;">
+          <div>Route</div><div>Description</div><div>Aircraft</div><div>Points</div>
+        </div>
+        <div class="nag-route-row"><div class="route-code">EGLL → LFPG</div><div>London to Paris Charter</div><div>CRJ-700</div><div>100 pts</div></div>
+        <div class="nag-route-row"><div class="route-code">PANC → RKSI</div><div>Anchorage to Seoul Cargo</div><div>Boeing 747-8F</div><div>180 pts</div></div>
+        <div class="nag-route-row"><div class="route-code">PAJN → PAYA</div><div>Juneau to Yakutat Bush</div><div>DHC-2 Beaver</div><div>85 pts</div></div>
+        <div class="nag-route-row"><div class="route-code">OMDB → OEJN</div><div>Dubai to Jeddah VIP Charter</div><div>Global 7500</div><div>140 pts</div></div>
+        <div class="nag-route-row"><div class="route-code">HKJK → HUEN</div><div>Nairobi to Entebbe Humanitarian</div><div>C-130 Hercules</div><div>150 pts</div></div>
+        <div class="nag-route-row"><div class="route-code">FALE → FVCP</div><div>Durban to Chirundu Bush</div><div>DHC-6 Twin Otter</div><div>90 pts</div></div>
+        <div class="nag-route-row"><div class="route-code">VHHH → WSSS</div><div>Hong Kong to Singapore Charter</div><div>Falcon 7X</div><div>130 pts</div></div>
+        <div class="nag-route-row"><div class="route-code">EDDF → OMDB</div><div>Frankfurt to Dubai Freight</div><div>Boeing 777F</div><div>170 pts</div></div>
+      </div>
+
+      <!-- NAG Fleet -->
+      <h2 style="font-family:var(--font-head);font-size:1.1rem;letter-spacing:0.08em;margin-bottom:16px;">NAG FLEET</h2>
+      <div class="nag-fleet-preview">
+        <div class="nag-fleet-card"><div class="ac-icon">🛩</div><div class="ac-name">CRJ-700</div><div class="ac-role">Regional Charter</div></div>
+        <div class="nag-fleet-card"><div class="ac-icon">✈</div><div class="ac-name">Challenger 350</div><div class="ac-role">Executive Charter</div></div>
+        <div class="nag-fleet-card"><div class="ac-icon">✈</div><div class="ac-name">Global 7500</div><div class="ac-role">Long-Range VIP</div></div>
+        <div class="nag-fleet-card"><div class="ac-icon">✈</div><div class="ac-name">Falcon 7X</div><div class="ac-role">Mid-Range Charter</div></div>
+        <div class="nag-fleet-card"><div class="ac-icon">📦</div><div class="ac-name">Boeing 747-8F</div><div class="ac-role">Heavy Cargo</div></div>
+        <div class="nag-fleet-card"><div class="ac-icon">📦</div><div class="ac-name">Boeing 777F</div><div class="ac-role">Intercontinental Cargo</div></div>
+        <div class="nag-fleet-card"><div class="ac-icon">📦</div><div class="ac-name">Airbus A330-200F</div><div class="ac-role">Long-Range Cargo</div></div>
+        <div class="nag-fleet-card"><div class="ac-icon">🌿</div><div class="ac-name">Cessna 208 Caravan</div><div class="ac-role">Bush / Utility</div></div>
+        <div class="nag-fleet-card"><div class="ac-icon">🌿</div><div class="ac-name">DHC-6 Twin Otter</div><div class="ac-role">STOL / Bush</div></div>
+        <div class="nag-fleet-card"><div class="ac-icon">🌿</div><div class="ac-name">DHC-2 Beaver</div><div class="ac-role">Bush Classic</div></div>
+        <div class="nag-fleet-card"><div class="ac-icon">🏝</div><div class="ac-name">ATR 72-600</div><div class="ac-role">Island Hopper</div></div>
+        <div class="nag-fleet-card"><div class="ac-icon">🚑</div><div class="ac-name">C-130 Hercules</div><div class="ac-role">Humanitarian Airlift</div></div>
+      </div>
+
+      <!-- CTA -->
+      <div class="card" style="text-align:center;padding:40px;border-color:rgba(224,64,251,0.25);background:linear-gradient(135deg,rgba(224,64,251,0.06),transparent);">
+        <h2 style="font-family:var(--font-head);font-size:1.2rem;margin-bottom:8px;">Ready to fly with NAG?</h2>
+        <p style="color:var(--text-sub);font-size:0.85rem;margin-bottom:18px;">Set your branch to Nomadic Aviation Group in your profile settings to start receiving NAG missions.</p>
+        <div style="display:flex;gap:10px;justify-content:center;">
+          <a href="profile.html" class="btn btn-primary" style="background:#e040fb;border-color:#e040fb;">Set Branch →</a>
+          <a href="tours.html" class="btn btn-secondary">NAG Tours</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-bottom">
+        <span>© 2026 Global Flight Inspection Group · Nomadic Aviation Group</span>
+        <span>Not affiliated with any real-world aviation authority.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script>gfigAuth.applyNav();</script>
+  <script>
+    document.addEventListener('gfig:authready', async function() {
+      if (!window.db) return;
+      try {
+        var usersSnap = await window.db.collection('users').where('branch', '==', 'NAG').get();
+        document.getElementById('nag-pilots-count').textContent = usersSnap.size;
+        var reportsSnap = await window.db.collection('reports').get();
+        var nagFlights = 0;
+        reportsSnap.docs.forEach(function(d) {
+          var data = d.data();
+          if (data.branch === 'NAG' || (data.missionType && data.missionType.match(/Charter|Cargo|Bush|Island|Humanitarian/))) nagFlights++;
+        });
+        document.getElementById('nag-flights-count').textContent = nagFlights;
+      } catch(e) { /* fallback to 0 */ }
+    });
+  </script>
+</body>
+</html>

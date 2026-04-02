@@ -127,8 +127,8 @@
         var snap = await window.db.collection('users').get();
         snap.docs.forEach(function(d) {
           var data = d.data();
-          if (data.vatsimCid) gfigMembers['v' + data.vatsimCid] = { name: data.name || data.callsign, callsign: data.callsign, uid: d.id };
-          if (data.ivaoVid) gfigMembers['i' + data.ivaoVid] = { name: data.name || data.callsign, callsign: data.callsign, uid: d.id };
+          if (data.vatsimCid) gfigMembers['v' + data.vatsimCid] = { name: data.name || data.callsign, callsign: data.callsign, uid: d.id, branch: data.branch || 'GFIG' };
+          if (data.ivaoVid) gfigMembers['i' + data.ivaoVid] = { name: data.name || data.callsign, callsign: data.callsign, uid: d.id, branch: data.branch || 'GFIG' };
         });
       } catch(e) { console.warn('Load members error:', e); }
     }
@@ -168,6 +168,8 @@
               callsign: p.callsign,
               memberName: gfigMembers[key].name,
               memberCallsign: gfigMembers[key].callsign,
+              branch: gfigMembers[key].branch || 'GFIG',
+              uid: gfigMembers[key].uid,
               lat: p.latitude, lng: p.longitude,
               altitude: p.altitude, groundspeed: p.groundspeed, heading: p.heading,
               departure: p.flight_plan?.departure || '—',
@@ -191,6 +193,8 @@
               callsign: p.callsign,
               memberName: gfigMembers[key].name,
               memberCallsign: gfigMembers[key].callsign,
+              branch: gfigMembers[key].branch || 'GFIG',
+              uid: gfigMembers[key].uid,
               lat: p.lastTrack?.latitude, lng: p.lastTrack?.longitude,
               altitude: p.lastTrack?.altitude, groundspeed: p.lastTrack?.groundSpeed, heading: p.lastTrack?.heading,
               departure: p.flightPlan?.departureId || '—',
@@ -225,8 +229,10 @@
       }
 
       listEl.innerHTML = allFlights.map(function(f, i) {
-        return '<div class="flight-card" onclick="focusFlight(' + i + ')">'
-          + '<div>✈</div>'
+        var branchColor = f.branch === 'NAG' ? '#e040fb' : 'var(--blue-light)';
+        var branchIcon = f.branch === 'NAG' ? '🌍' : '✈';
+        return '<div class="flight-card" onclick="focusFlight(' + i + ')" style="border-left-color:' + branchColor + ';">'
+          + '<div>' + branchIcon + '</div>'
           + '<div style="flex:1;">'
           + '<div class="callsign">' + esc(f.memberCallsign || f.callsign) + ' <span style="font-size:0.65rem;color:var(--text-muted);">' + f.network + '</span></div>'
           + '<div class="route">' + esc(f.departure) + ' → ' + esc(f.arrival) + '</div>'
@@ -258,6 +264,9 @@
       }
 
       window._allFlights = allFlights;
+
+      /* ACARS: persist positions */
+      logAcarsPositions(allFlights);
     }
 
     function focusFlight(idx) {
@@ -269,6 +278,27 @@
     }
 
     function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    /* ACARS: store latest positions to Firestore for dashboard stats */
+    async function logAcarsPositions(flights) {
+      if (!window.db || !flights.length) return;
+      try {
+        var batch = window.db.batch();
+        flights.forEach(function(f) {
+          if (!f.uid || !f.lat) return;
+          var ref = window.db.collection('acars_positions').doc(f.uid);
+          batch.set(ref, {
+            uid: f.uid, callsign: f.memberCallsign || f.callsign,
+            network: f.network, branch: f.branch || 'GFIG',
+            lat: f.lat, lng: f.lng, altitude: f.altitude || 0,
+            groundspeed: f.groundspeed || 0, heading: f.heading || 0,
+            departure: f.departure, arrival: f.arrival, aircraft: f.aircraft,
+            updatedAt: window.serverTimestamp()
+          }, { merge: true });
+        });
+        await batch.commit();
+      } catch(e) { /* quiet */ }
+    }
 
     // Init
     loadMembers().then(function() {

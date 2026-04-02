@@ -308,6 +308,23 @@ ul { list-style: none; }
 .rank-chief    { background: rgba(255,107,53,0.12); color: var(--orange-light); border: 1px solid rgba(255,107,53,0.35); }
 .rank-director { background: linear-gradient(135deg,rgba(150,0,255,0.12),rgba(255,107,53,0.12)); color: #cc88ff; border: 1px solid rgba(150,0,255,0.35); }
 
+/* ── Branch Badges ───────────────────────────────────────────── */
+.branch-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--r-sm);
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: var(--font-head);
+}
+.branch-gfig { background: rgba(0,119,255,0.1);   color: var(--blue-light); border: 1px solid rgba(0,119,255,0.3); }
+.branch-nag  { background: rgba(224,64,251,0.1);  color: #e040fb;           border: 1px solid rgba(224,64,251,0.3); }
+
+/* Leaderboard branch tabs */
+.lb-tab { padding:3px 10px; border-radius:var(--r-full); font-size:0.68rem; font-weight:600; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text-sub); cursor:pointer; font-family:var(--font-body); transition:all 0.15s; }
+.lb-tab.active { background:var(--blue); border-color:var(--blue); color:#fff; }
+.lb-tab[data-lb-branch="NAG"].active { background:#e040fb; border-color:#e040fb; }
+
 /* ── Tables ──────────────────────────────────────────────────── */
 .table-wrap { overflow-x: auto; border-radius: var(--r-lg); border: 1px solid var(--border); }
 table { width: 100%; border-collapse: collapse; }

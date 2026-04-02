@@ -10,7 +10,7 @@
    Deployment: Railway, Render, or Replit (all have free tiers)
    ================================================================ */
 
-const { Client, GatewayIntentBits, ChannelType, AuditLogEvent, Events, PermissionsBitField } = require('discord.js');
+const { Client, GatewayIntentBits, ChannelType, AuditLogEvent, Events, PermissionsBitField, REST, Routes, SlashCommandBuilder } = require('discord.js');
 const express = require('express');
 const cors    = require('cors');
 
@@ -247,6 +247,8 @@ const GFIG_ROLES = [
   { name: 'Applicant',           color: '#E67E22', hoist: true  },
   { name: 'Guest',               color: '#95A5A6', hoist: false },
   { name: 'Suspended',           color: '#555555', hoist: false },
+  // ── Branch tags ──
+  { name: 'Nomadic Aviation',    color: '#E040FB', hoist: true  },
   // ── Base tags (bottom, not displayed separately) ──
   { name: 'Member',              color: '#2ECC71', hoist: false },
   { name: 'GFIG Bot',            color: '#5865F2', hoist: false },
@@ -311,6 +313,17 @@ const PERM_PROFILES = {
     { role: 'Senior Inspector', allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory] },
     { role: 'Flight Examiner',  allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory] },
     { role: 'Training Officer', allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory] }
+  ],
+  nomadic: [
+    { role: '@everyone',        deny:  [P.ViewChannel] },
+    { role: 'Nomadic Aviation', allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory, P.AddReactions, P.AttachFiles] },
+    { role: 'Director',         allow: [P.ViewChannel, P.SendMessages, P.ReadMessageHistory, P.ManageMessages] },
+    { role: 'Chief Inspector',  allow: [P.ViewChannel, P.ReadMessageHistory] }
+  ],
+  nomadic_readonly: [
+    { role: '@everyone',        deny:  [P.ViewChannel] },
+    { role: 'Nomadic Aviation', allow: [P.ViewChannel, P.ReadMessageHistory, P.AddReactions], deny: [P.SendMessages] },
+    { role: 'Director',         allow: [P.SendMessages, P.AttachFiles] }
   ]
 };
 
@@ -379,12 +392,28 @@ const GFIG_CHANNELS = [
   { name: '📋-loa-requests',             type: 'text',         cat: '🔒 staff',        topic: 'Leave of Absence requests — auto-posted when members submit LOA forms.' },
   { name: '🤖-bot-commands',             type: 'text',         cat: '🔒 staff',        topic: 'Bot command testing.' },
   { name: '�-safety-log',              type: 'text',         cat: '🔒 staff',        topic: 'Auto-posted safety & incident reports from the GFIG portal.' },
-  { name: '�📜-audit-log',                type: 'text',         cat: '🔒 staff',        topic: 'Auto-posted audit trail — message edits, deletes, member events.' }
+  { name: '�📜-audit-log',                type: 'text',         cat: '🔒 staff',        topic: 'Auto-posted audit trail — message edits, deletes, member events.' },
+
+  /* ── NOMADIC AVIATION GROUP ── */
+  { name: '🌍 nomadic-aviation',          type: 'category', perms: 'nomadic' },
+  { name: '📢-nag-announcements',         type: 'announcement', cat: '🌍 nomadic-aviation', topic: 'Nomadic Aviation Group announcements and updates.' },
+  { name: '💬-nag-general',               type: 'text',         cat: '🌍 nomadic-aviation', topic: 'General chat for Nomadic Aviation Group members.' },
+  { name: '✈-nag-operations',             type: 'text',         cat: '🌍 nomadic-aviation', topic: 'Charter, cargo, and GA operations coordination.' },
+  { name: '📋-nag-dispatch',              type: 'text',         cat: '🌍 nomadic-aviation', topic: 'Flight plans, route coordination, and dispatch notes for NAG ops.' },
+  { name: '📸-nag-screenshots',            type: 'text',         cat: '🌍 nomadic-aviation', topic: 'Share your Nomadic Aviation screenshots and routes.' },
+  { name: '📣-nag-leaderboard',            type: 'text',         cat: '🌍 nomadic-aviation', topic: 'NAG member rankings and stats.', perms: 'nomadic_readonly' },
 ];
 
 app.post('/setup', auth, async (req, res) => {
   try {
     const guild = getGuild(res); if (!guild) return;
+    const log = await runSetup(guild);
+    res.json({ ok: true, log });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/** Shared setup logic — creates roles & channels for GFIG + NAG */
+async function runSetup(guild) {
     const log = [];
 
     /* ① Roles */
@@ -464,9 +493,8 @@ app.post('/setup', auth, async (req, res) => {
       } catch(e) { log.push('err:Failed channel ' + c.name + ': ' + e.message); }
     }
 
-    res.json({ ok: true, log });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
+    return log;
+}
 
 /* ── Get members list ───────────────────────────────────────── */
 
@@ -621,6 +649,50 @@ app.post('/sync-all', auth, async (req, res) => {
 });
 
 /* ── LOA Role Management ────────────────────────────────────── */
+
+/* ── Branch Role Sync ───────────────────────────────────────── */
+
+app.post('/sync-branch', auth, async (req, res) => {
+  try {
+    const guild = getGuild(res); if (!guild) return;
+    const { discordId, branch } = req.body;
+    if (!discordId) return res.status(400).json({ error: 'discordId required' });
+    if (!branch)    return res.status(400).json({ error: 'branch required (GFIG or NAG)' });
+
+    let member;
+    try { member = await guild.members.fetch(discordId); }
+    catch(e) { return res.status(404).json({ error: 'Member not found in server' }); }
+
+    await guild.roles.fetch();
+    const log = [];
+    const branchRoleMap = { NAG: 'Nomadic Aviation' };
+    const branchRoleName = branchRoleMap[branch];
+
+    // Remove existing branch roles
+    const allBranchRoleNames = Object.values(branchRoleMap);
+    for (const rn of allBranchRoleNames) {
+      const r = guild.roles.cache.find(x => x.name === rn);
+      if (r && member.roles.cache.has(r.id)) {
+        try { await member.roles.remove(r, 'Branch sync from GFIG Portal'); log.push('ok:Removed ' + rn); } catch(e) { log.push('err:' + e.message); }
+      }
+    }
+
+    // Add new branch role if applicable
+    if (branchRoleName) {
+      const newRole = guild.roles.cache.find(x => x.name === branchRoleName);
+      if (newRole) {
+        try { await member.roles.add(newRole, 'Branch sync from GFIG Portal'); log.push('ok:Assigned ' + branchRoleName); } catch(e) { log.push('err:' + e.message); }
+      } else {
+        log.push('err:Role "' + branchRoleName + '" not found — run Setup first');
+      }
+    } else {
+      log.push('ok:GFIG branch — no extra role needed');
+    }
+
+    auditPush({ type: 'role_change', user: member.user.tag, summary: `Branch set to **${branch}** for **${member.user.tag}**` });
+    res.json({ ok: true, branch, log });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 app.post('/loa', auth, async (req, res) => {
   try {
@@ -1372,7 +1444,7 @@ app.post('/channel-clear', auth, async (req, res) => {
 
 /* ── Bot Events ─────────────────────────────────────────────── */
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`✅ GFIG Bot online as ${client.user.tag}`);
   const guild = client.guilds.cache.get(GUILD_ID);
   if (guild) {
@@ -1381,6 +1453,19 @@ client.once('ready', () => {
     console.warn(`   ⚠ Guild ${GUILD_ID} not found — ensure the bot is added to your server`);
   }
   client.user.setPresence({ status: 'online', activities: [{ name: 'GFIG Operations', type: 3 }] });
+
+  /* Register slash commands */
+  try {
+    const commands = [
+      new SlashCommandBuilder().setName('setup').setDescription('Run full GFIG server setup (roles + channels). Director only.'),
+      new SlashCommandBuilder().setName('status').setDescription('Show bot and server status.'),
+    ];
+    const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
+    await rest.put(Routes.applicationGuildCommands(client.user.id, GUILD_ID), { body: commands.map(c => c.toJSON()) });
+    console.log('   ✅ Slash commands registered: /setup, /status');
+  } catch(e) {
+    console.warn('   ⚠ Failed to register slash commands:', e.message);
+  }
 });
 
 /* Audit: Message Deleted */
@@ -1490,6 +1575,104 @@ client.on(Events.GuildMemberRemove, (member) => {
 });
 
 client.on('error', e => console.error('Discord error:', e.message));
+
+/* ── Slash Command Handler ──────────────────────────────────── */
+
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+  if (interaction.guildId !== GUILD_ID) return;
+
+  /* /status */
+  if (interaction.commandName === 'status') {
+    const guild = client.guilds.cache.get(GUILD_ID);
+    await interaction.reply({ embeds: [{
+      color: 0x00E676,
+      title: '✅ GFIG Bot Status',
+      fields: [
+        { name: 'Bot',     value: client.user.tag, inline: true },
+        { name: 'Server',  value: guild?.name || '—', inline: true },
+        { name: 'Members', value: String(guild?.memberCount || 0), inline: true },
+        { name: 'Uptime',  value: Math.round(client.uptime / 60000) + ' min', inline: true }
+      ],
+      footer: { text: 'GFIG Operations' },
+      timestamp: new Date().toISOString()
+    }], ephemeral: true });
+    return;
+  }
+
+  /* /setup — Director only */
+  if (interaction.commandName === 'setup') {
+    const member = interaction.member;
+    const isDirector = member.roles.cache.some(r => r.name === 'Director') || member.permissions.has(PermissionsBitField.Flags.Administrator);
+    if (!isDirector) {
+      await interaction.reply({ content: '❌ Only Directors or Admins can run `/setup`.', ephemeral: true });
+      return;
+    }
+
+    await interaction.deferReply();
+    try {
+      const guild = interaction.guild;
+      const log = await runSetup(guild);
+      const ok   = log.filter(l => l.startsWith('ok:')).length;
+      const skip = log.filter(l => l.startsWith('skip:')).length;
+      const err  = log.filter(l => l.startsWith('err:')).length;
+      await interaction.editReply({ embeds: [{
+        color: err > 0 ? 0xFFD700 : 0x00E676,
+        title: '🔧 GFIG Server Setup Complete',
+        description: `✅ **${ok}** created · ⏭ **${skip}** already exist · ${err > 0 ? '⚠ **' + err + '** errors' : '✓ No errors'}`,
+        fields: [
+          { name: 'Created', value: log.filter(l => l.startsWith('ok:')).map(l => l.slice(3)).join('\n').substring(0, 1024) || 'Nothing new', inline: false },
+          ...(err > 0 ? [{ name: 'Errors', value: log.filter(l => l.startsWith('err:')).map(l => l.slice(4)).join('\n').substring(0, 1024), inline: false }] : [])
+        ],
+        footer: { text: 'GFIG Setup' },
+        timestamp: new Date().toISOString()
+      }] });
+    } catch(e) {
+      await interaction.editReply('❌ Setup failed: ' + e.message);
+    }
+    return;
+  }
+});
+
+/* ── Chat message fallback: !setup ──────────────────────────── */
+
+client.on(Events.MessageCreate, async (msg) => {
+  if (msg.author.bot) return;
+  if (msg.guildId !== GUILD_ID) return;
+  const content = msg.content.trim().toLowerCase();
+
+  if (content === '!setup' || content === '/setup') {
+    const member = msg.member;
+    const isDirector = member.roles.cache.some(r => r.name === 'Director') || member.permissions.has(PermissionsBitField.Flags.Administrator);
+    if (!isDirector) {
+      await msg.reply('❌ Only Directors or Admins can run setup.');
+      return;
+    }
+
+    const statusMsg = await msg.reply('⏳ Running GFIG server setup… This may take a minute.');
+    try {
+      const guild = msg.guild;
+      const log = await runSetup(guild);
+      const ok   = log.filter(l => l.startsWith('ok:')).length;
+      const skip = log.filter(l => l.startsWith('skip:')).length;
+      const err  = log.filter(l => l.startsWith('err:')).length;
+      await statusMsg.edit({ content: null, embeds: [{
+        color: err > 0 ? 0xFFD700 : 0x00E676,
+        title: '🔧 GFIG Server Setup Complete',
+        description: `✅ **${ok}** created · ⏭ **${skip}** already exist · ${err > 0 ? '⚠ **' + err + '** errors' : '✓ No errors'}`,
+        fields: [
+          { name: 'Created', value: log.filter(l => l.startsWith('ok:')).map(l => l.slice(3)).join('\n').substring(0, 1024) || 'Nothing new', inline: false },
+          ...(err > 0 ? [{ name: 'Errors', value: log.filter(l => l.startsWith('err:')).map(l => l.slice(4)).join('\n').substring(0, 1024), inline: false }] : [])
+        ],
+        footer: { text: 'GFIG Setup' },
+        timestamp: new Date().toISOString()
+      }] });
+    } catch(e) {
+      await statusMsg.edit('❌ Setup failed: ' + e.message);
+    }
+    return;
+  }
+});
 
 /* ── Start ──────────────────────────────────────────────────── */
 

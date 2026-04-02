@@ -75,7 +75,10 @@
           <h1>Flight Tours</h1>
           <p>Complete multi-leg tours to earn exclusive badges and explore the world</p>
         </div>
-        <div style="display:flex;gap:10px;">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button class="lb-tab active" onclick="filterTourBranch('all',this)">All Tours</button>
+          <button class="lb-tab" onclick="filterTourBranch('GFIG',this)">✈ GFIG</button>
+          <button class="lb-tab" onclick="filterTourBranch('NAG',this)">🌍 NAG</button>
           <span class="badge badge-active" id="tours-completed-badge">0 Completed</span>
         </div>
       </div>
@@ -106,8 +109,16 @@
     var _tours = [];
     var _myProgress = {};
     var _uid = null;
+    var _tourBranchFilter = 'all';
 
     function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    function filterTourBranch(branch, btn) {
+      _tourBranchFilter = branch;
+      document.querySelectorAll('.lb-tab').forEach(function(b) { b.classList.remove('active'); });
+      if (btn) btn.classList.add('active');
+      renderTours();
+    }
 
     // Default tours (admin can add more via Firestore)
     var DEFAULT_TOURS = [
@@ -211,6 +222,91 @@
           { dep: 'LIRF', arr: 'LFPG', aircraft: 'Any', note: 'Rome to Paris' },
           { dep: 'LFPG', arr: 'EGLL', aircraft: 'Any', note: 'Paris to London' }
         ]
+      },
+      /* ── NAG Tours ── */
+      {
+        id: 'african-bush-circuit',
+        title: 'African Bush Circuit',
+        description: 'NAG bush flying tour across Southern & East Africa in light aircraft.',
+        icon: '🌿',
+        badge: '🏅 Bush Pilot',
+        difficulty: 'Advanced',
+        branch: 'NAG',
+        legs: [
+          { dep: 'FAOR', arr: 'FALE', aircraft: 'King Air B200', note: 'Johannesburg to Durban' },
+          { dep: 'FALE', arr: 'FVCP', aircraft: 'DHC-6 Twin Otter', note: 'Durban to Chirundu' },
+          { dep: 'FVCP', arr: 'FVHA', aircraft: 'Cessna 208', note: 'Chirundu to Harare' },
+          { dep: 'FVHA', arr: 'HTDA', aircraft: 'DHC-6 Twin Otter', note: 'Harare to Dar es Salaam' },
+          { dep: 'HTDA', arr: 'HKJK', aircraft: 'Cessna 208', note: 'Dar es Salaam to Nairobi' },
+          { dep: 'HKJK', arr: 'HUEN', aircraft: 'C-130 Hercules', note: 'Nairobi to Entebbe (Aid Run)' }
+        ]
+      },
+      {
+        id: 'caribbean-cargo-run',
+        title: 'Caribbean Cargo Run',
+        description: 'NAG island-hopping cargo and aid delivery across the Caribbean.',
+        icon: '📦',
+        badge: '🏅 Caribbean Freighter',
+        difficulty: 'Intermediate',
+        branch: 'NAG',
+        legs: [
+          { dep: 'KMIA', arr: 'MYNN', aircraft: 'Cessna 208', note: 'Miami to Nassau' },
+          { dep: 'MYNN', arr: 'MKJP', aircraft: 'ATR 72-600', note: 'Nassau to Kingston' },
+          { dep: 'MKJP', arr: 'TNCM', aircraft: 'Cessna 208', note: 'Kingston to St Maarten' },
+          { dep: 'TNCM', arr: 'TKPK', aircraft: 'Cessna 208', note: 'St Maarten to St Kitts (Aid Delivery)' },
+          { dep: 'TKPK', arr: 'TJSJ', aircraft: 'ATR 72-600', note: 'St Kitts to San Juan' }
+        ]
+      },
+      {
+        id: 'alaska-frontier',
+        title: 'Alaska Frontier',
+        description: 'NAG bush flying in Alaska's wilderness — mountain passes and gravel strips.',
+        icon: '🏔',
+        badge: '🏅 Alaska Pioneer',
+        difficulty: 'Advanced',
+        branch: 'NAG',
+        legs: [
+          { dep: 'PANC', arr: 'PAFA', aircraft: 'DHC-2 Beaver', note: 'Anchorage to Fairbanks' },
+          { dep: 'PAFA', arr: 'PABE', aircraft: 'Cessna 208', note: 'Fairbanks to Bethel' },
+          { dep: 'PABE', arr: 'PAOM', aircraft: 'DHC-6 Twin Otter', note: 'Bethel to Nome' },
+          { dep: 'PAOM', arr: 'PABR', aircraft: 'DHC-6 Twin Otter', note: 'Nome to Barrow' },
+          { dep: 'PABR', arr: 'PAJN', aircraft: 'Cessna 208', note: 'Barrow to Juneau' },
+          { dep: 'PAJN', arr: 'PAYA', aircraft: 'DHC-2 Beaver', note: 'Juneau to Yakutat' }
+        ]
+      },
+      {
+        id: 'silk-road-cargo',
+        title: 'Silk Road Cargo Express',
+        description: 'NAG heavy cargo run following the ancient Silk Road trade routes.',
+        icon: '🐪',
+        badge: '🏅 Silk Road Hauler',
+        difficulty: 'Expert',
+        branch: 'NAG',
+        legs: [
+          { dep: 'EDDF', arr: 'LTFM', aircraft: 'Boeing 777F', note: 'Frankfurt to Istanbul' },
+          { dep: 'LTFM', arr: 'OMDB', aircraft: 'Boeing 777F', note: 'Istanbul to Dubai' },
+          { dep: 'OMDB', arr: 'OPKC', aircraft: 'Airbus A330-200F', note: 'Dubai to Karachi' },
+          { dep: 'OPKC', arr: 'VIDP', aircraft: 'Boeing 747-8F', note: 'Karachi to Delhi' },
+          { dep: 'VIDP', arr: 'VHHH', aircraft: 'Boeing 777F', note: 'Delhi to Hong Kong' },
+          { dep: 'VHHH', arr: 'RKSI', aircraft: 'Boeing 747-8F', note: 'Hong Kong to Seoul' },
+          { dep: 'RKSI', arr: 'PANC', aircraft: 'Boeing 747-8F', note: 'Seoul to Anchorage' }
+        ]
+      },
+      {
+        id: 'patagonia-explorer',
+        title: 'Patagonia Explorer',
+        description: 'NAG bush flying through southern South America's stunning landscapes.',
+        icon: '🏔',
+        badge: '🏅 Patagonia Pathfinder',
+        difficulty: 'Advanced',
+        branch: 'NAG',
+        legs: [
+          { dep: 'SCEL', arr: 'SCTE', aircraft: 'Pilatus PC-6', note: 'Santiago to Temuco' },
+          { dep: 'SCTE', arr: 'SCCY', aircraft: 'Cessna 208', note: 'Temuco to Coyhaique' },
+          { dep: 'SCCY', arr: 'SCCI', aircraft: 'DHC-6 Twin Otter', note: 'Coyhaique to Punta Arenas' },
+          { dep: 'SCCI', arr: 'SAWH', aircraft: 'DHC-2 Beaver', note: 'Punta Arenas to Ushuaia' },
+          { dep: 'SAWH', arr: 'SAEZ', aircraft: 'King Air 350', note: 'Ushuaia to Buenos Aires' }
+        ]
       }
     ];
 
@@ -248,13 +344,18 @@
       var completedCount = Object.values(_myProgress).filter(function(p) { return p.completed; }).length;
       document.getElementById('tours-completed-badge').textContent = completedCount + ' Completed';
 
-      grid.innerHTML = _tours.map(function(tour) {
+      var visibleTours = _tourBranchFilter === 'all' ? _tours : _tours.filter(function(t) {
+        if (_tourBranchFilter === 'NAG') return t.branch === 'NAG';
+        return t.branch !== 'NAG'; /* GFIG = no branch or branch=GFIG */
+      });
+
+      grid.innerHTML = visibleTours.map(function(tour) {
         var progress = _myProgress[tour.id] || { completedLegs: [], completed: false };
         var pct = tour.legs.length ? Math.round((progress.completedLegs.length / tour.legs.length) * 100) : 0;
         var diffColor = tour.difficulty === 'Beginner' ? 'var(--pass)' : tour.difficulty === 'Intermediate' ? 'var(--monitor)' : tour.difficulty === 'Advanced' ? 'var(--orange)' : 'var(--fail)';
 
         return '<div class="tour-card" onclick="openTourDetail(\'' + tour.id + '\')">'
-          + '<div class="tour-banner" style="background:linear-gradient(135deg,var(--blue),var(--orange));">' + (tour.icon || '✈') + '</div>'
+          + '<div class="tour-banner" style="background:linear-gradient(135deg,' + (tour.branch==='NAG' ? 'rgba(224,64,251,0.7),rgba(255,106,0,0.5)' : 'var(--blue),var(--orange)') + ');">' + (tour.icon || '✈') + '</div>'
           + '<div class="tour-body">'
           + '<div class="tour-title">' + esc(tour.title) + '</div>'
           + '<div class="tour-desc">' + esc(tour.description) + '</div>'

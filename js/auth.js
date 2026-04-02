@@ -241,8 +241,12 @@ const gfigAuth = {
       el.textContent = user.rank || '';
     });
     document.querySelectorAll('.nav-avatar, #nav-avatar').forEach(el => {
-      el.textContent = user.avatar ||
-        (user.name || 'IN').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      if (user.photoURL) {
+        el.innerHTML = '<img src="' + user.photoURL + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      } else {
+        el.textContent = user.avatar ||
+          (user.name || 'IN').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      }
     });
 
     if (user.isAdmin || this.hasAnyStaffRole()) {

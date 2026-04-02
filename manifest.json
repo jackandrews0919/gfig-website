@@ -1,8 +1,8 @@
 {
   "name": "GFIG Virtual Airline",
   "short_name": "GFIG",
-  "description": "Global Flight Inspection Group — Virtual Airline Operations Hub",
-  "start_url": "/index.html",
+  "description": "Global Flight Inspection Group — Virtual Airline Operations Hub. Track missions, submit reports, earn G-Credits, and explore the world with GFIG & NAG.",
+  "start_url": "/dashboard.html",
   "display": "standalone",
   "background_color": "#0b1f3a",
   "theme_color": "#0077ff",
@@ -23,5 +23,36 @@
   ],
   "categories": ["games", "entertainment"],
   "lang": "en",
-  "scope": "/"
+  "scope": "/",
+  "shortcuts": [
+    {
+      "name": "Submit Report",
+      "short_name": "Report",
+      "description": "File an inspection report",
+      "url": "/report.html",
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mission Board",
+      "short_name": "Missions",
+      "description": "View available missions",
+      "url": "/missions.html",
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Live Map",
+      "short_name": "Live Map",
+      "description": "Track pilots on VATSIM/IVAO",
+      "url": "/livemap.html",
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Logbook",
+      "short_name": "Logbook",
+      "description": "Your flight log",
+      "url": "/logbook.html",
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false
 }
